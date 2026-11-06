@@ -103,6 +103,41 @@ public class Loan : AuditableEntity, ISoftDeletable
     [MaxLength(1000)]
     public string? Notes { get; set; }
 
+    /// <summary>
+    /// Nominee name provided during loan creation.
+    /// </summary>
+    [MaxLength(200)]
+    public string? NomineeName { get; set; }
+
+    /// <summary>
+    /// Relationship of the nominee with the pledger.
+    /// </summary>
+    [MaxLength(50)]
+    public string? NomineeRelationship { get; set; }
+
+    /// <summary>
+    /// Security packet identifier or barcode for physical locker storage.
+    /// </summary>
+    [MaxLength(50)]
+    public string? PacketNumber { get; set; }
+
+    /// <summary>
+    /// Optional path to photo of the pledged jewellery ornaments on the scale/tray.
+    /// </summary>
+    [MaxLength(500)]
+    public string? JewelPhotoPath { get; set; }
+
+    /// <summary>
+    /// Reason recorded if an Owner overrode the scheme maximum LTV limit.
+    /// </summary>
+    [MaxLength(500)]
+    public string? OwnerLtvOverrideReason { get; set; }
+
+    /// <summary>
+    /// Date up to which interest has been fully settled through receipts.
+    /// </summary>
+    public DateOnly? LastInterestPaidDate { get; set; }
+
     // ── Soft Delete ──────────────────────────────────────────────────
 
     /// <inheritdoc />
