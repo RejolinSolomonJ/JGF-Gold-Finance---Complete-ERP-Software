@@ -68,10 +68,12 @@
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="*"/>
                 </Grid.RowDefinitions>
-                <DockPanel Grid.Row="0" Background="#F0F0F0" Padding="8,4">
-                    <TextBlock Text="Linked Customer Loans &amp; Ornaments in Bank Custody" FontWeight="Bold" VerticalAlignment="Center"/>
-                    <TextBlock Text="Check box to mark customer jewels as RELEASED back to shop locker:" Foreground="#666666" DockPanel.Dock="Right"/>
-                </DockPanel>
+                <Border Grid.Row="0" Background="#F0F0F0" Padding="8,4">
+                    <DockPanel>
+                        <TextBlock Text="Linked Customer Loans &amp; Ornaments in Bank Custody" FontWeight="Bold" VerticalAlignment="Center"/>
+                        <TextBlock Text="Check box to mark customer jewels as RELEASED back to shop locker:" Foreground="#666666" DockPanel.Dock="Right"/>
+                    </DockPanel>
+                </Border>
                 <DataGrid x:Name="GridLinkedLoans" Grid.Row="1" AutoGenerateColumns="False" CanUserAddRows="False" BorderBrush="#E0E0E0">
                     <DataGrid.Columns>
                         <DataGridCheckBoxColumn Header="Release Jewels" Binding="{Binding IsSelectedForRelease}" Width="100"/>

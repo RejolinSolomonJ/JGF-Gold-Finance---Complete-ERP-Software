@@ -35,6 +35,13 @@ public class Auction : AuditableEntity, ISoftDeletable
     [Column(TypeName = "decimal(18,2)")]
     public decimal AuctionCharges { get; set; }
 
+    [NotMapped]
+    public decimal AuctionExpenses
+    {
+        get => AuctionCharges;
+        set => AuctionCharges = value;
+    }
+
     [Column(TypeName = "decimal(18,2)")]
     public decimal SurplusAmount { get; set; }
 

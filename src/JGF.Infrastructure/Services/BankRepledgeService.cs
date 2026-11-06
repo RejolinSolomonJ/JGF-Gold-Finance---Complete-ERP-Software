@@ -93,7 +93,8 @@ public class BankRepledgeService : IBankRepledgeService
         var bank = await _context.Banks.FindAsync(new object[] { dto.BankId }, ct)
             ?? throw new ArgumentException("Selected Bank/NBFC not found.");
 
-        using var tx = await _context.Database.BeginTransactionAsync(ct);
+        var isRelational = _context.Database.IsRelational();
+        using var tx = isRelational ? await _context.Database.BeginTransactionAsync(ct) : null;
 
         var selectedLoans = await _context.Loans
             .Where(l => dto.LoanIdsToPledge.Contains(l.Id))
@@ -179,7 +180,10 @@ public class BankRepledgeService : IBankRepledgeService
         }
 
         await _context.SaveChangesAsync(ct);
-        await tx.CommitAsync(ct);
+        if (tx != null)
+        {
+            await tx.CommitAsync(ct);
+        }
 
         return bankPledge;
     }
@@ -194,10 +198,11 @@ public class BankRepledgeService : IBankRepledgeService
             .FirstOrDefaultAsync(b => b.Id == dto.BankPledgeId, ct)
             ?? throw new ArgumentException("Bank pledge not found.");
 
-        using var tx = await _context.Database.BeginTransactionAsync(ct);
+        var isRelational = _context.Database.IsRelational();
+        using var tx = isRelational ? await _context.Database.BeginTransactionAsync(ct) : null;
 
         // Separate RZ sequence series for bank payments
-        var fy = "2024-25";
+        var fy = "24-25";
         var rzSeries = await _context.NumberSerieses
             .FirstOrDefaultAsync(s => s.Prefix == "RZ" && s.FinancialYear == fy, ct);
 
@@ -343,7 +348,10 @@ public class BankRepledgeService : IBankRepledgeService
         payment.VoucherId = voucher.Id;
 
         await _context.SaveChangesAsync(ct);
-        await tx.CommitAsync(ct);
+        if (tx != null)
+        {
+            await tx.CommitAsync(ct);
+        }
 
         return (payment, rzNumber);
     }
@@ -412,19 +420,36 @@ public class BankRepledgeService : IBankRepledgeService
                 ? $"In Bank Custody ({activeBankPledge.BankPledge.Bank.Name} - #{activeBankPledge.BankPledge.PledgeNumber})"
                 : "In Shop Locker";
 
-            foreach (var item in loan.Items)
+            if (loan.Items.Count == 0)
             {
                 result.Add(new JewelCustodyStockDto(
                     custody,
                     loan.LoanNumber,
                     loan.Customer.FullName,
-                    $"{item.JewelType?.Name} - {item.Description}",
-                    item.Quantity,
-                    item.GrossWeight,
-                    item.NetWeight,
-                    item.AppraisedValue,
+                    "Gold Ornaments",
+                    1,
+                    loan.GrossWeight,
+                    loan.NetWeight,
+                    loan.MarketValue,
                     loan.PacketNumber ?? "-"
                 ));
+            }
+            else
+            {
+                foreach (var item in loan.Items)
+                {
+                    result.Add(new JewelCustodyStockDto(
+                        custody,
+                        loan.LoanNumber,
+                        loan.Customer.FullName,
+                        $"{item.JewelType?.Name} - {item.Description}",
+                        item.Quantity,
+                        item.GrossWeight,
+                        item.NetWeight,
+                        item.AppraisedValue,
+                        loan.PacketNumber ?? "-"
+                    ));
+                }
             }
         }
 

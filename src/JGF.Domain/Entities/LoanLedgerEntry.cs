@@ -34,6 +34,13 @@ public class LoanLedgerEntry : AuditableEntity, ISoftDeletable
 
     public Guid? ReferenceId { get; set; }
 
+    [NotMapped]
+    public Guid? ReceiptId
+    {
+        get => ReferenceId;
+        set => ReferenceId = value;
+    }
+
     public bool IsDeleted { get; set; }
     public DateTime? DeletedAtUtc { get; set; }
 

@@ -1,5 +1,10 @@
 using System.IO;
 using System.Windows;
+using JGF.Application.Accounting;
+using JGF.Application.Loans;
+using JGF.Application.Notices;
+using JGF.Application.Receipts;
+using JGF.Application.Repledge;
 using JGF.Application.Security;
 using JGF.Application.Services;
 using JGF.Infrastructure.Persistence;
@@ -75,6 +80,7 @@ public partial class App : System.Windows.Application
                     services.AddSingleton<IInterestCalculator, StandardInterestCalculator>();
                     services.AddScoped<ILoanService, LoanService>();
                     services.AddScoped<IReceiptService, ReceiptService>();
+                    services.AddScoped<IOverdueNoticeService, OverdueNoticeService>();
 
                     // ViewModels & Views
                     services.AddSingleton<Views.MainWindow>();

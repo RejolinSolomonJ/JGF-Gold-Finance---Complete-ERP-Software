@@ -26,7 +26,7 @@ public partial class GoldRateMasterControl : UserControl
         if (todayRate != null)
         {
             Txt22KRate.Text = todayRate.Rate22K.ToString("0.00");
-            Txt18KRate.Text = (todayRate.Rate18K ?? 0).ToString("0.00");
+            Txt18KRate.Text = todayRate.Rate18K.ToString("0.00");
             TxtMarketRate.Text = todayRate.RatePerGram.ToString("0.00");
             TxtSource.Text = todayRate.Source ?? "";
         }

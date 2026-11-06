@@ -27,7 +27,7 @@
         </Border>
 
         <!-- Right: Set Daily Rate Form -->
-        <StackPanel Grid.Column="1" Padding="16,0,0,0">
+        <StackPanel Grid.Column="1" Margin="16,0,0,0">
             <TextBlock Text="Set Daily Gold Rate (இன்றைய தங்கம் விலை)" FontWeight="Bold" FontSize="16"/>
             <Separator Margin="0,8"/>
 

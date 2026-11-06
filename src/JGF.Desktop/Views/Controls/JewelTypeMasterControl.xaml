@@ -28,7 +28,7 @@
             </Grid>
         </Border>
 
-        <StackPanel Grid.Column="1" Padding="16,0,0,0">
+        <StackPanel Grid.Column="1" Margin="16,0,0,0">
             <TextBlock Text="Jewel Master Details" FontWeight="Bold" FontSize="16"/>
             <Separator Margin="0,8"/>
 

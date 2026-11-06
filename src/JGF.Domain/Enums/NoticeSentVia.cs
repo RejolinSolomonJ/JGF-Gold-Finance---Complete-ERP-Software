@@ -18,5 +18,11 @@ public enum NoticeSentVia
     SMS,
 
     /// <summary>Notice sent via WhatsApp message.</summary>
-    WhatsApp
+    WhatsApp,
+
+    // Backward-compatible aliases
+    RegisteredPost = Post,
+    SpeedPost = Post,
+    HandDelivery = Hand,
+    Sms = SMS
 }

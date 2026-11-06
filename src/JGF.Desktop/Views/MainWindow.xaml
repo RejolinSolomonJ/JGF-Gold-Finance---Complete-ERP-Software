@@ -41,9 +41,10 @@
             <MenuItem Header="_Customer Detail (F3)" Click="OnCustomerDetailClick"/>
             <MenuItem Header="_Receipt (F4)" Click="OnReceiptClick"/>
             <MenuItem Header="Re _Pledge (F5)" x:Name="MenuRepledge" Click="OnRepledgeClick"/>
-            <MenuItem Header="_Reports (F6)" Click="OnReportsClick"/>
-            <MenuItem Header="_Stock (F7)" Click="OnStockClick"/>
-            <MenuItem Header="_Accounts (F8)" x:Name="MenuAccounts">
+            <MenuItem Header="_Notices &amp; Auction (F6)" x:Name="MenuNoticesAuction" Click="OnNoticesAuctionClick"/>
+            <MenuItem Header="_Reports (F7)" Click="OnReportsClick"/>
+            <MenuItem Header="_Stock (F8)" Click="OnStockClick"/>
+            <MenuItem Header="_Accounts (F9)" x:Name="MenuAccounts">
                 <MenuItem Header="Day Book" Click="OnDayBookClick"/>
                 <MenuItem Header="Ledger Heads Master" Click="OnLedgerHeadsClick"/>
                 <MenuItem Header="Voucher Entry" Click="OnVouchersClick"/>

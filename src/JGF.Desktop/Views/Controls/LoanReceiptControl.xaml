@@ -72,9 +72,11 @@
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="*"/>
                 </Grid.RowDefinitions>
-                <DockPanel Grid.Row="0" Background="#F0F0F0" Padding="8,4">
-                    <TextBlock Text="Month-by-Month Interest Calculation Breakdown" FontWeight="Bold"/>
-                </DockPanel>
+                <Border Grid.Row="0" Background="#F0F0F0" Padding="8,4">
+                    <DockPanel>
+                        <TextBlock Text="Month-by-Month Interest Calculation Breakdown" FontWeight="Bold"/>
+                    </DockPanel>
+                </Border>
                 <DataGrid x:Name="GridInterest" Grid.Row="1" AutoGenerateColumns="False" IsReadOnly="True" BorderBrush="#E0E0E0">
                     <DataGrid.Columns>
                         <DataGridTextColumn Header="From Date" Binding="{Binding FromDate, StringFormat={}{0:dd-MMM-yyyy}}" Width="100"/>

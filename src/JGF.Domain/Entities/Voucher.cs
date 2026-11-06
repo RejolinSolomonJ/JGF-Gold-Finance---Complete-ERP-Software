@@ -51,5 +51,8 @@ public class Voucher : AuditableEntity, ISoftDeletable
 
     public User? PostedByUser { get; set; }
     public ICollection<VoucherLine> Lines { get; set; } = new List<VoucherLine>();
+
+    [NotMapped]
+    public ICollection<VoucherLine> Entries => Lines;
 }
 

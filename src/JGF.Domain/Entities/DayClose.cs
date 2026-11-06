@@ -39,6 +39,12 @@ public class DayClose : AuditableEntity, ISoftDeletable
 
     public int ReceiptsCount { get; set; }
 
+    [NotMapped]
+    public int TotalLoansActive { get; set; }
+
+    [NotMapped]
+    public decimal TotalOutstandingPrincipal { get; set; }
+
     [MaxLength(1000)]
     public string? Remarks { get; set; }
 

@@ -39,6 +39,13 @@ public class Scheme : AuditableEntity, ISoftDeletable
     [Column(TypeName = "decimal(18,4)")]
     public decimal InterestRatePerMonth { get; set; }
 
+    [NotMapped]
+    public decimal InterestRate
+    {
+        get => InterestRatePerMonth;
+        set => InterestRatePerMonth = value;
+    }
+
     /// <summary>
     /// Minimum number of days for which interest is charged, even if loan is closed earlier.
     /// </summary>
@@ -55,21 +62,49 @@ public class Scheme : AuditableEntity, ISoftDeletable
     [Column(TypeName = "decimal(5,2)")]
     public decimal MaxLtvPercent { get; set; }
 
+    [NotMapped]
+    public decimal MaxLtvPercentage
+    {
+        get => MaxLtvPercent;
+        set => MaxLtvPercent = value;
+    }
+
     /// <summary>
     /// Maximum tenure in months before the loan is considered overdue.
     /// </summary>
     public int MaxTenureMonths { get; set; }
+
+    [NotMapped]
+    public int TenureMonths
+    {
+        get => MaxTenureMonths;
+        set => MaxTenureMonths = value;
+    }
 
     /// <summary>
     /// Number of grace days allowed after the maturity date before penal interest kicks in.
     /// </summary>
     public int GraceDaysAfterExpiry { get; set; }
 
+    [NotMapped]
+    public int GracePeriodDays
+    {
+        get => GraceDaysAfterExpiry;
+        set => GraceDaysAfterExpiry = value;
+    }
+
     /// <summary>
     /// Monthly penal interest rate charged on overdue loans (percentage).
     /// </summary>
     [Column(TypeName = "decimal(18,4)")]
     public decimal PenalInterestRatePerMonth { get; set; }
+
+    [NotMapped]
+    public decimal PenalRate
+    {
+        get => PenalInterestRatePerMonth;
+        set => PenalInterestRatePerMonth = value;
+    }
 
     /// <summary>
     /// Whether the scheme is currently active and available for new loans.

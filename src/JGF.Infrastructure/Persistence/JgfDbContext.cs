@@ -29,6 +29,9 @@ public class JgfDbContext : DbContext
     /// <summary>Notices sent to borrowers (reminders, auction notices).</summary>
     public DbSet<Notice> Notices => Set<Notice>();
 
+    /// <summary>Auctions and recovery records.</summary>
+    public DbSet<Auction> Auctions => Set<Auction>();
+
     // ────────────────────────────── Configuration ─────────────────────────────
 
     /// <summary>Gold-loan schemes / product templates.</summary>
@@ -84,6 +87,9 @@ public class JgfDbContext : DbContext
 
     /// <summary>Immutable audit trail.</summary>
     public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
+
+    /// <summary>System backup logs.</summary>
+    public DbSet<BackupLog> BackupLogs => Set<BackupLog>();
 
     // ──────────────────────────────────────────────────────────────────────────
 

@@ -36,6 +36,27 @@ public class JewelType : AuditableEntity, ISoftDeletable
     [Column(TypeName = "decimal(5,2)")]
     public decimal DefaultPurityPercent { get; set; }
 
+    [NotMapped]
+    public string Description
+    {
+        get => Name;
+        set => Name = value;
+    }
+
+    [NotMapped]
+    public bool IsActive
+    {
+        get => !IsDeleted;
+        set => IsDeleted = !value;
+    }
+
+    [NotMapped]
+    public decimal Purity
+    {
+        get => DefaultPurityPercent;
+        set => DefaultPurityPercent = value;
+    }
+
     // ── Soft Delete ──────────────────────────────────────────────────
 
     /// <inheritdoc />

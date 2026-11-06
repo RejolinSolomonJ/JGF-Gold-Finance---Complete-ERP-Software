@@ -76,10 +76,12 @@
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="*"/>
                 </Grid.RowDefinitions>
-                <DockPanel Grid.Row="0" Background="#F0F0F0" Padding="8,6">
-                    <TextBlock Text="Select Customer Loans to Repledge to Bank (வாடிக்கையாளர் கடன்களை தேர்வு செய்க)" FontWeight="Bold" VerticalAlignment="Center"/>
-                    <Button Content="Select All" DockPanel.Dock="Right" Background="#333333" Width="90" Click="OnSelectAllLoansClick"/>
-                </DockPanel>
+                <Border Grid.Row="0" Background="#F0F0F0" Padding="8,6">
+                    <DockPanel>
+                        <TextBlock Text="Select Customer Loans to Repledge to Bank (வாடிக்கையாளர் கடன்களை தேர்வு செய்க)" FontWeight="Bold" VerticalAlignment="Center"/>
+                        <Button Content="Select All" DockPanel.Dock="Right" Background="#333333" Width="90" Click="OnSelectAllLoansClick"/>
+                    </DockPanel>
+                </Border>
                 <DataGrid x:Name="GridAvailableLoans" Grid.Row="1" AutoGenerateColumns="False" CanUserAddRows="False" BorderBrush="#E0E0E0">
                     <DataGrid.Columns>
                         <DataGridCheckBoxColumn Header="Pledge" Binding="{Binding IsSelected, UpdateSourceTrigger=PropertyChanged}" Width="60"/>

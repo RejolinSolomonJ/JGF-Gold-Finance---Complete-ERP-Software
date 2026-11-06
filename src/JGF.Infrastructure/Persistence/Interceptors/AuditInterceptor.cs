@@ -1,5 +1,6 @@
 using System.Text.Json;
 using JGF.Domain.Entities;
+using JGF.Domain.Enums;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
 using Microsoft.EntityFrameworkCore.Diagnostics;
@@ -86,7 +87,13 @@ public class AuditInterceptor : SaveChangesInterceptor
 
             var tableName = entry.Metadata.GetTableName() ?? entry.Entity.GetType().Name;
             var primaryKey = GetPrimaryKeyValue(entry);
-            var action = entry.State.ToString();
+            var action = entry.State switch
+            {
+                EntityState.Added => AuditAction.Create,
+                EntityState.Deleted => AuditAction.Delete,
+                _ => AuditAction.Update
+            };
+            Guid? recordId = Guid.TryParse(primaryKey, out var g) ? g : null;
 
             var oldValues = new Dictionary<string, object?>();
             var newValues = new Dictionary<string, object?>();
@@ -133,7 +140,7 @@ public class AuditInterceptor : SaveChangesInterceptor
             {
                 Id = Guid.NewGuid(),
                 TableName = tableName,
-                RecordId = primaryKey,
+                RecordId = recordId,
                 Action = action,
                 Timestamp = utcNow,
                 UserId = userId,

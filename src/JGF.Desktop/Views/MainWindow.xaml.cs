@@ -1,4 +1,9 @@
 using System.Windows;
+using JGF.Application.Accounting;
+using JGF.Application.Loans;
+using JGF.Application.Notices;
+using JGF.Application.Receipts;
+using JGF.Application.Repledge;
 using JGF.Application.Security;
 using JGF.Application.Services;
 using JGF.Domain.Entities;
@@ -55,6 +60,7 @@ public partial class MainWindow : Window
         // Configure Role-Based Menu Visibility
         MenuAuditLog.Visibility = (user.Role == UserRole.Owner) ? Visibility.Visible : Visibility.Collapsed;
         MenuRepledge.Visibility = _permissionService.HasPermission(user.Role, Permission.ManageBankRepledge) ? Visibility.Visible : Visibility.Collapsed;
+        MenuNoticesAuction.Visibility = _permissionService.HasPermission(user.Role, Permission.ManageAuction) ? Visibility.Visible : Visibility.Collapsed;
         MenuAccounts.Visibility = _permissionService.HasPermission(user.Role, Permission.ViewAccounts) ? Visibility.Visible : Visibility.Collapsed;
         MenuSettings.Visibility = (user.Role == UserRole.Owner || user.Role == UserRole.Manager) ? Visibility.Visible : Visibility.Collapsed;
 
@@ -167,6 +173,15 @@ public partial class MainWindow : Window
         var view = new Controls.BankRepledgeControl(
             _services.GetRequiredService<IBankRepledgeService>(),
             _services.GetRequiredService<IBankService>());
+        MainContentArea.Content = view;
+    }
+
+    private void OnNoticesAuctionClick(object sender, RoutedEventArgs e)
+    {
+        var view = new Controls.NoticeAuctionControl(
+            _services.GetRequiredService<IOverdueNoticeService>(),
+            _currentUser?.Id,
+            _currentUser?.Role);
         MainContentArea.Content = view;
     }
 

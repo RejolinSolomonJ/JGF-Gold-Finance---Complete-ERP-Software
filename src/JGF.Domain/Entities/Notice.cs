@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 using JGF.Domain.Common;
 using JGF.Domain.Enums;
 
@@ -26,6 +27,20 @@ public class Notice : AuditableEntity, ISoftDeletable
     public DateTime? SentAtUtc { get; set; }
 
     public NoticeSentVia? DeliveryMode { get; set; }
+
+    [NotMapped]
+    public NoticeSentVia? SentVia
+    {
+        get => DeliveryMode;
+        set => DeliveryMode = value;
+    }
+
+    [NotMapped]
+    public string? TrackingNumber
+    {
+        get => Remarks;
+        set => Remarks = value;
+    }
 
     [MaxLength(1000)]
     public string? Remarks { get; set; }

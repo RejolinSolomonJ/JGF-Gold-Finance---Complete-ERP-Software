@@ -15,5 +15,9 @@ public enum NoticeType
     FinalNotice,
 
     /// <summary>Formal auction notice as per RBI guidelines.</summary>
-    AuctionNotice
+    AuctionNotice,
+
+    // Aliases
+    Reminder = FirstReminder,
+    DemandNotice = SecondReminder
 }

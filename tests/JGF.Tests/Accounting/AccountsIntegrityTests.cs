@@ -74,6 +74,18 @@ public class AccountsIntegrityTests
                 // Loan Disbursement: Dr Loan Receivable, Cr Cash
                 voucher.Lines.Add(new VoucherLine { LedgerHeadId = loanHead.Id, DebitAmount = amount, CreditAmount = 0m, LineOrder = 1 });
                 voucher.Lines.Add(new VoucherLine { LedgerHeadId = cashHead.Id, DebitAmount = 0m, CreditAmount = amount, LineOrder = 2 });
+
+                // Synchronize loan ledger sub-module
+                context.Loans.Add(new Loan
+                {
+                    LoanNumber = $"GL-SIM-{i}",
+                    CustomerId = Guid.NewGuid(),
+                    SchemeId = Guid.NewGuid(),
+                    PledgeDate = today,
+                    MaturityDate = today.AddYears(1),
+                    LoanAmount = amount,
+                    Status = LoanStatus.Active
+                });
             }
             else if (isInterestReceipt)
             {

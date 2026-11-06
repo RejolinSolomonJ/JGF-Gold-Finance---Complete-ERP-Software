@@ -8,7 +8,7 @@ namespace JGF.Domain.Entities;
 /// Daily gold rate record. Stores rates for different purities used
 /// for appraising pledged jewellery on a given date.
 /// </summary>
-public class GoldRate : AuditableEntity
+public class GoldRate : AuditableEntity, ISoftDeletable
 {
     /// <summary>
     /// Date for which this gold rate applies. One record per date.
@@ -16,38 +16,66 @@ public class GoldRate : AuditableEntity
     public DateOnly Date { get; set; }
 
     /// <summary>
+    /// Standard market rate per gram (in ₹).
+    /// </summary>
+    [Column(TypeName = "decimal(18,2)")]
+    public decimal RatePerGram { get; set; }
+
+    /// <summary>
     /// Rate per gram for 22-karat gold (in ₹).
     /// </summary>
     [Column(TypeName = "decimal(18,2)")]
-    public decimal RatePerGram22K { get; set; }
+    public decimal Rate22K { get; set; }
 
     /// <summary>
     /// Rate per gram for 24-karat gold (in ₹).
     /// </summary>
     [Column(TypeName = "decimal(18,2)")]
-    public decimal RatePerGram24K { get; set; }
+    public decimal Rate24K { get; set; }
 
     /// <summary>
     /// Rate per gram for 18-karat gold (in ₹).
     /// </summary>
     [Column(TypeName = "decimal(18,2)")]
-    public decimal RatePerGram18K { get; set; }
+    public decimal Rate18K { get; set; }
 
-    /// <summary>
-    /// Current market rate per gram (in ₹) — typically the retail/MCX rate for reference.
-    /// </summary>
-    [Column(TypeName = "decimal(18,2)")]
-    public decimal MarketRatePerGram { get; set; }
+    [MaxLength(200)]
+    public string? Source { get; set; }
 
-    /// <summary>
-    /// Foreign key to the user who entered/updated this rate.
-    /// </summary>
+    [MaxLength(500)]
+    public string? Remarks { get; set; }
+
+    public bool IsDeleted { get; set; }
+    public DateTime? DeletedAtUtc { get; set; }
+
     public Guid? EnteredByUserId { get; set; }
 
-    // ── Navigation Properties ────────────────────────────────────────
+    // Backward compatibility aliases
+    [NotMapped]
+    public decimal RatePerGram22K
+    {
+        get => Rate22K;
+        set => Rate22K = value;
+    }
 
-    /// <summary>
-    /// The user who entered this gold rate.
-    /// </summary>
-    public User? EnteredByUser { get; set; }
+    [NotMapped]
+    public decimal RatePerGram24K
+    {
+        get => Rate24K;
+        set => Rate24K = value;
+    }
+
+    [NotMapped]
+    public decimal RatePerGram18K
+    {
+        get => Rate18K;
+        set => Rate18K = value;
+    }
+
+    [NotMapped]
+    public decimal MarketRatePerGram
+    {
+        get => RatePerGram;
+        set => RatePerGram = value;
+    }
 }

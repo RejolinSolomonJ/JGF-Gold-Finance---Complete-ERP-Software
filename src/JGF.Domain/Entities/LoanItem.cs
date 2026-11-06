@@ -61,11 +61,32 @@ public class LoanItem : AuditableEntity, ISoftDeletable
     [Column(TypeName = "decimal(10,3)")]
     public decimal DeductionWeight { get; set; }
 
+    [NotMapped]
+    public decimal StoneWeight
+    {
+        get => DeductionWeight;
+        set => DeductionWeight = value;
+    }
+
     /// <summary>
     /// Gold purity percentage of this item (e.g., 91.67 for 22K).
     /// </summary>
     [Column(TypeName = "decimal(5,2)")]
     public decimal PurityPercent { get; set; }
+
+    [NotMapped]
+    public decimal PurityPercentage
+    {
+        get => PurityPercent;
+        set => PurityPercent = value;
+    }
+
+    [NotMapped]
+    public decimal Purity
+    {
+        get => PurityPercent;
+        set => PurityPercent = value;
+    }
 
     /// <summary>
     /// Appraised (estimated) value of this item (in ₹).
@@ -73,6 +94,23 @@ public class LoanItem : AuditableEntity, ISoftDeletable
     /// </summary>
     [Column(TypeName = "decimal(18,2)")]
     public decimal AppraisedValue { get; set; }
+
+    [NotMapped]
+    public decimal MarketValue
+    {
+        get => AppraisedValue;
+        set => AppraisedValue = value;
+    }
+
+    [NotMapped]
+    public decimal TotalValue
+    {
+        get => AppraisedValue;
+        set => AppraisedValue = value;
+    }
+
+    [NotMapped]
+    public decimal RatePerGram { get; set; }
 
     /// <summary>
     /// Free-text notes about this item.

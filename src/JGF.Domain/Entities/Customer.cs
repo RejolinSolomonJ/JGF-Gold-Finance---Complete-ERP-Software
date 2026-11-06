@@ -27,6 +27,16 @@ public class Customer : AuditableEntity, ISoftDeletable
     public string Name { get; set; } = string.Empty;
 
     /// <summary>
+    /// Alias property for FullName
+    /// </summary>
+    [NotMapped]
+    public string FullName
+    {
+        get => Name;
+        set => Name = value;
+    }
+
+    /// <summary>
     /// Full name of the customer in Tamil (தமிழ்).
     /// </summary>
     [MaxLength(200)]
@@ -37,6 +47,13 @@ public class Customer : AuditableEntity, ISoftDeletable
     /// </summary>
     [MaxLength(200)]
     public string? FatherOrHusbandName { get; set; }
+
+    [NotMapped]
+    public string? GuardianName
+    {
+        get => FatherOrHusbandName;
+        set => FatherOrHusbandName = value;
+    }
 
     /// <summary>
     /// Gender of the customer.
@@ -57,11 +74,25 @@ public class Customer : AuditableEntity, ISoftDeletable
     [MaxLength(15)]
     public string Phone { get; set; } = string.Empty;
 
+    [NotMapped]
+    public string MobileNumber
+    {
+        get => Phone;
+        set => Phone = value;
+    }
+
     /// <summary>
     /// Secondary/alternate phone number.
     /// </summary>
     [MaxLength(15)]
     public string? Phone2 { get; set; }
+
+    [NotMapped]
+    public string? AlternateMobile
+    {
+        get => Phone2;
+        set => Phone2 = value;
+    }
 
     /// <summary>
     /// Full address in English.
@@ -81,6 +112,13 @@ public class Customer : AuditableEntity, ISoftDeletable
     /// </summary>
     [MaxLength(100)]
     public string? City { get; set; }
+
+    [NotMapped]
+    public string? District
+    {
+        get => City;
+        set => City = value;
+    }
 
     /// <summary>
     /// Indian PIN code (6 digits).
