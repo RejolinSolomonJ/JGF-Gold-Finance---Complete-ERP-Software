@@ -78,3 +78,4 @@ public partial class DashboardControl : UserControl
     private void OnReportsClick(object sender, RoutedEventArgs e) => _navigationCallback?.Invoke("Reports");
     private void OnDayBookClick(object sender, RoutedEventArgs e) => _navigationCallback?.Invoke("DayBook");
 }
+

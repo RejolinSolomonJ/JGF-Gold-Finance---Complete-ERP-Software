@@ -620,3 +620,4 @@ public partial class JlReportsControl : UserControl
         }
     }
 }
+

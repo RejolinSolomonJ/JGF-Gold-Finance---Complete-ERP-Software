@@ -306,3 +306,4 @@ public interface IJlReportService
     Task<InterestCollectionReportSummaryDto> GetInterestCollectionReportAsync(JlReportFilterDto filter, CancellationToken ct = default);
     Task<CustomerStatementReportDto> GetCustomerStatementAsync(Guid customerId, CancellationToken ct = default);
 }
+

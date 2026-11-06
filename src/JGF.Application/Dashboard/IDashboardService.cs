@@ -46,3 +46,4 @@ public interface IDashboardService
 {
     Task<DashboardSummaryDto> GetDashboardSummaryAsync(CancellationToken ct = default);
 }
+

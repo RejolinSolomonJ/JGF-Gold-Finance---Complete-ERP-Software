@@ -17,3 +17,4 @@ public interface IExcelExportService
         List<object?>? totalsRow = null
     );
 }
+
