@@ -160,3 +160,4 @@ public class BankRepledgeTests
         v.Lines.Sum(l => l.CreditAmount).Should().Be(50425m);
     }
 }
+
