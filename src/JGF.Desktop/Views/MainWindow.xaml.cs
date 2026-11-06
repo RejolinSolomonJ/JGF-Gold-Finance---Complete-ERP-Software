@@ -31,27 +31,44 @@ public partial class MainWindow : Window
 
     private async void OnWindowLoaded(object sender, RoutedEventArgs e)
     {
-        var authService = _services.GetRequiredService<IAuthService>();
-        if (await authService.IsFirstRunAsync())
+        try
         {
-            var wizard = new FirstRunWizardDialog(authService);
-            if (wizard.ShowDialog() != true)
+            var authService = _services.GetRequiredService<IAuthService>();
+            if (await authService.IsFirstRunAsync())
+            {
+                var wizard = new FirstRunWizardDialog(authService);
+                if (wizard.ShowDialog() != true)
+                {
+                    Close();
+                    return;
+                }
+            }
+
+            // Prompt Login
+            var loginDlg = new LoginDialog(authService);
+            if (loginDlg.ShowDialog() != true || loginDlg.AuthenticatedUser == null)
             {
                 Close();
                 return;
             }
-        }
 
-        // Prompt Login
-        var loginDlg = new LoginDialog(authService);
-        if (loginDlg.ShowDialog() != true || loginDlg.AuthenticatedUser == null)
+            _currentUser = loginDlg.AuthenticatedUser;
+            ApplyUserSession(_currentUser);
+        }
+        catch (Exception ex)
         {
-            Close();
-            return;
-        }
+            TxtDbStatus.Text = "● DB: Disconnected (Check Settings)";
+            TxtDbStatus.Foreground = System.Windows.Media.Brushes.Red;
 
-        _currentUser = loginDlg.AuthenticatedUser;
-        ApplyUserSession(_currentUser);
+            MessageBox.Show(
+                $"Cannot connect to PostgreSQL Database: {ex.Message}\n\n" +
+                "Please configure your PostgreSQL database connection credentials in Settings -> Database Connection Settings.",
+                "Database Connection Required",
+                MessageBoxButton.OK,
+                MessageBoxImage.Warning);
+
+            MainContentArea.Content = new Controls.DbConnectionSettingsControl();
+        }
     }
 
     private void ApplyUserSession(User user)
