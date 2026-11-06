@@ -103,3 +103,4 @@ public class AccountsIntegrityTests
         audit.CashReconciliationDifference.Should().Be(0m);
     }
 }
+

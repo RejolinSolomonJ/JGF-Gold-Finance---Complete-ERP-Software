@@ -1,0 +1,76 @@
+<UserControl x:Class="JGF.Desktop.Views.Controls.BankReportsControl"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             Background="White">
+    <Grid Margin="12">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/> <!-- Report Type Selector & Actions -->
+            <RowDefinition Height="*"/>    <!-- Data Report Grid -->
+            <RowDefinition Height="Auto"/> <!-- Summary Status -->
+        </Grid.RowDefinitions>
+
+        <Border Grid.Row="0" Background="#F0F0F0" Padding="8" Margin="0,0,0,10">
+            <DockPanel LastChildFill="True">
+                <StackPanel Orientation="Horizontal" DockPanel.Dock="Left">
+                    <TextBlock Text="Report:" VerticalAlignment="Center" FontWeight="Bold" Margin="0,0,6,0"/>
+                    <ComboBox x:Name="CmbReport" Width="300" SelectedIndex="0" SelectionChanged="OnReportChanged" Margin="0,0,12,0">
+                        <ComboBoxItem Content="Jewel Stock Custody Report (Locker vs. Bank)"/>
+                        <ComboBoxItem Content="Pawn vs. Bank Principal Difference Report"/>
+                        <ComboBoxItem Content="Bank Overdue &amp; Due-Soon Alert Report"/>
+                    </ComboBox>
+                    <Button Content="🔄 Refresh Report" Background="#2B2B2B" FontWeight="Bold" Width="130" Click="OnRefreshReportClick"/>
+                </StackPanel>
+                <StackPanel Orientation="Horizontal" DockPanel.Dock="Right">
+                    <Button Content="📄 Export PDF / Print" Background="#1565C0" FontWeight="Bold" Width="140" Click="OnExportClick"/>
+                </StackPanel>
+            </DockPanel>
+        </Border>
+
+        <!-- 1. Jewel Stock Custody Grid -->
+        <DataGrid x:Name="GridStockCustody" Grid.Row="1" AutoGenerateColumns="False" IsReadOnly="True" BorderBrush="#CCCCCC" Visibility="Visible">
+            <DataGrid.Columns>
+                <DataGridTextColumn Header="Custody Location" Binding="{Binding CustodyLocation}" Width="260"/>
+                <DataGridTextColumn Header="GL Loan No" Binding="{Binding LoanNumber}" Width="130"/>
+                <DataGridTextColumn Header="Customer" Binding="{Binding CustomerName}" Width="160"/>
+                <DataGridTextColumn Header="Jewel Description" Binding="{Binding JewelDescription}" Width="200"/>
+                <DataGridTextColumn Header="Qty" Binding="{Binding Quantity}" Width="50"/>
+                <DataGridTextColumn Header="Gross (g)" Binding="{Binding GrossWeight, StringFormat={}{0:F3}}" Width="90"/>
+                <DataGridTextColumn Header="Net (g)" Binding="{Binding NetWeight, StringFormat={}{0:F3}}" Width="90"/>
+                <DataGridTextColumn Header="Appraised Value (₹)" Binding="{Binding AppraisedValue, StringFormat={}{0:N2}}" Width="140"/>
+                <DataGridTextColumn Header="Packet No" Binding="{Binding PacketNumber}" Width="*"/>
+            </DataGrid.Columns>
+        </DataGrid>
+
+        <!-- 2. Pawn vs Bank Difference Grid -->
+        <DataGrid x:Name="GridPawnVsBank" Grid.Row="1" AutoGenerateColumns="False" IsReadOnly="True" BorderBrush="#CCCCCC" Visibility="Collapsed">
+            <DataGrid.Columns>
+                <DataGridTextColumn Header="Bank Name" Binding="{Binding BankName}" Width="180"/>
+                <DataGridTextColumn Header="Bank Pledge No" Binding="{Binding BankPledgeNumber}" Width="140"/>
+                <DataGridTextColumn Header="Customer Loan No" Binding="{Binding CustomerLoanNumber}" Width="140"/>
+                <DataGridTextColumn Header="Customer" Binding="{Binding CustomerName}" Width="180"/>
+                <DataGridTextColumn Header="Net Wt (g)" Binding="{Binding CustomerNetWeight, StringFormat={}{0:F3}}" Width="100"/>
+                <DataGridTextColumn Header="Customer Loan (₹)" Binding="{Binding CustomerLoanAmount, StringFormat={}{0:N2}}" Width="140"/>
+                <DataGridTextColumn Header="Bank Apportioned (₹)" Binding="{Binding BankApportionedAmount, StringFormat={}{0:N2}}" Width="150"/>
+                <DataGridTextColumn Header="Difference (₹)" Binding="{Binding Difference, StringFormat={}{0:N2}}" Width="*"/>
+            </DataGrid.Columns>
+        </DataGrid>
+
+        <!-- 3. Overdue Alert Grid -->
+        <DataGrid x:Name="GridOverdue" Grid.Row="1" AutoGenerateColumns="False" IsReadOnly="True" BorderBrush="#CCCCCC" Visibility="Collapsed">
+            <DataGrid.Columns>
+                <DataGridTextColumn Header="Bank" Binding="{Binding BankName}" Width="180"/>
+                <DataGridTextColumn Header="Pledge Number" Binding="{Binding PledgeNumber}" Width="140"/>
+                <DataGridTextColumn Header="Bank A/C No" Binding="{Binding BankAccountOrLoanNumber}" Width="140"/>
+                <DataGridTextColumn Header="Pledge Date" Binding="{Binding PledgeDate, StringFormat={}{0:dd-MMM-yyyy}}" Width="110"/>
+                <DataGridTextColumn Header="Maturity Date" Binding="{Binding MaturityDate, StringFormat={}{0:dd-MMM-yyyy}}" Width="110"/>
+                <DataGridTextColumn Header="Bank Balance (₹)" Binding="{Binding DisbursedAmount, StringFormat={}{0:N2}}" Width="140"/>
+                <DataGridTextColumn Header="Urgency" Binding="{Binding Status}" Width="*"/>
+            </DataGrid.Columns>
+        </DataGrid>
+
+        <!-- Bottom Legend -->
+        <Border Grid.Row="2" Background="#F9F9F9" Padding="8,4" Margin="0,8,0,0">
+            <TextBlock x:Name="TxtReportSummary" Text="Showing custody status for all active customer pledged jewels." Foreground="#555555"/>
+        </Border>
+    </Grid>
+</UserControl>

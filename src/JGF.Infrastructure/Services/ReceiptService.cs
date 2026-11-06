@@ -55,6 +55,20 @@ public class ReceiptService : IReceiptService
             throw new InvalidOperationException("Loan is already closed.");
         }
 
+        // Safety Check: If closing, verify jewels are not pledged to a Bank/NBFC
+        if (dto.ReceiptType == ReceiptType.Closure)
+        {
+            var isWithBank = await _context.BankPledgeLoans
+                .AnyAsync(bpl => bpl.LoanId == loan.Id && !bpl.IsReleased, ct);
+
+            if (isWithBank && dto.UserRole != UserRole.Owner)
+            {
+                throw new InvalidOperationException(
+                    $"Loan {loan.LoanNumber} cannot be closed because its pledged jewels are currently deposited with a Bank/NBFC! " +
+                    "Release the ornaments from the Bank Repledge module first, or obtain Owner override.");
+            }
+        }
+
         using var tx = await _context.Database.BeginTransactionAsync(ct);
 
         var fy = "2024-25";

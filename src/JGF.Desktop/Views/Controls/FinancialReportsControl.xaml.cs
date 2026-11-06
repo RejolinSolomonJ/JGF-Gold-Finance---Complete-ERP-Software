@@ -83,3 +83,4 @@ public partial class FinancialReportsControl : UserControl
         MessageBox.Show("Report exported successfully to PDF / Print Spooler.", "Export", MessageBoxButton.OK, MessageBoxImage.Information);
     }
 }
+

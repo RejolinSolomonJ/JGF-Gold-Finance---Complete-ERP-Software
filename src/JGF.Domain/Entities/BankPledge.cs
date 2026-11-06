@@ -23,6 +23,29 @@ public class BankPledge : AuditableEntity, ISoftDeletable
 
     public decimal InterestRate { get; set; }
 
+    /// <summary>
+    /// Total gold weight appraised and accepted by the bank (in grams).
+    /// </summary>
+    public decimal BankWeight { get; set; }
+
+    /// <summary>
+    /// Bank's official loan account number or pawn ticket number.
+    /// </summary>
+    [MaxLength(50)]
+    public string? BankAccountOrLoanNumber { get; set; }
+
+    /// <summary>
+    /// Name of the account holder under which the bank pledge was made.
+    /// </summary>
+    [MaxLength(200)]
+    public string? AccountHolderName { get; set; }
+
+    /// <summary>
+    /// External bank receipt number if issued.
+    /// </summary>
+    [MaxLength(50)]
+    public string? BankReceiptNumber { get; set; }
+
     public DateOnly? MaturityDate { get; set; }
 
     [Required]

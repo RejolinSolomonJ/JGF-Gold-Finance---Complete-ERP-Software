@@ -169,3 +169,4 @@ public class DayCloseService : IDayCloseService
         return dc != null && dc.Status == DayCloseStatus.Closed;
     }
 }
+

@@ -23,3 +23,4 @@ public interface IDayCloseService
     Task<DayClose> ReopenDayAsync(DateOnly date, string reopenReason, Guid userId, UserRole userRole, CancellationToken ct = default);
     Task<bool> IsDateLockedAsync(DateOnly date, CancellationToken ct = default);
 }
+

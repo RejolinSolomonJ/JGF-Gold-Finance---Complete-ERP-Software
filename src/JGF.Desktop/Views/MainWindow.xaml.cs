@@ -162,7 +162,14 @@ public partial class MainWindow : Window
     }
 
     private void OnCustomerDetailClick(object sender, RoutedEventArgs e) => OnCustomerMasterClick(sender, e);
-    private void OnRepledgeClick(object sender, RoutedEventArgs e) => MessageBox.Show("Bank Repledge screen.", "Module Navigation");
+    private void OnRepledgeClick(object sender, RoutedEventArgs e)
+    {
+        var view = new Controls.BankRepledgeControl(
+            _services.GetRequiredService<IBankRepledgeService>(),
+            _services.GetRequiredService<IBankService>());
+        MainContentArea.Content = view;
+    }
+
     private void OnReportsClick(object sender, RoutedEventArgs e)
     {
         var view = new Controls.FinancialReportsControl(_services.GetRequiredService<IAccountingReportService>());

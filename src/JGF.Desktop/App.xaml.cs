@@ -69,6 +69,7 @@ public partial class App : System.Windows.Application
                     // Accounting & Reporting services
                     services.AddScoped<IAccountingReportService, AccountingReportService>();
                     services.AddScoped<IDayCloseService, DayCloseService>();
+                    services.AddScoped<IBankRepledgeService, BankRepledgeService>();
 
                     // Loan & Receipt processing services
                     services.AddSingleton<IInterestCalculator, StandardInterestCalculator>();

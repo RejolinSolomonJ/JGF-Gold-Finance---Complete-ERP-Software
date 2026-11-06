@@ -383,3 +383,4 @@ public class AccountingReportService : IAccountingReportService
         return voucher.VoucherNumber;
     }
 }
+

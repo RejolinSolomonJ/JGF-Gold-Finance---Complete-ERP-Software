@@ -112,3 +112,4 @@ public interface IAccountingReportService
     Task<AccountingIntegrityCheckDto> RunIntegrityAuditAsync(DateOnly asOfDate, CancellationToken ct = default);
     Task<string> PostManualVoucherAsync(CreateManualVoucherDto dto, CancellationToken ct = default);
 }
+
