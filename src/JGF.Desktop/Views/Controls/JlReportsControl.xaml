@@ -1,0 +1,455 @@
+<UserControl x:Class="JGF.Desktop.Views.Controls.JlReportsControl"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             Background="White">
+    <Grid Margin="12">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/> <!-- Title & Toolbar -->
+            <RowDefinition Height="Auto"/> <!-- Filter Options Bar -->
+            <RowDefinition Height="*"/>    <!-- Active Report Display Area -->
+        </Grid.RowDefinitions>
+
+        <!-- 1. Top Report Switcher & Export Toolbar -->
+        <Border Grid.Row="0" Background="#F1F5F9" Padding="10" Margin="0,0,0,8" CornerRadius="6">
+            <DockPanel LastChildFill="True">
+                <StackPanel Orientation="Horizontal" DockPanel.Dock="Left">
+                    <TextBlock Text="Select Report:" VerticalAlignment="Center" FontWeight="Bold" Foreground="#1E293B" Margin="0,0,8,0"/>
+                    <ComboBox x:Name="CmbReportSelect" Width="260" SelectedIndex="0" SelectionChanged="OnReportSelectChanged" FontSize="13" FontWeight="SemiBold">
+                        <ComboBoxItem Content="1. Outstanding Loans (நிலுவை கடன்)"/>
+                        <ComboBoxItem Content="2. Scheme-wise Summary (சுருக்க அறிக்கை)"/>
+                        <ComboBoxItem Content="3. Pledge Report (அடகு அறிக்கை)"/>
+                        <ComboBoxItem Content="4. Release / Redemption (மீட்பு அறிக்கை)"/>
+                        <ComboBoxItem Content="5. JL Cash Flow (நகை கடன் ரொக்கம்)"/>
+                        <ComboBoxItem Content="6. All Stock Summary (மொத்த இருப்பு)"/>
+                        <ComboBoxItem Content="7. JL Granular Stock (பொருள் இருப்பு)"/>
+                        <ComboBoxItem Content="8. Postal Charge Report &amp; Entry (அஞ்சல்)"/>
+                        <ComboBoxItem Content="9. Interest Collection (வட்டி வசூல்)"/>
+                        <ComboBoxItem Content="10. Customer Statement (வாடிக்கையாளர் ஏடு)"/>
+                    </ComboBox>
+                </StackPanel>
+                <StackPanel Orientation="Horizontal" DockPanel.Dock="Right">
+                    <Button x:Name="BtnNewPostalCharge" Content="✉ Record Postal Charge" Background="#7C3AED" Foreground="White" FontWeight="Bold" Padding="10,6" Margin="0,0,8,0" Visibility="Collapsed" Click="OnNewPostalChargeClick"/>
+                    <Button Content="📤 Export Excel (.xlsx)" Background="#059669" Foreground="White" FontWeight="Bold" Padding="12,6" Margin="0,0,8,0" Click="OnExportExcelClick"/>
+                    <Button Content="🖨 Print / PDF" Background="#2563EB" Foreground="White" FontWeight="Bold" Padding="12,6" Click="OnPrintPdfClick"/>
+                </StackPanel>
+            </DockPanel>
+        </Border>
+
+        <!-- 2. Dynamic Filters Toolbar -->
+        <Border Grid.Row="1" Background="#F8FAFC" BorderBrush="#E2E8F0" BorderThickness="1" Padding="10" Margin="0,0,0,10" CornerRadius="6">
+            <WrapPanel VerticalAlignment="Center">
+                <TextBlock Text="From:" VerticalAlignment="Center" Margin="0,0,4,0"/>
+                <DatePicker x:Name="DpFromDate" Width="110" Margin="0,0,10,0"/>
+
+                <TextBlock Text="To:" VerticalAlignment="Center" Margin="0,0,4,0"/>
+                <DatePicker x:Name="DpToDate" Width="110" Margin="0,0,10,0"/>
+
+                <TextBlock Text="Scheme:" VerticalAlignment="Center" Margin="0,0,4,0"/>
+                <ComboBox x:Name="CmbSchemeFilter" Width="130" DisplayMemberPath="Name" SelectedValuePath="Id" Margin="0,0,10,0"/>
+
+                <TextBlock Text="Status:" VerticalAlignment="Center" Margin="0,0,4,0"/>
+                <ComboBox x:Name="CmbStatusFilter" Width="110" SelectedIndex="0" Margin="0,0,10,0">
+                    <ComboBoxItem Content="All"/>
+                    <ComboBoxItem Content="Active"/>
+                    <ComboBoxItem Content="PartiallyPaid"/>
+                    <ComboBoxItem Content="Closed"/>
+                    <ComboBoxItem Content="Overdue"/>
+                </ComboBox>
+
+                <TextBlock Text="Location:" VerticalAlignment="Center" Margin="0,0,4,0"/>
+                <ComboBox x:Name="CmbLocationFilter" Width="110" SelectedIndex="0" Margin="0,0,10,0">
+                    <ComboBoxItem Content="All"/>
+                    <ComboBoxItem Content="ShopLocker"/>
+                    <ComboBoxItem Content="BankCustody"/>
+                </ComboBox>
+
+                <TextBlock Text="Search:" VerticalAlignment="Center" Margin="0,0,4,0"/>
+                <TextBox x:Name="TxtSearchFilter" Width="140" Margin="0,0,12,0"/>
+
+                <Button Content="🔍 Filter" Background="#1E293B" Foreground="White" FontWeight="Bold" Padding="14,4" Margin="0,0,6,0" Click="OnFilterApplyClick"/>
+                <Button Content="🔄 Reset" Background="#64748B" Foreground="White" Padding="10,4" Click="OnFilterResetClick"/>
+            </WrapPanel>
+        </Border>
+
+        <!-- 3. Dynamic Multi-View Reports Area -->
+        <Border Grid.Row="2" BorderBrush="#CBD5E1" BorderThickness="1" CornerRadius="4">
+            <Grid>
+                <!-- 0. Outstanding Loans Grid View -->
+                <Grid x:Name="PanelOutstanding" Visibility="Visible">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="36"/>
+                    </Grid.RowDefinitions>
+                    <DataGrid x:Name="GridOutstanding" Grid.Row="0" AutoGenerateColumns="False" IsReadOnly="True" BorderThickness="0" RowHeight="24">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="GL #" Binding="{Binding GlNumber}" FontWeight="SemiBold" Width="95"/>
+                            <DataGridTextColumn Header="Pledge Date" Binding="{Binding PledgeDate, StringFormat={}{0:dd-MMM-yyyy}}" Width="95"/>
+                            <DataGridTextColumn Header="Customer Name" Binding="{Binding CustomerName}" Width="140"/>
+                            <DataGridTextColumn Header="Phone" Binding="{Binding CustomerPhone}" Width="100"/>
+                            <DataGridTextColumn Header="Scheme" Binding="{Binding SchemeName}" Width="100"/>
+                            <DataGridTextColumn Header="Gross Wt (g)" Binding="{Binding GrossWeight, StringFormat={}{0:F3}}" Width="90"/>
+                            <DataGridTextColumn Header="Net Wt (g)" Binding="{Binding NetWeight, StringFormat={}{0:F3}}" Width="90"/>
+                            <DataGridTextColumn Header="Principal Bal (₹)" Binding="{Binding PrincipalBalance, StringFormat={}{0:N2}}" FontWeight="SemiBold" Width="115"/>
+                            <DataGridTextColumn Header="Days" Binding="{Binding DaysElapsed}" Width="55"/>
+                            <DataGridTextColumn Header="Accrued Int (₹)" Binding="{Binding AccruedInterest, StringFormat={}{0:N2}}" Width="105"/>
+                            <DataGridTextColumn Header="Total Payable (₹)" Binding="{Binding TotalPayable, StringFormat={}{0:N2}}" FontWeight="Bold" Foreground="#1E3A8A" Width="120"/>
+                            <DataGridTextColumn Header="Status" Binding="{Binding Status}" Width="85"/>
+                            <DataGridTextColumn Header="Location" Binding="{Binding StorageLocation}" Width="120"/>
+                            <DataGridTextColumn Header="Packet #" Binding="{Binding PacketNumber}" Width="80"/>
+                        </DataGrid.Columns>
+                    </DataGrid>
+                    <Border Grid.Row="1" Background="#F1F5F9" Padding="8,4">
+                        <DockPanel>
+                            <TextBlock x:Name="TxtOutstandingCount" Text="Total Loans: 0" FontWeight="Bold" VerticalAlignment="Center"/>
+                            <StackPanel Orientation="Horizontal" DockPanel.Dock="Right">
+                                <TextBlock Text="Net Wt: " FontWeight="Bold"/>
+                                <TextBlock x:Name="TxtOutstandingNetWt" Text="0.000 g" FontWeight="Bold" Margin="0,0,16,0"/>
+                                <TextBlock Text="Principal Outstanding: " FontWeight="Bold"/>
+                                <TextBlock x:Name="TxtOutstandingPrincipal" Text="₹ 0.00" FontWeight="Bold" Foreground="#1E3A8A" Margin="0,0,16,0"/>
+                                <TextBlock Text="Total Payable: " FontWeight="Bold"/>
+                                <TextBlock x:Name="TxtOutstandingPayable" Text="₹ 0.00" FontWeight="Bold" Foreground="#047857"/>
+                            </StackPanel>
+                        </DockPanel>
+                    </Border>
+                </Grid>
+
+                <!-- 1. Scheme-Wise Summary Grid View -->
+                <Grid x:Name="PanelSummary" Visibility="Collapsed">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="36"/>
+                    </Grid.RowDefinitions>
+                    <DataGrid x:Name="GridSummary" Grid.Row="0" AutoGenerateColumns="False" IsReadOnly="True" BorderThickness="0" RowHeight="26">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="Code" Binding="{Binding SchemeCode}" FontWeight="Bold" Width="70"/>
+                            <DataGridTextColumn Header="Scheme Name" Binding="{Binding SchemeName}" Width="180"/>
+                            <DataGridTextColumn Header="Total Loans" Binding="{Binding TotalLoansCount}" Width="90"/>
+                            <DataGridTextColumn Header="Active" Binding="{Binding ActiveLoansCount}" Width="75"/>
+                            <DataGridTextColumn Header="Closed" Binding="{Binding ClosedLoansCount}" Width="75"/>
+                            <DataGridTextColumn Header="Total Disbursed (₹)" Binding="{Binding TotalDisbursedAmount, StringFormat={}{0:N2}}" Width="140"/>
+                            <DataGridTextColumn Header="Principal Repaid (₹)" Binding="{Binding TotalPrincipalCollected, StringFormat={}{0:N2}}" Width="140"/>
+                            <DataGridTextColumn Header="Principal Outstanding (₹)" Binding="{Binding TotalOutstandingPrincipal, StringFormat={}{0:N2}}" FontWeight="Bold" Foreground="#1E3A8A" Width="160"/>
+                            <DataGridTextColumn Header="Total Net Wt (g)" Binding="{Binding TotalNetWeight, StringFormat={}{0:F3}}" Width="120"/>
+                            <DataGridTextColumn Header="Interest Collected (₹)" Binding="{Binding TotalInterestCollected, StringFormat={}{0:N2}}" Width="140"/>
+                        </DataGrid.Columns>
+                    </DataGrid>
+                    <Border Grid.Row="1" Background="#F1F5F9" Padding="8,4">
+                        <DockPanel>
+                            <TextBlock x:Name="TxtSummaryTotals" Text="Grand Totals:" FontWeight="Bold" VerticalAlignment="Center"/>
+                            <StackPanel Orientation="Horizontal" DockPanel.Dock="Right">
+                                <TextBlock Text="Total Disbursed: " FontWeight="Bold"/>
+                                <TextBlock x:Name="TxtSummaryDisbursed" Text="₹ 0.00" FontWeight="Bold" Margin="0,0,16,0"/>
+                                <TextBlock Text="Total Outstanding: " FontWeight="Bold"/>
+                                <TextBlock x:Name="TxtSummaryOutstanding" Text="₹ 0.00" FontWeight="Bold" Foreground="#1E3A8A" Margin="0,0,16,0"/>
+                                <TextBlock Text="Total Net Wt: " FontWeight="Bold"/>
+                                <TextBlock x:Name="TxtSummaryNetWt" Text="0.000 g" FontWeight="Bold"/>
+                            </StackPanel>
+                        </DockPanel>
+                    </Border>
+                </Grid>
+
+                <!-- 2. Pledge Report Grid View -->
+                <Grid x:Name="PanelPledge" Visibility="Collapsed">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="36"/>
+                    </Grid.RowDefinitions>
+                    <DataGrid x:Name="GridPledge" Grid.Row="0" AutoGenerateColumns="False" IsReadOnly="True" BorderThickness="0" RowHeight="24">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="GL #" Binding="{Binding GlNumber}" FontWeight="SemiBold" Width="100"/>
+                            <DataGridTextColumn Header="Pledge Date" Binding="{Binding PledgeDate, StringFormat={}{0:dd-MMM-yyyy}}" Width="100"/>
+                            <DataGridTextColumn Header="Maturity Date" Binding="{Binding MaturityDate, StringFormat={}{0:dd-MMM-yyyy}}" Width="100"/>
+                            <DataGridTextColumn Header="Customer Name" Binding="{Binding CustomerName}" Width="160"/>
+                            <DataGridTextColumn Header="Phone" Binding="{Binding CustomerPhone}" Width="110"/>
+                            <DataGridTextColumn Header="Scheme" Binding="{Binding SchemeName}" Width="120"/>
+                            <DataGridTextColumn Header="Items" Binding="{Binding ItemCount}" Width="60"/>
+                            <DataGridTextColumn Header="Gross Wt (g)" Binding="{Binding GrossWeight, StringFormat={}{0:F3}}" Width="95"/>
+                            <DataGridTextColumn Header="Net Wt (g)" Binding="{Binding NetWeight, StringFormat={}{0:F3}}" Width="95"/>
+                            <DataGridTextColumn Header="Loan Amount (₹)" Binding="{Binding LoanAmount, StringFormat={}{0:N2}}" FontWeight="Bold" Foreground="#1E3A8A" Width="130"/>
+                            <DataGridTextColumn Header="Monthly Rate %" Binding="{Binding MonthlyInterestRate, StringFormat={}{0:F2}%}" Width="100"/>
+                            <DataGridTextColumn Header="Packet #" Binding="{Binding PacketNumber}" Width="80"/>
+                        </DataGrid.Columns>
+                    </DataGrid>
+                    <Border Grid.Row="1" Background="#F1F5F9" Padding="8,4">
+                        <DockPanel>
+                            <TextBlock x:Name="TxtPledgeCount" Text="Total Loans Pledged: 0" FontWeight="Bold" VerticalAlignment="Center"/>
+                            <StackPanel Orientation="Horizontal" DockPanel.Dock="Right">
+                                <TextBlock Text="Total Gross: " FontWeight="Bold"/>
+                                <TextBlock x:Name="TxtPledgeGross" Text="0.000 g" FontWeight="Bold" Margin="0,0,16,0"/>
+                                <TextBlock Text="Total Net: " FontWeight="Bold"/>
+                                <TextBlock x:Name="TxtPledgeNet" Text="0.000 g" FontWeight="Bold" Margin="0,0,16,0"/>
+                                <TextBlock Text="Total Loan Disbursed: " FontWeight="Bold"/>
+                                <TextBlock x:Name="TxtPledgeTotalDisbursed" Text="₹ 0.00" FontWeight="Bold" Foreground="#1E3A8A"/>
+                            </StackPanel>
+                        </DockPanel>
+                    </Border>
+                </Grid>
+
+                <!-- 3. Release / Redemption Grid View -->
+                <Grid x:Name="PanelRelease" Visibility="Collapsed">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="36"/>
+                    </Grid.RowDefinitions>
+                    <DataGrid x:Name="GridRelease" Grid.Row="0" AutoGenerateColumns="False" IsReadOnly="True" BorderThickness="0" RowHeight="24">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="Receipt #" Binding="{Binding ReceiptNumber}" FontWeight="SemiBold" Width="110"/>
+                            <DataGridTextColumn Header="Release Date" Binding="{Binding ReleaseDate, StringFormat={}{0:dd-MMM-yyyy}}" Width="100"/>
+                            <DataGridTextColumn Header="GL #" Binding="{Binding GlNumber}" FontWeight="SemiBold" Width="100"/>
+                            <DataGridTextColumn Header="Pledged On" Binding="{Binding OriginalPledgeDate, StringFormat={}{0:dd-MMM-yyyy}}" Width="95"/>
+                            <DataGridTextColumn Header="Customer Name" Binding="{Binding CustomerName}" Width="150"/>
+                            <DataGridTextColumn Header="Scheme" Binding="{Binding SchemeName}" Width="110"/>
+                            <DataGridTextColumn Header="Principal (₹)" Binding="{Binding PrincipalPaid, StringFormat={}{0:N2}}" Width="110"/>
+                            <DataGridTextColumn Header="Interest (₹)" Binding="{Binding InterestPaid, StringFormat={}{0:N2}}" Width="100"/>
+                            <DataGridTextColumn Header="Penal (₹)" Binding="{Binding PenalPaid, StringFormat={}{0:N2}}" Width="80"/>
+                            <DataGridTextColumn Header="Charges (₹)" Binding="{Binding OtherAndPostalCharges, StringFormat={}{0:N2}}" Width="85"/>
+                            <DataGridTextColumn Header="Total Paid (₹)" Binding="{Binding TotalAmountPaid, StringFormat={}{0:N2}}" FontWeight="Bold" Foreground="#047857" Width="125"/>
+                            <DataGridTextColumn Header="Mode" Binding="{Binding PaymentMode}" Width="75"/>
+                        </DataGrid.Columns>
+                    </DataGrid>
+                    <Border Grid.Row="1" Background="#F1F5F9" Padding="8,4">
+                        <DockPanel>
+                            <TextBlock x:Name="TxtReleaseCount" Text="Closed Loans: 0" FontWeight="Bold" VerticalAlignment="Center"/>
+                            <StackPanel Orientation="Horizontal" DockPanel.Dock="Right">
+                                <TextBlock Text="Total Principal: " FontWeight="Bold"/>
+                                <TextBlock x:Name="TxtReleasePrincipal" Text="₹ 0.00" FontWeight="Bold" Margin="0,0,16,0"/>
+                                <TextBlock Text="Total Interest: " FontWeight="Bold"/>
+                                <TextBlock x:Name="TxtReleaseInterest" Text="₹ 0.00" FontWeight="Bold" Margin="0,0,16,0"/>
+                                <TextBlock Text="Grand Total Collected: " FontWeight="Bold"/>
+                                <TextBlock x:Name="TxtReleaseTotal" Text="₹ 0.00" FontWeight="Bold" Foreground="#047857"/>
+                            </StackPanel>
+                        </DockPanel>
+                    </Border>
+                </Grid>
+
+                <!-- 4. JL Cash Flow Grid View -->
+                <Grid x:Name="PanelJlCash" Visibility="Collapsed">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="36"/>
+                    </Grid.RowDefinitions>
+                    <DataGrid x:Name="GridJlCash" Grid.Row="0" AutoGenerateColumns="False" IsReadOnly="True" BorderThickness="0" RowHeight="24">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="Date" Binding="{Binding Date, StringFormat={}{0:dd-MMM-yyyy}}" FontWeight="SemiBold" Width="105"/>
+                            <DataGridTextColumn Header="Disbursed Count" Binding="{Binding LoansDisbursedCount}" Width="100"/>
+                            <DataGridTextColumn Header="Loans Disbursed (₹ Out)" Binding="{Binding LoansDisbursedAmount, StringFormat={}{0:N2}}" Foreground="#DC2626" Width="150"/>
+                            <DataGridTextColumn Header="Receipts Count" Binding="{Binding ReceiptsCount}" Width="95"/>
+                            <DataGridTextColumn Header="Principal In (₹)" Binding="{Binding PrincipalCollectedAmount, StringFormat={}{0:N2}}" Width="120"/>
+                            <DataGridTextColumn Header="Interest In (₹)" Binding="{Binding InterestCollectedAmount, StringFormat={}{0:N2}}" Width="110"/>
+                            <DataGridTextColumn Header="Penal In (₹)" Binding="{Binding PenalCollectedAmount, StringFormat={}{0:N2}}" Width="95"/>
+                            <DataGridTextColumn Header="Postal In (₹)" Binding="{Binding PostalChargesCollectedAmount, StringFormat={}{0:N2}}" Width="95"/>
+                            <DataGridTextColumn Header="Total Inflow (₹)" Binding="{Binding TotalInflow, StringFormat={}{0:N2}}" FontWeight="Bold" Foreground="#047857" Width="130"/>
+                            <DataGridTextColumn Header="Net Cash Flow (₹)" Binding="{Binding NetCashMovement, StringFormat={}{0:N2}}" FontWeight="Bold" Width="140"/>
+                        </DataGrid.Columns>
+                    </DataGrid>
+                    <Border Grid.Row="1" Background="#F1F5F9" Padding="8,4">
+                        <DockPanel>
+                            <TextBlock Text="Period Net Flow:" FontWeight="Bold" VerticalAlignment="Center"/>
+                            <StackPanel Orientation="Horizontal" DockPanel.Dock="Right">
+                                <TextBlock Text="Total Outflow: " FontWeight="Bold"/>
+                                <TextBlock x:Name="TxtCashOutflow" Text="₹ 0.00" FontWeight="Bold" Foreground="#DC2626" Margin="0,0,16,0"/>
+                                <TextBlock Text="Total Inflow: " FontWeight="Bold"/>
+                                <TextBlock x:Name="TxtCashInflow" Text="₹ 0.00" FontWeight="Bold" Foreground="#047857" Margin="0,0,16,0"/>
+                                <TextBlock Text="Net Movement: " FontWeight="Bold"/>
+                                <TextBlock x:Name="TxtCashNet" Text="₹ 0.00" FontWeight="Bold"/>
+                            </StackPanel>
+                        </DockPanel>
+                    </Border>
+                </Grid>
+
+                <!-- 5. All Stock Summary Grid View -->
+                <Grid x:Name="PanelAllStock" Visibility="Collapsed">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="36"/>
+                    </Grid.RowDefinitions>
+                    <DataGrid x:Name="GridAllStock" Grid.Row="0" AutoGenerateColumns="False" IsReadOnly="True" BorderThickness="0" RowHeight="26">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="Code" Binding="{Binding JewelTypeCode}" FontWeight="Bold" Width="70"/>
+                            <DataGridTextColumn Header="Jewel Category" Binding="{Binding JewelTypeName}" Width="160"/>
+                            <DataGridTextColumn Header="Total Pieces" Binding="{Binding TotalPieces}" FontWeight="SemiBold" Width="95"/>
+                            <DataGridTextColumn Header="Gross Wt (g)" Binding="{Binding TotalGrossWeight, StringFormat={}{0:F3}}" Width="110"/>
+                            <DataGridTextColumn Header="Deductions (g)" Binding="{Binding TotalDeductionWeight, StringFormat={}{0:F3}}" Width="100"/>
+                            <DataGridTextColumn Header="Total Net Wt (g)" Binding="{Binding TotalNetWeight, StringFormat={}{0:F3}}" FontWeight="Bold" Foreground="#1E3A8A" Width="125"/>
+                            <DataGridTextColumn Header="Locker Gross (g)" Binding="{Binding ShopLockerGrossWeight, StringFormat={}{0:F3}}" Width="115"/>
+                            <DataGridTextColumn Header="Locker Net (g)" Binding="{Binding ShopLockerNetWeight, StringFormat={}{0:F3}}" FontWeight="SemiBold" Width="115"/>
+                            <DataGridTextColumn Header="Bank Gross (g)" Binding="{Binding BankCustodyGrossWeight, StringFormat={}{0:F3}}" Width="115"/>
+                            <DataGridTextColumn Header="Bank Net (g)" Binding="{Binding BankCustodyNetWeight, StringFormat={}{0:F3}}" FontWeight="SemiBold" Width="115"/>
+                        </DataGrid.Columns>
+                    </DataGrid>
+                    <Border Grid.Row="1" Background="#F1F5F9" Padding="8,4">
+                        <DockPanel>
+                            <TextBlock x:Name="TxtAllStockTotals" Text="Total Stock:" FontWeight="Bold" VerticalAlignment="Center"/>
+                            <StackPanel Orientation="Horizontal" DockPanel.Dock="Right">
+                                <TextBlock Text="Total Pieces: " FontWeight="Bold"/>
+                                <TextBlock x:Name="TxtStockPieces" Text="0" FontWeight="Bold" Margin="0,0,16,0"/>
+                                <TextBlock Text="Shop Locker Net: " FontWeight="Bold"/>
+                                <TextBlock x:Name="TxtStockLockerNet" Text="0.000 g" FontWeight="Bold" Foreground="#047857" Margin="0,0,16,0"/>
+                                <TextBlock Text="Bank Custody Net: " FontWeight="Bold"/>
+                                <TextBlock x:Name="TxtStockBankNet" Text="0.000 g" FontWeight="Bold" Foreground="#D97706" Margin="0,0,16,0"/>
+                                <TextBlock Text="Grand Net Weight: " FontWeight="Bold"/>
+                                <TextBlock x:Name="TxtStockGrandNet" Text="0.000 g" FontWeight="Bold" Foreground="#1E3A8A"/>
+                            </StackPanel>
+                        </DockPanel>
+                    </Border>
+                </Grid>
+
+                <!-- 6. JL Granular Stock Grid View -->
+                <Grid x:Name="PanelJlStock" Visibility="Collapsed">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="36"/>
+                    </Grid.RowDefinitions>
+                    <DataGrid x:Name="GridJlStock" Grid.Row="0" AutoGenerateColumns="False" IsReadOnly="True" BorderThickness="0" RowHeight="24">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="GL #" Binding="{Binding GlNumber}" FontWeight="SemiBold" Width="95"/>
+                            <DataGridTextColumn Header="Packet #" Binding="{Binding PacketNumber}" Width="80"/>
+                            <DataGridTextColumn Header="Pledge Date" Binding="{Binding PledgeDate, StringFormat={}{0:dd-MMM-yyyy}}" Width="95"/>
+                            <DataGridTextColumn Header="Customer" Binding="{Binding CustomerName}" Width="130"/>
+                            <DataGridTextColumn Header="Ornament Description" Binding="{Binding Description}" Width="160"/>
+                            <DataGridTextColumn Header="Category" Binding="{Binding JewelTypeName}" Width="95"/>
+                            <DataGridTextColumn Header="Qty" Binding="{Binding Quantity}" Width="50"/>
+                            <DataGridTextColumn Header="Gross (g)" Binding="{Binding GrossWeight, StringFormat={}{0:F3}}" Width="85"/>
+                            <DataGridTextColumn Header="Stone (g)" Binding="{Binding StoneWeight, StringFormat={}{0:F3}}" Width="80"/>
+                            <DataGridTextColumn Header="Net (g)" Binding="{Binding NetWeight, StringFormat={}{0:F3}}" FontWeight="Bold" Width="85"/>
+                            <DataGridTextColumn Header="Purity %" Binding="{Binding PurityPercent, StringFormat={}{0:F1}%}" Width="75"/>
+                            <DataGridTextColumn Header="Appraised (₹)" Binding="{Binding AppraisedValue, StringFormat={}{0:N2}}" Width="110"/>
+                            <DataGridTextColumn Header="Custody Location" Binding="{Binding StorageLocation}" Width="125"/>
+                        </DataGrid.Columns>
+                    </DataGrid>
+                    <Border Grid.Row="1" Background="#F1F5F9" Padding="8,4">
+                        <DockPanel>
+                            <TextBlock x:Name="TxtJlStockCount" Text="Total Ornaments: 0" FontWeight="Bold" VerticalAlignment="Center"/>
+                            <StackPanel Orientation="Horizontal" DockPanel.Dock="Right">
+                                <TextBlock Text="Total Gross: " FontWeight="Bold"/>
+                                <TextBlock x:Name="TxtJlStockGross" Text="0.000 g" FontWeight="Bold" Margin="0,0,16,0"/>
+                                <TextBlock Text="Total Net: " FontWeight="Bold"/>
+                                <TextBlock x:Name="TxtJlStockNet" Text="0.000 g" FontWeight="Bold" Foreground="#1E3A8A" Margin="0,0,16,0"/>
+                                <TextBlock Text="Total Appraised Value: " FontWeight="Bold"/>
+                                <TextBlock x:Name="TxtJlStockValue" Text="₹ 0.00" FontWeight="Bold" Foreground="#047857"/>
+                            </StackPanel>
+                        </DockPanel>
+                    </Border>
+                </Grid>
+
+                <!-- 7. Postal Charge Report Grid View -->
+                <Grid x:Name="PanelPostal" Visibility="Collapsed">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="36"/>
+                    </Grid.RowDefinitions>
+                    <DataGrid x:Name="GridPostal" Grid.Row="0" AutoGenerateColumns="False" IsReadOnly="True" BorderThickness="0" RowHeight="24">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="Date" Binding="{Binding Date, StringFormat={}{0:dd-MMM-yyyy}}" Width="100"/>
+                            <DataGridTextColumn Header="Voucher #" Binding="{Binding VoucherNumber}" FontWeight="SemiBold" Width="110"/>
+                            <DataGridTextColumn Header="GL #" Binding="{Binding GlNumber}" FontWeight="SemiBold" Width="100"/>
+                            <DataGridTextColumn Header="Customer Name" Binding="{Binding CustomerName}" Width="160"/>
+                            <DataGridTextColumn Header="Phone" Binding="{Binding CustomerPhone}" Width="110"/>
+                            <DataGridTextColumn Header="Postal Charge (₹)" Binding="{Binding Amount, StringFormat={}{0:N2}}" FontWeight="Bold" Foreground="#7C3AED" Width="120"/>
+                            <DataGridTextColumn Header="Narration" Binding="{Binding Narration}" Width="*"/>
+                            <DataGridTextColumn Header="Payment Mode" Binding="{Binding PaymentMode}" Width="95"/>
+                        </DataGrid.Columns>
+                    </DataGrid>
+                    <Border Grid.Row="1" Background="#F1F5F9" Padding="8,4">
+                        <DockPanel>
+                            <TextBlock x:Name="TxtPostalCount" Text="Total Entries: 0" FontWeight="Bold" VerticalAlignment="Center"/>
+                            <StackPanel Orientation="Horizontal" DockPanel.Dock="Right">
+                                <TextBlock Text="Total Postal Charges Recovered: " FontWeight="Bold"/>
+                                <TextBlock x:Name="TxtPostalTotal" Text="₹ 0.00" FontWeight="Bold" Foreground="#7C3AED"/>
+                            </StackPanel>
+                        </DockPanel>
+                    </Border>
+                </Grid>
+
+                <!-- 8. Interest Collection Report Grid View -->
+                <Grid x:Name="PanelInterest" Visibility="Collapsed">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="36"/>
+                    </Grid.RowDefinitions>
+                    <DataGrid x:Name="GridInterest" Grid.Row="0" AutoGenerateColumns="False" IsReadOnly="True" BorderThickness="0" RowHeight="24">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="Receipt #" Binding="{Binding ReceiptNumber}" FontWeight="SemiBold" Width="110"/>
+                            <DataGridTextColumn Header="Receipt Date" Binding="{Binding ReceiptDate, StringFormat={}{0:dd-MMM-yyyy}}" Width="100"/>
+                            <DataGridTextColumn Header="GL #" Binding="{Binding GlNumber}" FontWeight="SemiBold" Width="100"/>
+                            <DataGridTextColumn Header="Customer Name" Binding="{Binding CustomerName}" Width="150"/>
+                            <DataGridTextColumn Header="Scheme" Binding="{Binding SchemeName}" Width="100"/>
+                            <DataGridTextColumn Header="Period From" Binding="{Binding PeriodFrom, StringFormat={}{0:dd-MMM-yyyy}}" Width="95"/>
+                            <DataGridTextColumn Header="Period To" Binding="{Binding PeriodTo, StringFormat={}{0:dd-MMM-yyyy}}" Width="95"/>
+                            <DataGridTextColumn Header="Days" Binding="{Binding Days}" Width="50"/>
+                            <DataGridTextColumn Header="Interest (₹)" Binding="{Binding InterestAmount, StringFormat={}{0:N2}}" Width="110"/>
+                            <DataGridTextColumn Header="Penal (₹)" Binding="{Binding PenalInterestAmount, StringFormat={}{0:N2}}" Width="90"/>
+                            <DataGridTextColumn Header="Total Interest (₹)" Binding="{Binding TotalInterestCollected, StringFormat={}{0:N2}}" FontWeight="Bold" Foreground="#047857" Width="130"/>
+                            <DataGridTextColumn Header="Mode" Binding="{Binding PaymentMode}" Width="75"/>
+                        </DataGrid.Columns>
+                    </DataGrid>
+                    <Border Grid.Row="1" Background="#F1F5F9" Padding="8,4">
+                        <DockPanel>
+                            <TextBlock x:Name="TxtInterestCount" Text="Total Receipts: 0" FontWeight="Bold" VerticalAlignment="Center"/>
+                            <StackPanel Orientation="Horizontal" DockPanel.Dock="Right">
+                                <TextBlock Text="Regular Interest: " FontWeight="Bold"/>
+                                <TextBlock x:Name="TxtInterestRegular" Text="₹ 0.00" FontWeight="Bold" Margin="0,0,16,0"/>
+                                <TextBlock Text="Penal Interest: " FontWeight="Bold"/>
+                                <TextBlock x:Name="TxtInterestPenal" Text="₹ 0.00" FontWeight="Bold" Margin="0,0,16,0"/>
+                                <TextBlock Text="Total Interest Income: " FontWeight="Bold"/>
+                                <TextBlock x:Name="TxtInterestGrandTotal" Text="₹ 0.00" FontWeight="Bold" Foreground="#047857"/>
+                            </StackPanel>
+                        </DockPanel>
+                    </Border>
+                </Grid>
+
+                <!-- 9. Customer Statement Panel -->
+                <Grid x:Name="PanelStatement" Visibility="Collapsed">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/> <!-- Customer Profile Card -->
+                        <RowDefinition Height="*"/>    <!-- Statement Ledger -->
+                        <RowDefinition Height="36"/>   <!-- Summary Footer -->
+                    </Grid.RowDefinitions>
+
+                    <Border Grid.Row="0" Background="#F8FAFC" BorderBrush="#E2E8F0" BorderThickness="0,0,0,1" Padding="12">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Grid.Column="0">
+                                <TextBlock x:Name="TxtCustName" Text="Customer: -" FontWeight="Bold" FontSize="14" Foreground="#1E293B"/>
+                                <TextBlock x:Name="TxtCustPhone" Text="Mobile: -" FontSize="12" Foreground="#64748B" Margin="0,2,0,0"/>
+                                <TextBlock x:Name="TxtCustAddress" Text="Address: -" FontSize="11" Foreground="#94A3B8" Margin="0,2,0,0"/>
+                            </StackPanel>
+                            <StackPanel Grid.Column="1">
+                                <TextBlock x:Name="TxtCustLoansStats" Text="Total Loans: 0 (Active: 0, Closed: 0)" FontWeight="SemiBold" FontSize="12"/>
+                                <TextBlock x:Name="TxtCustOutstanding" Text="Principal Outstanding: ₹ 0.00" FontWeight="Bold" Foreground="#1E3A8A" Margin="0,4,0,0"/>
+                                <TextBlock x:Name="TxtCustAccrued" Text="Accrued Interest: ₹ 0.00" FontSize="12" Foreground="#64748B" Margin="0,2,0,0"/>
+                            </StackPanel>
+                            <StackPanel Grid.Column="2" HorizontalAlignment="Right">
+                                <TextBlock Text="TOTAL PAYABLE NOW" FontSize="11" FontWeight="Bold" Foreground="#64748B"/>
+                                <TextBlock x:Name="TxtCustTotalPayable" Text="₹ 0.00" FontSize="20" FontWeight="Bold" Foreground="#047857" Margin="0,4,0,0"/>
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+
+                    <DataGrid x:Name="GridStatement" Grid.Row="1" AutoGenerateColumns="False" IsReadOnly="True" BorderThickness="0" RowHeight="24">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="Date" Binding="{Binding Date, StringFormat={}{0:dd-MMM-yyyy}}" Width="100"/>
+                            <DataGridTextColumn Header="Type" Binding="{Binding TransactionType}" FontWeight="SemiBold" Width="120"/>
+                            <DataGridTextColumn Header="Reference #" Binding="{Binding ReferenceNumber}" FontWeight="SemiBold" Width="110"/>
+                            <DataGridTextColumn Header="Particulars / Ornaments" Binding="{Binding Particulars}" Width="*"/>
+                            <DataGridTextColumn Header="Debit (₹ Loan)" Binding="{Binding DebitAmount, StringFormat={}{0:N2}}" Width="110"/>
+                            <DataGridTextColumn Header="Credit (₹ Repaid)" Binding="{Binding CreditAmount, StringFormat={}{0:N2}}" Width="110"/>
+                            <DataGridTextColumn Header="Principal Bal (₹)" Binding="{Binding RunningPrincipalBalance, StringFormat={}{0:N2}}" FontWeight="Bold" Foreground="#1E3A8A" Width="130"/>
+                        </DataGrid.Columns>
+                    </DataGrid>
+
+                    <Border Grid.Row="2" Background="#F1F5F9" Padding="8,4">
+                        <DockPanel>
+                            <TextBlock Text="Customer Statement History" FontWeight="Bold" VerticalAlignment="Center"/>
+                            <TextBlock x:Name="TxtStatementFoot" Text="End of Statement" FontWeight="Bold" DockPanel.Dock="Right"/>
+                        </DockPanel>
+                    </Border>
+                </Grid>
+            </Grid>
+        </Border>
+    </Grid>
+</UserControl>

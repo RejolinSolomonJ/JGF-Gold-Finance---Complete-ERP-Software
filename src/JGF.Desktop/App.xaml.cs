@@ -1,9 +1,11 @@
 using System.IO;
 using System.Windows;
 using JGF.Application.Accounting;
+using JGF.Application.Dashboard;
 using JGF.Application.Loans;
 using JGF.Application.Notices;
 using JGF.Application.Receipts;
+using JGF.Application.Reports;
 using JGF.Application.Repledge;
 using JGF.Application.Security;
 using JGF.Application.Services;
@@ -75,6 +77,9 @@ public partial class App : System.Windows.Application
                     services.AddScoped<IAccountingReportService, AccountingReportService>();
                     services.AddScoped<IDayCloseService, DayCloseService>();
                     services.AddScoped<IBankRepledgeService, BankRepledgeService>();
+                    services.AddScoped<IExcelExportService, ExcelExportService>();
+                    services.AddScoped<IJlReportService, JlReportService>();
+                    services.AddScoped<IDashboardService, DashboardService>();
 
                     // Loan & Receipt processing services
                     services.AddSingleton<IInterestCalculator, StandardInterestCalculator>();

@@ -1,8 +1,10 @@
 using System.Windows;
 using JGF.Application.Accounting;
+using JGF.Application.Dashboard;
 using JGF.Application.Loans;
 using JGF.Application.Notices;
 using JGF.Application.Receipts;
+using JGF.Application.Reports;
 using JGF.Application.Repledge;
 using JGF.Application.Security;
 using JGF.Application.Services;
@@ -67,8 +69,8 @@ public partial class MainWindow : Window
         // Check recent backup warning
         _ = CheckBackupStatusAsync();
 
-        // Default open customer master
-        OnCustomerMasterClick(this, new RoutedEventArgs());
+        // Default open Executive Dashboard as home screen
+        OnDashboardClick(this, new RoutedEventArgs());
     }
 
     private async Task CheckBackupStatusAsync()
@@ -185,9 +187,46 @@ public partial class MainWindow : Window
         MainContentArea.Content = view;
     }
 
+    private void OnDashboardClick(object sender, RoutedEventArgs e)
+    {
+        var view = new Controls.DashboardControl(
+            _services.GetRequiredService<IDashboardService>(),
+            target =>
+            {
+                switch (target)
+                {
+                    case "NewLoan": OnNewLoanClick(this, new RoutedEventArgs()); break;
+                    case "Receipt": OnReceiptClick(this, new RoutedEventArgs()); break;
+                    case "Repledge": OnRepledgeClick(this, new RoutedEventArgs()); break;
+                    case "Notices": OnNoticesAuctionClick(this, new RoutedEventArgs()); break;
+                    case "Reports": OnReportsClick(this, new RoutedEventArgs()); break;
+                    case "DayBook": OnDayBookClick(this, new RoutedEventArgs()); break;
+                }
+            });
+        MainContentArea.Content = view;
+    }
+
     private void OnReportsClick(object sender, RoutedEventArgs e)
     {
+        var view = new Controls.JlReportsControl(
+            _services.GetRequiredService<IJlReportService>(),
+            _services.GetRequiredService<ISchemeService>(),
+            _services.GetRequiredService<ICustomerService>(),
+            _services.GetRequiredService<IExcelExportService>(),
+            _currentUser?.Id,
+            _currentUser?.Role ?? UserRole.Owner);
+        MainContentArea.Content = view;
+    }
+
+    private void OnFinancialReportsClick(object sender, RoutedEventArgs e)
+    {
         var view = new Controls.FinancialReportsControl(_services.GetRequiredService<IAccountingReportService>());
+        MainContentArea.Content = view;
+    }
+
+    private void OnIntegrityCheckClick(object sender, RoutedEventArgs e)
+    {
+        var view = new Controls.AccountsIntegrityControl(_services.GetRequiredService<IAccountingReportService>());
         MainContentArea.Content = view;
     }
 

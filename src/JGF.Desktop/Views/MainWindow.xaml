@@ -36,6 +36,7 @@
 
         <!-- 2. Main Menu Navigation Bar (Role-Based Visibility) -->
         <Menu Grid.Row="1" Background="#2D2D30" Foreground="White" FontSize="14" Padding="4">
+            <MenuItem Header="⌂ _Dashboard (Home)" Click="OnDashboardClick"/>
             <MenuItem Header="_Member Detail (F1)" Click="OnCustomerMasterClick"/>
             <MenuItem Header="_New Loan Entry (F2)" Click="OnNewLoanClick"/>
             <MenuItem Header="_Customer Detail (F3)" Click="OnCustomerDetailClick"/>
@@ -46,6 +47,9 @@
             <MenuItem Header="_Stock (F8)" Click="OnStockClick"/>
             <MenuItem Header="_Accounts (F9)" x:Name="MenuAccounts">
                 <MenuItem Header="Day Book" Click="OnDayBookClick"/>
+                <MenuItem Header="Financial Reports (Trial Balance, P&amp;L, Balance Sheet)" Click="OnFinancialReportsClick"/>
+                <MenuItem Header="Accounts Integrity Audit" Click="OnIntegrityCheckClick"/>
+                <Separator/>
                 <MenuItem Header="Ledger Heads Master" Click="OnLedgerHeadsClick"/>
                 <MenuItem Header="Voucher Entry" Click="OnVouchersClick"/>
                 <Separator/>
