@@ -217,3 +217,4 @@ public partial class LoanReceiptControl : UserControl
         }
     }
 }
+

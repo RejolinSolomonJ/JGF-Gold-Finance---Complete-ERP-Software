@@ -149,3 +149,4 @@ public class StandardInterestCalculator : IInterestCalculator
         return Math.Round(days / 30m, 4, MidpointRounding.AwayFromZero);
     }
 }
+

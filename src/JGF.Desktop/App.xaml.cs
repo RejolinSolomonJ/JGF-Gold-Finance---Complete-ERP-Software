@@ -66,6 +66,10 @@ public partial class App : System.Windows.Application
                     services.AddScoped<IAccountingService>(sp => sp.GetRequiredService<MasterDataService>());
                     services.AddScoped<INumberSeriesService>(sp => sp.GetRequiredService<MasterDataService>());
 
+                    // Accounting & Reporting services
+                    services.AddScoped<IAccountingReportService, AccountingReportService>();
+                    services.AddScoped<IDayCloseService, DayCloseService>();
+
                     // Loan & Receipt processing services
                     services.AddSingleton<IInterestCalculator, StandardInterestCalculator>();
                     services.AddScoped<ILoanService, LoanService>();

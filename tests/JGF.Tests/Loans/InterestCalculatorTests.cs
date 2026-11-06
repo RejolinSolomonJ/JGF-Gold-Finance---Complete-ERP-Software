@@ -120,3 +120,4 @@ public class InterestCalculatorTests
         result.Breakdown.Should().HaveCount(2);
     }
 }
+

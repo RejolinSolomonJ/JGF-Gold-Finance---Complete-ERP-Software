@@ -253,3 +253,4 @@ public partial class NewLoanEntryControl : UserControl
         RecalculateTotals();
     }
 }
+

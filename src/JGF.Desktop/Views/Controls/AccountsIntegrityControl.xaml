@@ -1,0 +1,125 @@
+<UserControl x:Class="JGF.Desktop.Views.Controls.AccountsIntegrityControl"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             Background="White">
+    <Grid Margin="12">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/> <!-- Title & Run Toolbar -->
+            <RowDefinition Height="*"/>    <!-- Audit Results Panel -->
+        </Grid.RowDefinitions>
+
+        <Border Grid.Row="0" Background="#F0F0F0" Padding="10" Margin="0,0,0,10">
+            <DockPanel LastChildFill="True">
+                <StackPanel Orientation="Horizontal" DockPanel.Dock="Left">
+                    <TextBlock Text="✦ AUTOMATIC ACCOUNTS INTEGRITY AUDITOR" FontWeight="Bold" FontSize="16" Foreground="#B8860B" VerticalAlignment="Center"/>
+                </StackPanel>
+                <StackPanel Orientation="Horizontal" DockPanel.Dock="Right">
+                    <TextBlock Text="Audit As Of Date:" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                    <DatePicker x:Name="DpAuditDate" Width="120" Margin="0,0,10,0"/>
+                    <Button Content="⚡ Run Full System Audit" Background="#1565C0" FontWeight="Bold" Width="180" Click="OnRunAuditClick"/>
+                </StackPanel>
+            </DockPanel>
+        </Border>
+
+        <!-- Audit Cards Panel -->
+        <ScrollViewer Grid.Row="1">
+            <StackPanel>
+                <!-- Overall Status Banner -->
+                <Border x:Name="BannerStatus" Background="#E8F5E9" BorderBrush="#4CAF50" BorderThickness="1" CornerRadius="4" Padding="12" Margin="0,0,0,12">
+                    <DockPanel>
+                        <TextBlock x:Name="TxtBannerIcon" Text="✓" FontSize="24" FontWeight="Bold" Foreground="#2E7D32" Margin="0,0,10,0"/>
+                        <StackPanel>
+                            <TextBlock x:Name="TxtBannerTitle" Text="ALL SYSTEM INTEGRITY CHECKS PASSED (ZERO DISCREPANCIES)" FontWeight="Bold" FontSize="15" Foreground="#2E7D32"/>
+                            <TextBlock x:Name="TxtBannerSubtitle" Text="Double-entry vouchers balance, balance sheet balances, and sub-ledgers reconcile perfectly with operational modules." Foreground="#555555"/>
+                        </StackPanel>
+                    </DockPanel>
+                </Border>
+
+                <!-- Check 1: Double-Entry Voucher Consistency -->
+                <Border Background="#FAFAFA" BorderBrush="#E0E0E0" BorderThickness="1" CornerRadius="4" Padding="10" Margin="0,0,0,8">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="2*"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="80"/>
+                        </Grid.ColumnDefinitions>
+                        <StackPanel Grid.Column="0">
+                            <TextBlock Text="1. Double-Entry Vouchers Balance Check" FontWeight="Bold"/>
+                            <TextBlock Text="Verifies that for every posted voucher, Header Debit = Credit and Line Items Debit = Credit." Foreground="#777777"/>
+                        </StackPanel>
+                        <TextBlock x:Name="TxtUnbalancedCount" Grid.Column="1" Text="0 Unbalanced Vouchers" VerticalAlignment="Center" FontWeight="SemiBold"/>
+                        <TextBlock x:Name="TxtVoucherStatus" Grid.Column="2" Text="[PASS]" FontWeight="Bold" Foreground="#2E7D32" VerticalAlignment="Center"/>
+                    </Grid>
+                </Border>
+
+                <!-- Check 2: Balance Sheet Derivation Balance -->
+                <Border Background="#FAFAFA" BorderBrush="#E0E0E0" BorderThickness="1" CornerRadius="4" Padding="10" Margin="0,0,0,8">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="2*"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="80"/>
+                        </Grid.ColumnDefinitions>
+                        <StackPanel Grid.Column="0">
+                            <TextBlock Text="2. Pure Derived Balance Sheet Equivalence" FontWeight="Bold"/>
+                            <TextBlock Text="Verifies that Total Assets = Total Liabilities + Owner Capital + Current Net Profit." Foreground="#777777"/>
+                        </StackPanel>
+                        <TextBlock x:Name="TxtBsDiff" Grid.Column="1" Text="Difference: ₹ 0.00" VerticalAlignment="Center" FontWeight="SemiBold"/>
+                        <TextBlock x:Name="TxtBsStatus" Grid.Column="2" Text="[PASS]" FontWeight="Bold" Foreground="#2E7D32" VerticalAlignment="Center"/>
+                    </Grid>
+                </Border>
+
+                <!-- Check 3: Cash Book Closing vs Balance Sheet Cash -->
+                <Border Background="#FAFAFA" BorderBrush="#E0E0E0" BorderThickness="1" CornerRadius="4" Padding="10" Margin="0,0,0,8">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="2*"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="80"/>
+                        </Grid.ColumnDefinitions>
+                        <StackPanel Grid.Column="0">
+                            <TextBlock Text="3. Cash Book Closing vs. Balance Sheet Cash Asset (1001)" FontWeight="Bold"/>
+                            <TextBlock Text="Reconciles day book cumulative cash position against ledger head 1001 balance." Foreground="#777777"/>
+                        </StackPanel>
+                        <TextBlock x:Name="TxtCashReconcile" Grid.Column="1" Text="DayBook=₹0.00 | BS=₹0.00" VerticalAlignment="Center" FontWeight="SemiBold"/>
+                        <TextBlock x:Name="TxtCashStatus" Grid.Column="2" Text="[PASS]" FontWeight="Bold" Foreground="#2E7D32" VerticalAlignment="Center"/>
+                    </Grid>
+                </Border>
+
+                <!-- Check 4: Loan Module Outstanding vs Jewel Loan Ledger -->
+                <Border Background="#FAFAFA" BorderBrush="#E0E0E0" BorderThickness="1" CornerRadius="4" Padding="10" Margin="0,0,0,8">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="2*"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="80"/>
+                        </Grid.ColumnDefinitions>
+                        <StackPanel Grid.Column="0">
+                            <TextBlock Text="4. Loan Module Outstanding vs. Jewel Loan Ledger (1002)" FontWeight="Bold"/>
+                            <TextBlock Text="Compares sum of active/partial loan balances against general ledger asset head 1002." Foreground="#777777"/>
+                        </StackPanel>
+                        <TextBlock x:Name="TxtLoanReconcile" Grid.Column="1" Text="Loans=₹0.00 | Ledger=₹0.00" VerticalAlignment="Center" FontWeight="SemiBold"/>
+                        <TextBlock x:Name="TxtLoanStatus" Grid.Column="2" Text="[PASS]" FontWeight="Bold" Foreground="#2E7D32" VerticalAlignment="Center"/>
+                    </Grid>
+                </Border>
+
+                <!-- Check 5: Bank Repledge Module vs Ledger -->
+                <Border Background="#FAFAFA" BorderBrush="#E0E0E0" BorderThickness="1" CornerRadius="4" Padding="10">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="2*"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="80"/>
+                        </Grid.ColumnDefinitions>
+                        <StackPanel Grid.Column="0">
+                            <TextBlock Text="5. Bank Repledge Module vs. Bank Loan Payable Ledger (2001)" FontWeight="Bold"/>
+                            <TextBlock Text="Compares total active bank repledge liability against general ledger head 2001." Foreground="#777777"/>
+                        </StackPanel>
+                        <TextBlock x:Name="TxtRepledgeReconcile" Grid.Column="1" Text="Repledge=₹0.00 | Ledger=₹0.00" VerticalAlignment="Center" FontWeight="SemiBold"/>
+                        <TextBlock x:Name="TxtRepledgeStatus" Grid.Column="2" Text="[PASS]" FontWeight="Bold" Foreground="#2E7D32" VerticalAlignment="Center"/>
+                    </Grid>
+                </Border>
+            </StackPanel>
+        </ScrollViewer>
+    </Grid>
+</UserControl>

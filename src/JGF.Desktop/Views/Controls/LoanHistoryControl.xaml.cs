@@ -30,3 +30,4 @@ public partial class LoanHistoryControl : UserControl
         GridHistory.ItemsSource = history;
     }
 }
+

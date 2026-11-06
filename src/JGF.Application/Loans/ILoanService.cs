@@ -58,3 +58,4 @@ public interface ILoanService
     Task<(Receipt ClosingReceipt, Loan NewLoan)> RenewLoanAsync(RenewalDto dto, CancellationToken ct = default);
     Task<List<LoanLedgerEntry>> GetLoanHistoryAsync(Guid loanId, CancellationToken ct = default);
 }
+

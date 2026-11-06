@@ -163,15 +163,33 @@ public partial class MainWindow : Window
 
     private void OnCustomerDetailClick(object sender, RoutedEventArgs e) => OnCustomerMasterClick(sender, e);
     private void OnRepledgeClick(object sender, RoutedEventArgs e) => MessageBox.Show("Bank Repledge screen.", "Module Navigation");
-    private void OnReportsClick(object sender, RoutedEventArgs e) => MessageBox.Show("Reports screen.", "Module Navigation");
+    private void OnReportsClick(object sender, RoutedEventArgs e)
+    {
+        var view = new Controls.FinancialReportsControl(_services.GetRequiredService<IAccountingReportService>());
+        MainContentArea.Content = view;
+    }
+
     private void OnStockClick(object sender, RoutedEventArgs e)
     {
         var view = new Controls.LoanHistoryControl(_services.GetRequiredService<ILoanService>());
         MainContentArea.Content = view;
     }
-    private void OnDayBookClick(object sender, RoutedEventArgs e) => MessageBox.Show("Day Book report screen.", "Module Navigation");
-    private void OnVouchersClick(object sender, RoutedEventArgs e) => MessageBox.Show("Double-entry voucher screen.", "Module Navigation");
-    private void OnDayCloseClick(object sender, RoutedEventArgs e) => MessageBox.Show("Day-End Close verification dialog.", "Module Navigation");
+
+    private void OnDayBookClick(object sender, RoutedEventArgs e)
+    {
+        var view = new Controls.DayBookEntryControl(
+            _services.GetRequiredService<IAccountingReportService>(),
+            _services.GetRequiredService<IAccountingService>());
+        MainContentArea.Content = view;
+    }
+
+    private void OnVouchersClick(object sender, RoutedEventArgs e) => OnDayBookClick(sender, e);
+
+    private void OnDayCloseClick(object sender, RoutedEventArgs e)
+    {
+        var view = new Controls.DayEndCloseControl(_services.GetRequiredService<IDayCloseService>());
+        MainContentArea.Content = view;
+    }
     private void OnExitClick(object sender, RoutedEventArgs e) => Close();
 }
 

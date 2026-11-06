@@ -48,3 +48,4 @@ public interface IInterestCalculator
         int minimumInterestDays = 30,
         bool roundUpToNextMonth = false);
 }
+

@@ -300,3 +300,4 @@ public class ReceiptService : IReceiptService
         return Encoding.UTF8.GetBytes(sb.ToString());
     }
 }
+

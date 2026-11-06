@@ -1,0 +1,90 @@
+<UserControl x:Class="JGF.Desktop.Views.Controls.DayEndCloseControl"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             Background="White">
+    <Grid Margin="12" MaxWidth="800" HorizontalAlignment="Left">
+        <StackPanel>
+            <TextBlock Text="✦ DAY-END CLOSE (நாள் முடிவு சரிபார்ப்பு)" FontWeight="Bold" FontSize="18" Foreground="#B8860B"/>
+            <TextBlock Text="Verifies physical cash in drawer, seals accounting entries for the date, triggers AES-256 backup." Foreground="#666666" Margin="0,4,0,12"/>
+            <Separator Margin="0,0,0,12"/>
+
+            <!-- Status Banner -->
+            <Border x:Name="BorderDayState" Background="#E3F2FD" BorderBrush="#2196F3" BorderThickness="1" CornerRadius="4" Padding="12" Margin="0,0,0,16">
+                <DockPanel>
+                    <TextBlock x:Name="TxtStatusBadge" Text="[DAY OPEN]" FontWeight="Bold" FontSize="15" Foreground="#1565C0" Margin="0,0,16,0" VerticalAlignment="Center"/>
+                    <StackPanel>
+                        <TextBlock x:Name="TxtDayCloseDate" Text="Date: 07-Nov-2026" FontWeight="SemiBold"/>
+                        <TextBlock x:Name="TxtClosedByInfo" Text="Entries currently permitted for Cashier and Manager." Foreground="#666666"/>
+                    </StackPanel>
+                </DockPanel>
+            </Border>
+
+            <!-- Financial Position Card -->
+            <Border Background="#F9F9F9" BorderBrush="#E0E0E0" BorderThickness="1" CornerRadius="4" Padding="12" Margin="0,0,0,16">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+
+                    <StackPanel Grid.Row="0" Grid.Column="0" Margin="0,0,8,8">
+                        <TextBlock Text="Opening Cash:" Foreground="#777777"/>
+                        <TextBlock x:Name="TxtOpening" Text="₹ 0.00" FontWeight="Bold" FontSize="15"/>
+                    </StackPanel>
+                    <StackPanel Grid.Row="0" Grid.Column="1" Margin="4,0,8,8">
+                        <TextBlock Text="Total Receipts (In):" Foreground="#777777"/>
+                        <TextBlock x:Name="TxtReceipts" Text="₹ 0.00" FontWeight="Bold" FontSize="15" Foreground="#2E7D32"/>
+                    </StackPanel>
+                    <StackPanel Grid.Row="0" Grid.Column="2" Margin="4,0,0,8">
+                        <TextBlock Text="Total Payments (Out):" Foreground="#777777"/>
+                        <TextBlock x:Name="TxtPayments" Text="₹ 0.00" FontWeight="Bold" FontSize="15" Foreground="#C62828"/>
+                    </StackPanel>
+
+                    <StackPanel Grid.Row="1" Grid.Column="0" Margin="0,8,8,0">
+                        <TextBlock Text="Active Loans Count:" Foreground="#777777"/>
+                        <TextBlock x:Name="TxtActiveCount" Text="0 loans" FontWeight="Bold" FontSize="15"/>
+                    </StackPanel>
+                    <StackPanel Grid.Row="1" Grid.Column="1" Margin="4,8,8,0">
+                        <TextBlock Text="Loan Portfolio Principal:" Foreground="#777777"/>
+                        <TextBlock x:Name="TxtPortfolioPrincipal" Text="₹ 0.00" FontWeight="Bold" FontSize="15"/>
+                    </StackPanel>
+                    <StackPanel Grid.Row="1" Grid.Column="2" Margin="4,8,0,0">
+                        <TextBlock Text="Calculated Closing Cash:" Foreground="#777777"/>
+                        <TextBlock x:Name="TxtCalculatedClosing" Text="₹ 0.00" FontWeight="Bold" FontSize="18" Foreground="#B8860B"/>
+                    </StackPanel>
+                </Grid>
+            </Border>
+
+            <!-- Physical Cash Verification -->
+            <TextBlock Text="Physical Cash Verification &amp; Drawer Count:" FontWeight="Bold" Margin="0,4,0,4"/>
+            <Grid Margin="0,0,0,12">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+                <StackPanel Grid.Column="0" Margin="0,0,8,0">
+                    <TextBlock Text="Actual Cash Counted in Counter / Locker (₹) (*):"/>
+                    <TextBox x:Name="TxtCountedCash" Height="34" FontSize="16" FontWeight="Bold" Text="0.00" TextChanged="OnCountedCashChanged"/>
+                </StackPanel>
+                <StackPanel Grid.Column="1" Margin="4,0,0,0">
+                    <TextBlock Text="Cash Drawer Variance:"/>
+                    <TextBlock x:Name="TxtCashVariance" Text="₹ 0.00 (Matched)" FontWeight="Bold" FontSize="16" Foreground="#2E7D32" Margin="0,6,0,0"/>
+                </StackPanel>
+            </Grid>
+
+            <TextBlock Text="Closing Remarks / Auditor Notes:" Margin="0,4,0,2"/>
+            <TextBox x:Name="TxtRemarks" Height="45" TextWrapping="Wrap"/>
+
+            <!-- Close Action Buttons -->
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,16,0,0">
+                <Button x:Name="BtnReopenDay" Content="🔓 Reopen Day (Owner Only)" Width="200" Height="36" Background="#C62828" FontWeight="Bold" Click="OnReopenDayClick" Visibility="Collapsed" Margin="0,0,8,0"/>
+                <Button x:Name="BtnCloseDay" Content="🔒 Execute Day-End Close" Width="200" Height="36" Background="#2E7D32" FontWeight="Bold" Click="OnExecuteCloseClick"/>
+            </StackPanel>
+        </StackPanel>
+    </Grid>
+</UserControl>

@@ -32,3 +32,4 @@ public interface IReceiptService
     Task<byte[]> GenerateReceiptPdfAsync(Guid receiptId, bool isDuplicate = false, CancellationToken ct = default);
     Task<byte[]> GenerateReleaseSlipPdfAsync(Guid loanId, CancellationToken ct = default);
 }
+
