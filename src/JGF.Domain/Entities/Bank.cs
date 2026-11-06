@@ -46,3 +46,4 @@ public class Bank : AuditableEntity, ISoftDeletable
 
     public ICollection<BankPledge> BankPledges { get; set; } = new List<BankPledge>();
 }
+

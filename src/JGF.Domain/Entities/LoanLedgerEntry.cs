@@ -39,3 +39,4 @@ public class LoanLedgerEntry : AuditableEntity, ISoftDeletable
 
     public Loan Loan { get; set; } = null!;
 }
+

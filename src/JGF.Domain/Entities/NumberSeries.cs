@@ -36,3 +36,4 @@ public class NumberSeries : AuditableEntity, ISoftDeletable
 
     public Scheme? Scheme { get; set; }
 }
+

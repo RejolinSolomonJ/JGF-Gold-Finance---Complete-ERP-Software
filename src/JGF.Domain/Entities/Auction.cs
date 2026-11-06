@@ -54,3 +54,4 @@ public class Auction : AuditableEntity, ISoftDeletable
 
     public Loan Loan { get; set; } = null!;
 }
+

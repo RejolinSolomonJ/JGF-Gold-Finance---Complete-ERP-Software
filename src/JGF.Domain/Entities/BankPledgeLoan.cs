@@ -24,3 +24,4 @@ public class BankPledgeLoan : AuditableEntity, ISoftDeletable
     public BankPledge BankPledge { get; set; } = null!;
     public Loan Loan { get; set; } = null!;
 }
+

@@ -46,3 +46,4 @@ public class User : AuditableEntity, ISoftDeletable
     public bool IsDeleted { get; set; }
     public DateTime? DeletedAtUtc { get; set; }
 }
+

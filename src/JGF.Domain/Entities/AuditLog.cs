@@ -36,3 +36,4 @@ public class AuditLog
     [MaxLength(50)]
     public string? IpAddress { get; set; }
 }
+

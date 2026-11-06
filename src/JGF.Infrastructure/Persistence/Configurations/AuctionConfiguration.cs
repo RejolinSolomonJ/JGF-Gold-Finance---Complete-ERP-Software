@@ -70,3 +70,4 @@ public class AuctionConfiguration : IEntityTypeConfiguration<Auction>
             .OnDelete(DeleteBehavior.Restrict);
     }
 }
+

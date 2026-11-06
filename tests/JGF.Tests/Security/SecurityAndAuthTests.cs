@@ -35,3 +35,4 @@ public class SecurityAndAuthTests
         hasAccess.Should().Be(expected);
     }
 }
+

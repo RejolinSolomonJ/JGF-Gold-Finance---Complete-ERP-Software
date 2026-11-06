@@ -35,3 +35,4 @@ public class Notice : AuditableEntity, ISoftDeletable
 
     public Loan Loan { get; set; } = null!;
 }
+

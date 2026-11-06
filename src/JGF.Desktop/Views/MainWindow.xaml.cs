@@ -152,3 +152,4 @@ public partial class MainWindow : Window
     private void OnDayCloseClick(object sender, RoutedEventArgs e) => MessageBox.Show("Day-End Close verification dialog.", "Module Navigation");
     private void OnExitClick(object sender, RoutedEventArgs e) => Close();
 }
+

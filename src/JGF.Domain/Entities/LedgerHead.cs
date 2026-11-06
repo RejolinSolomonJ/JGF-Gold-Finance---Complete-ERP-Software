@@ -43,3 +43,4 @@ public class LedgerHead : AuditableEntity, ISoftDeletable
     public LedgerHead? ParentLedgerHead { get; set; }
     public ICollection<LedgerHead> ChildLedgerHeads { get; set; } = new List<LedgerHead>();
 }
+

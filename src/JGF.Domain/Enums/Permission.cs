@@ -51,3 +51,4 @@ public enum Permission
     ManageBackups = 1 << 27,
     ManageSettings = 1 << 28
 }
+

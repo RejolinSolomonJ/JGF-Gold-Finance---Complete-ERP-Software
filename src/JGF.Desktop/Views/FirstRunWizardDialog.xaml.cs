@@ -69,3 +69,4 @@ public partial class FirstRunWizardDialog : Window
         Close();
     }
 }
+

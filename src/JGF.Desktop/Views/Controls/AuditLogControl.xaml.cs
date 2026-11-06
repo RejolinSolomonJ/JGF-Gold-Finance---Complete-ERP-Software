@@ -35,3 +35,4 @@ public partial class AuditLogControl : UserControl
         await LoadLogsAsync();
     }
 }
+

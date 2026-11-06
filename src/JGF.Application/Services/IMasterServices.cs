@@ -58,3 +58,4 @@ public interface INumberSeriesService
     Task<string> GetNextNumberAsync(NumberSeriesType type, string financialYear, Guid? schemeId = null, CancellationToken ct = default);
     Task<NumberSeries> CreateOrUpdateSeriesAsync(NumberSeries series, CancellationToken ct = default);
 }
+

@@ -53,3 +53,4 @@ public partial class LoginDialog : Window
         Close();
     }
 }
+

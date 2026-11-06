@@ -42,3 +42,4 @@ public class BackupLogConfiguration : IEntityTypeConfiguration<BackupLog>
             .HasDatabaseName("IX_BackupLogs_Status");
     }
 }
+

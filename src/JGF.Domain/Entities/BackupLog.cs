@@ -35,3 +35,4 @@ public class BackupLog : AuditableEntity
     [MaxLength(500)]
     public string? LanCopyStatus { get; set; }
 }
+

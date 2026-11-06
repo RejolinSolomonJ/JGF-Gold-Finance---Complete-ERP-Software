@@ -35,3 +35,4 @@ public partial class NumberSeriesMasterControl : UserControl
         }
     }
 }
+

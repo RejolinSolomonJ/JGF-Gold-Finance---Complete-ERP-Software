@@ -12,3 +12,4 @@ public interface IBackupService
     Task<bool> HasRecentSuccessfulBackupAsync(TimeSpan threshold, CancellationToken ct = default);
     Task<List<BackupLog>> GetBackupLogsAsync(int limit = 50, CancellationToken ct = default);
 }
+

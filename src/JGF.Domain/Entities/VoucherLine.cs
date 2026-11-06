@@ -29,3 +29,4 @@ public class VoucherLine : AuditableEntity, ISoftDeletable
     public Voucher Voucher { get; set; } = null!;
     public LedgerHead LedgerHead { get; set; } = null!;
 }
+

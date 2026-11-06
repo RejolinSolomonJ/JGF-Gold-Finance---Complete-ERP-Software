@@ -21,3 +21,4 @@ public interface IAuthService
     Task<bool> IsFirstRunAsync(CancellationToken ct = default);
     Task<User> CompleteFirstRunWizardAsync(string ownerUsername, string ownerPassword, string ownerFullName, CompanyProfileDto company, CancellationToken ct = default);
 }
+

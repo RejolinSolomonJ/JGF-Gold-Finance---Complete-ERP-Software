@@ -53,3 +53,4 @@ public class DayClose : AuditableEntity, ISoftDeletable
 
     public User? ClosedByUser { get; set; }
 }
+

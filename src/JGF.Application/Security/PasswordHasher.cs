@@ -23,3 +23,4 @@ public class BCryptPasswordHasher : IPasswordHasher
         return BCrypt.Net.BCrypt.Verify(plainPassword, passwordHash);
     }
 }
+

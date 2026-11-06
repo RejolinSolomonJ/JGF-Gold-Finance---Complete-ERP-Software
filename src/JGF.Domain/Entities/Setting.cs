@@ -34,3 +34,4 @@ public class Setting : AuditableEntity, ISoftDeletable
     public bool IsDeleted { get; set; }
     public DateTime? DeletedAtUtc { get; set; }
 }
+

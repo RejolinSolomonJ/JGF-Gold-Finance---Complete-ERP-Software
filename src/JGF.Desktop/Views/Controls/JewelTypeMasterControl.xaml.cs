@@ -85,3 +85,4 @@ public partial class JewelTypeMasterControl : UserControl
         }
     }
 }
+
