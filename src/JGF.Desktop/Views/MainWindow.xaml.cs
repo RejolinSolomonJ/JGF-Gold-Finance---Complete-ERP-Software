@@ -31,6 +31,11 @@ public partial class MainWindow : Window
 
     private async void OnWindowLoaded(object sender, RoutedEventArgs e)
     {
+        await TryConnectAndInitializeAsync();
+    }
+
+    private async Task TryConnectAndInitializeAsync()
+    {
         try
         {
             var authService = _services.GetRequiredService<IAuthService>();
@@ -53,6 +58,8 @@ public partial class MainWindow : Window
             }
 
             _currentUser = loginDlg.AuthenticatedUser;
+            TxtDbStatus.Text = "● DB: Connected (LAN PC1)";
+            TxtDbStatus.Foreground = System.Windows.Media.Brushes.LightGreen;
             ApplyUserSession(_currentUser);
         }
         catch (Exception ex)
@@ -67,7 +74,12 @@ public partial class MainWindow : Window
                 MessageBoxButton.OK,
                 MessageBoxImage.Warning);
 
-            MainContentArea.Content = new Controls.DbConnectionSettingsControl();
+            var dbSettings = new Controls.DbConnectionSettingsControl();
+            dbSettings.ConnectionConfigured += async (s, e) =>
+            {
+                await TryConnectAndInitializeAsync();
+            };
+            MainContentArea.Content = dbSettings;
         }
     }
 
