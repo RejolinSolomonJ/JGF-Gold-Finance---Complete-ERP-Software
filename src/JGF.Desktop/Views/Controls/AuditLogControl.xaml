@@ -1,0 +1,51 @@
+<UserControl x:Class="JGF.Desktop.Views.Controls.AuditLogControl"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             Background="White">
+    <Grid Margin="12">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/> <!-- Title -->
+            <RowDefinition Height="Auto"/> <!-- Filter toolbar -->
+            <RowDefinition Height="*"/>    <!-- DataGrid -->
+        </Grid.RowDefinitions>
+
+        <TextBlock Grid.Row="0" Text="SECURITY AUDIT TRAIL (OWNER ONLY)" FontWeight="Bold" FontSize="16" Foreground="#B8860B" Margin="0,0,0,10"/>
+
+        <!-- Filters -->
+        <Border Grid.Row="1" Background="#F9F9F9" BorderBrush="#E0E0E0" BorderThickness="1" Padding="8" Margin="0,0,0,10">
+            <WrapPanel Orientation="Horizontal" VerticalAlignment="Center">
+                <TextBlock Text="Table:" Margin="0,0,4,0"/>
+                <ComboBox x:Name="CmbTable" Width="130" Margin="0,0,12,0">
+                    <ComboBoxItem Content="All Tables" IsSelected="True"/>
+                    <ComboBoxItem Content="Loans"/>
+                    <ComboBoxItem Content="Receipts"/>
+                    <ComboBoxItem Content="Customers"/>
+                    <ComboBoxItem Content="Schemes"/>
+                    <ComboBoxItem Content="Users"/>
+                    <ComboBoxItem Content="Vouchers"/>
+                </ComboBox>
+
+                <TextBlock Text="From Date:" Margin="0,0,4,0"/>
+                <DatePicker x:Name="DpFrom" Width="120" Margin="0,0,12,0"/>
+
+                <TextBlock Text="To Date:" Margin="0,0,4,0"/>
+                <DatePicker x:Name="DpTo" Width="120" Margin="0,0,12,0"/>
+
+                <Button Content="Filter Logs" Background="#2B2B2B" FontWeight="Bold" Click="OnFilterClick" Width="100"/>
+            </WrapPanel>
+        </Border>
+
+        <!-- Audit Log Grid -->
+        <DataGrid x:Name="GridAudit" Grid.Row="2" AutoGenerateColumns="False" IsReadOnly="True" BorderBrush="#CCCCCC">
+            <DataGrid.Columns>
+                <DataGridTextColumn Header="Timestamp (UTC)" Binding="{Binding Timestamp, StringFormat={}{0:dd-MMM-yyyy HH:mm:ss}}" Width="160"/>
+                <DataGridTextColumn Header="User" Binding="{Binding UserName}" Width="100"/>
+                <DataGridTextColumn Header="Action" Binding="{Binding Action}" Width="90"/>
+                <DataGridTextColumn Header="Table" Binding="{Binding TableName}" Width="110"/>
+                <DataGridTextColumn Header="Record Id" Binding="{Binding RecordId}" Width="140"/>
+                <DataGridTextColumn Header="IP Address" Binding="{Binding IpAddress}" Width="110"/>
+                <DataGridTextColumn Header="Changes / Payload" Binding="{Binding NewValues}" Width="*"/>
+            </DataGrid.Columns>
+        </DataGrid>
+    </Grid>
+</UserControl>

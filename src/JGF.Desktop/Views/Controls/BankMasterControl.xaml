@@ -1,0 +1,107 @@
+<UserControl x:Class="JGF.Desktop.Views.Controls.BankMasterControl"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             Background="White">
+    <Grid Margin="12">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="340"/>
+            <ColumnDefinition Width="*"/>
+        </Grid.ColumnDefinitions>
+
+        <Border Grid.Column="0" BorderBrush="#DDDDDD" BorderThickness="0,0,1,0" Padding="0,0,12,0">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+                <DockPanel Grid.Row="0" Margin="0,0,0,8">
+                    <Button Content="+ New Bank" DockPanel.Dock="Right" Background="#B8860B" Click="OnNewBankClick"/>
+                    <TextBlock Text="BANKS &amp; NBFCs" FontWeight="Bold" FontSize="16" Foreground="#B8860B"/>
+                </DockPanel>
+                <DataGrid x:Name="GridBanks" Grid.Row="1" AutoGenerateColumns="False" IsReadOnly="True" 
+                          SelectionMode="Single" SelectionChanged="OnBankSelected">
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Header="Code" Binding="{Binding Code}" Width="60"/>
+                        <DataGridTextColumn Header="Bank Name" Binding="{Binding Name}" Width="*"/>
+                        <DataGridTextColumn Header="Branch" Binding="{Binding Branch}" Width="100"/>
+                    </DataGrid.Columns>
+                </DataGrid>
+            </Grid>
+        </Border>
+
+        <ScrollViewer Grid.Column="1" Padding="16,0,0,0">
+            <StackPanel>
+                <TextBlock Text="Bank / NBFC Repledge Profile" FontWeight="Bold" FontSize="16"/>
+                <Separator Margin="0,8"/>
+
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <StackPanel Grid.Column="0" Margin="0,0,4,0">
+                        <TextBlock Text="Bank Code:"/>
+                        <TextBox x:Name="TxtBankCode" Text="SBI"/>
+                    </StackPanel>
+                    <StackPanel Grid.Column="1" Margin="4,0,0,0">
+                        <TextBlock Text="Bank Name:"/>
+                        <TextBox x:Name="TxtBankName" Text="State Bank of India"/>
+                    </StackPanel>
+                </Grid>
+
+                <TextBlock Text="Branch Name:" Margin="0,8,0,0"/>
+                <TextBox x:Name="TxtBranch" Text="Main Branch"/>
+
+                <Grid Margin="0,8,0,0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <StackPanel Grid.Column="0" Margin="0,0,4,0">
+                        <TextBlock Text="Account Number:"/>
+                        <TextBox x:Name="TxtAccountNo"/>
+                    </StackPanel>
+                    <StackPanel Grid.Column="1" Margin="4,0,0,0">
+                        <TextBlock Text="IFSC Code:"/>
+                        <TextBox x:Name="TxtIfsc"/>
+                    </StackPanel>
+                </Grid>
+
+                <Grid Margin="0,8,0,0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <StackPanel Grid.Column="0" Margin="0,0,4,0">
+                        <TextBlock Text="Contact Person:"/>
+                        <TextBox x:Name="TxtContactPerson"/>
+                    </StackPanel>
+                    <StackPanel Grid.Column="1" Margin="4,0,0,0">
+                        <TextBlock Text="Contact Phone:"/>
+                        <TextBox x:Name="TxtPhone"/>
+                    </StackPanel>
+                </Grid>
+
+                <Grid Margin="0,8,0,0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <StackPanel Grid.Column="0" Margin="0,0,4,0">
+                        <TextBlock Text="Interest Rate Charged (%/mo):"/>
+                        <TextBox x:Name="TxtInterestRate" Text="0.75"/>
+                    </StackPanel>
+                    <StackPanel Grid.Column="1" Margin="4,0,0,0">
+                        <TextBlock Text="Sanctioned Limit (₹):"/>
+                        <TextBox x:Name="TxtSanctionedLimit" Text="10000000.00"/>
+                    </StackPanel>
+                </Grid>
+
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,20,0,0">
+                    <Button Content="Soft Delete" Background="#C62828" Click="OnDeleteBankClick" Width="100"/>
+                    <Button Content="Save Bank" Background="#2E7D32" FontWeight="Bold" Click="OnSaveBankClick" Width="140"/>
+                </StackPanel>
+            </StackPanel>
+        </ScrollViewer>
+    </Grid>
+</UserControl>
