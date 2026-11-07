@@ -138,6 +138,13 @@ public class Loan : AuditableEntity, ISoftDeletable
     /// </summary>
     public DateOnly? LastInterestPaidDate { get; set; }
 
+    /// <summary>
+    /// Concurrency token for optimistic locking across multiple workstations (PC1 and PC2).
+    /// Prevents simultaneous overwrite when two cashiers update or close the same loan.
+    /// </summary>
+    [ConcurrencyCheck]
+    public int ConcurrencyVersion { get; set; } = 1;
+
     // ── Soft Delete ──────────────────────────────────────────────────
 
     /// <inheritdoc />

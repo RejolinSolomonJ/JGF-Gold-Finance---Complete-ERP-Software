@@ -1,0 +1,147 @@
+<UserControl x:Class="JGF.Desktop.Views.Controls.DataMigrationControl"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             Background="White">
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <Grid Margin="20">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+
+            <!-- 1. Header Banner -->
+            <Border Grid.Row="0" Background="#1E1E1E" Padding="16" CornerRadius="6" Margin="0,0,0,16">
+                <DockPanel LastChildFill="True">
+                    <StackPanel Orientation="Horizontal" DockPanel.Dock="Right" VerticalAlignment="Center">
+                        <TextBlock Text="Role: Owner Only" Foreground="#B8860B" FontWeight="Bold" Margin="0,0,12,0"/>
+                        <Border Background="#2E7D32" CornerRadius="4" Padding="8,4">
+                            <TextBlock Text="● Zero-Data-Loss Safety Mode Active" Foreground="White" FontSize="11" FontWeight="SemiBold"/>
+                        </Border>
+                    </StackPanel>
+                    <StackPanel>
+                        <TextBlock Text="DATA MIGRATION TOOL (LEGACY SYSTEM IMPORT)" Foreground="#DAA520" FontWeight="Bold" FontSize="18"/>
+                        <TextBlock Text="Import legacy CSV / Excel data (Customers, Loans, Jewels, Receipts, Bank Pledges, Opening Ledger) with dry-run validation and financial reconciliation." Foreground="#CCCCCC" FontSize="12" Margin="0,4,0,0"/>
+                    </StackPanel>
+                </DockPanel>
+            </Border>
+
+            <!-- 2. Migration Configuration & Controls -->
+            <Grid Grid.Row="1" Margin="0,0,0,16">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="380"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+
+                <!-- Left Panel: File Selection & Options -->
+                <Border Grid.Column="0" Background="#F9F9F9" BorderBrush="#E0E0E0" BorderThickness="1" CornerRadius="6" Padding="16" Margin="0,0,16,0">
+                    <StackPanel>
+                        <TextBlock Text="1. SELECT ENTITY TO MIGRATE" FontWeight="Bold" Foreground="#333333"/>
+                        <ComboBox x:Name="CmbEntityType" Margin="0,6,0,16" SelectedIndex="0" SelectionChanged="OnEntityTypeChanged">
+                            <ComboBoxItem Content="1. Customers Master"/>
+                            <ComboBoxItem Content="2. Active Loans &amp; Jewel Items"/>
+                            <ComboBoxItem Content="3. Historical Receipts / Payments"/>
+                            <ComboBoxItem Content="4. Bank Re-Pledges"/>
+                            <ComboBoxItem Content="5. Opening Ledger Balances"/>
+                        </ComboBox>
+
+                        <TextBlock Text="2. CHOOSE LEGACY EXPORT FILE" FontWeight="Bold" Foreground="#333333"/>
+                        <DockPanel Margin="0,6,0,16">
+                            <Button Content="📂 Browse..." Width="90" DockPanel.Dock="Right" Background="#1565C0" Click="OnBrowseFileClick"/>
+                            <TextBox x:Name="TxtFilePath" IsReadOnly="True" Text="Select .csv or .xlsx file..." Margin="0,0,8,0" Background="#F0F0F0"/>
+                        </DockPanel>
+
+                        <TextBlock Text="3. MIGRATION SAFETY" FontWeight="Bold" Foreground="#333333"/>
+                        <CheckBox x:Name="ChkDryRun" Content="🔍 Dry-Run Mode (Validate &amp; test without database commit)" IsChecked="True" FontWeight="SemiBold" Margin="0,6,0,16" Foreground="#D32F2F"/>
+
+                        <Separator Margin="0,0,0,16"/>
+
+                        <!-- Action Buttons -->
+                        <Button x:Name="BtnValidate" Content="🔍 Run Validation &amp; Dry-Run" Background="#1565C0" FontWeight="Bold" Height="36" Click="OnRunDryRunClick"/>
+                        <Button x:Name="BtnExecute" Content="🚀 Execute Live Migration" Background="#2E7D32" FontWeight="Bold" Height="36" Margin="0,8,0,0" Click="OnExecuteMigrationClick"/>
+                    </StackPanel>
+                </Border>
+
+                <!-- Right Panel: Expected Totals & Reconciliation Baseline -->
+                <Border Grid.Column="1" Background="#F9F9F9" BorderBrush="#E0E0E0" BorderThickness="1" CornerRadius="6" Padding="16">
+                    <StackPanel>
+                        <DockPanel LastChildFill="True">
+                            <Button Content="🔄 Refresh System Audit" DockPanel.Dock="Right" Width="160" Background="#455A64" Click="OnRefreshAuditClick"/>
+                            <TextBlock Text="RECONCILIATION BASELINE (OLD SYSTEM TOTALS)" FontWeight="Bold" Foreground="#333333"/>
+                        </DockPanel>
+                        <TextBlock Text="Enter the closing totals from your previous software to verify zero-rupee reconciliation." Foreground="#777777" FontSize="11" Margin="0,2,0,12"/>
+
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+
+                            <StackPanel Grid.Row="0" Grid.Column="0" Margin="0,0,8,8">
+                                <TextBlock Text="Old System Outstanding Principal (₹):" FontSize="11" Foreground="#555"/>
+                                <TextBox x:Name="TxtOldPrincipal" Text="0.00"/>
+                            </StackPanel>
+
+                            <StackPanel Grid.Row="0" Grid.Column="1" Margin="8,0,0,8">
+                                <TextBlock Text="Old System Interest Received (₹):" FontSize="11" Foreground="#555"/>
+                                <TextBox x:Name="TxtOldInterest" Text="0.00"/>
+                            </StackPanel>
+
+                            <StackPanel Grid.Row="1" Grid.Column="0" Margin="0,0,8,0">
+                                <TextBlock Text="Old System Cash Balance (₹):" FontSize="11" Foreground="#555"/>
+                                <TextBox x:Name="TxtOldCash" Text="0.00"/>
+                            </StackPanel>
+
+                            <StackPanel Grid.Row="1" Grid.Column="1" Margin="8,0,0,0">
+                                <TextBlock Text="Old System Bank Repledge Outstanding (₹):" FontSize="11" Foreground="#555"/>
+                                <TextBox x:Name="TxtOldBank" Text="0.00"/>
+                            </StackPanel>
+                        </Grid>
+
+                        <!-- Live Reconciliation Audit Summary Card -->
+                        <Border x:Name="BorderReconciliation" Background="#E8F5E9" BorderBrush="#4CAF50" BorderThickness="1" CornerRadius="4" Padding="12" Margin="0,12,0,0">
+                            <StackPanel>
+                                <TextBlock x:Name="TxtReconTitle" Text="✔ Zero Difference Reconciliation Status" FontWeight="Bold" Foreground="#2E7D32"/>
+                                <TextBlock x:Name="TxtReconDetails" Text="Principal Diff: ₹0.00 | Interest Diff: ₹0.00 | Cash Diff: ₹0.00 | Bank Diff: ₹0.00" Foreground="#1B5E20" Margin="0,4,0,0"/>
+                                <TextBlock x:Name="TxtIntegrityStatus" Text="Accounting Integrity Check: All Vouchers Balanced (Diff: ₹0.00)" Foreground="#2E7D32" FontWeight="SemiBold" FontSize="11" Margin="0,2,0,0"/>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                </Border>
+            </Grid>
+
+            <!-- 3. Validation Logs & Error Grid -->
+            <Border Grid.Row="2" Background="White" BorderBrush="#E0E0E0" BorderThickness="1" CornerRadius="6" Padding="16">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+
+                    <DockPanel Grid.Row="0" Margin="0,0,0,8">
+                        <StackPanel Orientation="Horizontal" DockPanel.Dock="Right">
+                            <TextBlock x:Name="TxtStats" Text="Rows Read: 0 | Valid: 0 | Errors: 0" VerticalAlignment="Center" FontWeight="SemiBold" Margin="0,0,16,0"/>
+                            <Button Content="📊 Export Error Report to Excel" Background="#388E3C" Click="OnExportReportClick"/>
+                        </StackPanel>
+                        <TextBlock Text="VALIDATION LOG &amp; ERROR AUDIT REPORT" FontWeight="Bold" Foreground="#333333" VerticalAlignment="Center"/>
+                    </DockPanel>
+
+                    <DataGrid x:Name="DgErrors" Grid.Row="1" AutoGenerateColumns="False" IsReadOnly="True" MinHeight="250" MaxHeight="400"
+                              GridLinesVisibility="Horizontal" HeadersVisibility="Column" Background="White">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="Row #" Binding="{Binding RowIndex}" Width="60"/>
+                            <DataGridTextColumn Header="Identifier" Binding="{Binding Identifier}" Width="140"/>
+                            <DataGridTextColumn Header="Column" Binding="{Binding ColumnName}" Width="120"/>
+                            <DataGridTextColumn Header="Severity" Binding="{Binding Severity}" Width="90"/>
+                            <DataGridTextColumn Header="Detailed Error / Warning Message" Binding="{Binding Message}" Width="*"/>
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </Grid>
+            </Border>
+        </Grid>
+    </ScrollViewer>
+</UserControl>

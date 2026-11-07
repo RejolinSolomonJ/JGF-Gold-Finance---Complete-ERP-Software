@@ -63,6 +63,7 @@
                 <MenuItem Header="Number Series" Click="OnNumberSeriesClick"/>
                 <Separator/>
                 <MenuItem Header="Audit Trail (Owner Only)" x:Name="MenuAuditLog" Click="OnAuditLogClick"/>
+                <MenuItem Header="Data Migration &amp; Legacy Import (Owner Only)" x:Name="MenuDataMigration" Click="OnDataMigrationClick"/>
                 <MenuItem Header="Database Backup &amp; Test Restore" Click="OnBackupSettingsClick"/>
                 <MenuItem Header="Database Connection Settings (PC2 / LAN)" Click="OnDbSettingsClick"/>
             </MenuItem>

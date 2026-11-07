@@ -64,6 +64,24 @@ public partial class DbConnectionSettingsControl : UserControl
         return $"Host={TxtHost.Text.Trim()};Port={TxtPort.Text.Trim()};Database={TxtDatabase.Text.Trim()};Username={TxtUsername.Text.Trim()};Password={TxtPassword.Password};SSL Mode={ssl}";
     }
 
+    private async Task EnsureDatabaseExistsAsync()
+    {
+        var targetDb = TxtDatabase.Text.Trim();
+        var ssl = (CmbSslMode.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? "Prefer";
+        var adminConnStr = $"Host={TxtHost.Text.Trim()};Port={TxtPort.Text.Trim()};Database=postgres;Username={TxtUsername.Text.Trim()};Password={TxtPassword.Password};SSL Mode={ssl}";
+
+        using var adminConn = new NpgsqlConnection(adminConnStr);
+        await adminConn.OpenAsync();
+
+        using var checkCmd = new NpgsqlCommand($"SELECT 1 FROM pg_database WHERE datname = '{targetDb}'", adminConn);
+        var exists = await checkCmd.ExecuteScalarAsync();
+        if (exists == null)
+        {
+            using var createCmd = new NpgsqlCommand($"CREATE DATABASE \"{targetDb}\"", adminConn);
+            await createCmd.ExecuteNonQueryAsync();
+        }
+    }
+
     private async void OnTestConnectionClick(object sender, RoutedEventArgs e)
     {
         var connStr = BuildConnectionString();
@@ -72,10 +90,38 @@ public partial class DbConnectionSettingsControl : UserControl
             using var conn = new NpgsqlConnection(connStr);
             await conn.OpenAsync();
 
-            TxtTestResult.Text = $"Connection Successful! Connected to PostgreSQL server on {TxtHost.Text}.";
+            TxtTestResult.Text = $"Connection Successful! Connected to PostgreSQL database \"{TxtDatabase.Text}\".";
             BorderTestResult.Background = System.Windows.Media.Brushes.Honeydew;
             TxtTestResult.Foreground = System.Windows.Media.Brushes.DarkGreen;
             BorderTestResult.Visibility = Visibility.Visible;
+        }
+        catch (PostgresException pex) when (pex.SqlState == "3D000")
+        {
+            try
+            {
+                TxtTestResult.Text = $"Database \"{TxtDatabase.Text}\" does not exist yet. Creating database now...";
+                BorderTestResult.Background = System.Windows.Media.Brushes.LightYellow;
+                TxtTestResult.Foreground = System.Windows.Media.Brushes.DarkGoldenrod;
+                BorderTestResult.Visibility = Visibility.Visible;
+
+                await EnsureDatabaseExistsAsync();
+
+                // Re-test connection to the newly created database
+                using var conn = new NpgsqlConnection(connStr);
+                await conn.OpenAsync();
+
+                TxtTestResult.Text = $"Database \"{TxtDatabase.Text}\" created and connected successfully!";
+                BorderTestResult.Background = System.Windows.Media.Brushes.Honeydew;
+                TxtTestResult.Foreground = System.Windows.Media.Brushes.DarkGreen;
+                BorderTestResult.Visibility = Visibility.Visible;
+            }
+            catch (Exception ex)
+            {
+                TxtTestResult.Text = $"Failed to create database: {ex.Message}";
+                BorderTestResult.Background = System.Windows.Media.Brushes.MistyRose;
+                TxtTestResult.Foreground = System.Windows.Media.Brushes.DarkRed;
+                BorderTestResult.Visibility = Visibility.Visible;
+            }
         }
         catch (Exception ex)
         {
@@ -92,6 +138,13 @@ public partial class DbConnectionSettingsControl : UserControl
 
         try
         {
+            // Auto ensure database exists before saving
+            try
+            {
+                await EnsureDatabaseExistsAsync();
+            }
+            catch { }
+
             var json = JsonSerializer.Serialize(new
             {
                 ConnectionStrings = new

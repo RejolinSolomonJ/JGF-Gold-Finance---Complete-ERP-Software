@@ -150,6 +150,12 @@ public class Customer : AuditableEntity, ISoftDeletable
     [MaxLength(1000)]
     public string? Notes { get; set; }
 
+    /// <summary>
+    /// Concurrency token for optimistic locking across multiple workstations.
+    /// </summary>
+    [ConcurrencyCheck]
+    public int ConcurrencyVersion { get; set; } = 1;
+
     // ── Soft Delete ──────────────────────────────────────────────────
 
     /// <inheritdoc />

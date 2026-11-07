@@ -1,0 +1,52 @@
+<Window x:Class="JGF.Desktop.Views.ScreenLockDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Screen Locked — JGF Security"
+        Height="360" Width="480"
+        WindowStartupLocation="CenterScreen"
+        WindowStyle="None"
+        ResizeMode="NoResize"
+        BorderBrush="#DAA520"
+        BorderThickness="3"
+        Topmost="True"
+        Background="#1E1E1E">
+    <Grid Margin="24">
+        <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Width="360">
+            <!-- Security Icon & Title -->
+            <TextBlock Text="🔒" FontSize="36" HorizontalAlignment="Center" Margin="0,0,0,6"/>
+            <TextBlock Text="SESSION LOCKED FOR SECURITY" Foreground="#DAA520" FontWeight="Bold" FontSize="16" HorizontalAlignment="Center"/>
+            <TextBlock Text="Screen locked due to user inactivity (10-minute timeout)." Foreground="#AAAAAA" FontSize="11" HorizontalAlignment="Center" Margin="0,2,0,16"/>
+
+            <!-- Current User info -->
+            <Border Background="#2B2B2B" CornerRadius="4" Padding="12" Margin="0,0,0,16">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Text="👤" FontSize="24" VerticalAlignment="Center" Margin="0,0,12,0"/>
+                    <StackPanel Grid.Column="1">
+                        <TextBlock x:Name="TxtLockedUser" Text="Rejolin Solomon (Owner)" Foreground="White" FontWeight="Bold" FontSize="14"/>
+                        <TextBlock x:Name="TxtLockedUsername" Text="Username: admin" Foreground="#888888" FontSize="11"/>
+                    </StackPanel>
+                </Grid>
+            </Border>
+
+            <!-- Password Input -->
+            <TextBlock Text="Enter your password to resume session:" Foreground="#CCCCCC" FontSize="12" Margin="0,0,0,4"/>
+            <PasswordBox x:Name="TxtPassword" Height="32" FontSize="14" Padding="4" Margin="0,0,0,8" KeyDown="OnPasswordKeyDown"/>
+
+            <TextBlock x:Name="TxtError" Text="" Foreground="#FF5252" FontSize="11" FontWeight="SemiBold" Margin="0,0,0,12" Visibility="Collapsed"/>
+
+            <!-- Action buttons -->
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+                <Button Content="🚪 Switch User / Log Out" Grid.Column="0" Margin="0,0,6,0" Background="#424242" Click="OnLogoutClick"/>
+                <Button Content="🔓 Unlock Screen" Grid.Column="1" Margin="6,0,0,0" Background="#2E7D32" FontWeight="Bold" Click="OnUnlockClick"/>
+            </Grid>
+        </StackPanel>
+    </Grid>
+</Window>

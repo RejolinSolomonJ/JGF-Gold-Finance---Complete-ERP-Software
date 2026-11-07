@@ -52,7 +52,13 @@ public partial class App : System.Windows.Application
 
                     services.AddDbContext<JgfDbContext>(opts =>
                     {
-                        opts.UseNpgsql(connStr);
+                        opts.UseNpgsql(connStr, npgsqlOpts =>
+                        {
+                            npgsqlOpts.EnableRetryOnFailure(
+                                maxRetryCount: 5,
+                                maxRetryDelay: TimeSpan.FromSeconds(5),
+                                errorCodesToAdd: null);
+                        });
                     });
 
                     // Core Security & Auth
@@ -86,6 +92,7 @@ public partial class App : System.Windows.Application
                     services.AddScoped<ILoanService, LoanService>();
                     services.AddScoped<IReceiptService, ReceiptService>();
                     services.AddScoped<IOverdueNoticeService, OverdueNoticeService>();
+                    services.AddScoped<JGF.Application.Migration.IDataMigrationService, DataMigrationService>();
 
                     // ViewModels & Views
                     services.AddSingleton<Views.MainWindow>();

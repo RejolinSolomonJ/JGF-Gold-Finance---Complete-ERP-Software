@@ -19,6 +19,9 @@ public partial class MainWindow : Window
     private readonly IServiceProvider _services;
     private readonly IPermissionService _permissionService;
     private User? _currentUser;
+    private DateTime _lastActivityUtc = DateTime.UtcNow;
+    private readonly System.Windows.Threading.DispatcherTimer _inactivityTimer = new();
+    private bool _isScreenLocked;
 
     public MainWindow(IServiceProvider services, IPermissionService permissionService)
     {
@@ -27,6 +30,54 @@ public partial class MainWindow : Window
         _permissionService = permissionService;
 
         Loaded += OnWindowLoaded;
+
+        // In-app Security Screen Lock Setup
+        PreviewMouseMove += (s, e) => ResetInactivity();
+        PreviewKeyDown += (s, e) => ResetInactivity();
+        PreviewMouseDown += (s, e) => ResetInactivity();
+
+        _inactivityTimer.Interval = TimeSpan.FromSeconds(30);
+        _inactivityTimer.Tick += OnInactivityTick;
+        _inactivityTimer.Start();
+    }
+
+    private void ResetInactivity()
+    {
+        _lastActivityUtc = DateTime.UtcNow;
+    }
+
+    private void OnInactivityTick(object? sender, EventArgs e)
+    {
+        if (_currentUser != null && !_isScreenLocked && DateTime.UtcNow - _lastActivityUtc >= TimeSpan.FromMinutes(10))
+        {
+            LockScreen();
+        }
+    }
+
+    private void LockScreen()
+    {
+        if (_currentUser == null || _isScreenLocked) return;
+
+        _isScreenLocked = true;
+        try
+        {
+            var hasher = _services.GetRequiredService<IPasswordHasher>();
+            var lockDlg = new ScreenLockDialog(_currentUser, hasher);
+            var unlocked = lockDlg.ShowDialog();
+
+            if (lockDlg.ShouldLogout || unlocked != true)
+            {
+                // Restart login flow
+                _currentUser = null;
+                MainContentArea.Content = null;
+                OnWindowLoaded(this, new RoutedEventArgs());
+            }
+        }
+        finally
+        {
+            _isScreenLocked = false;
+            ResetInactivity();
+        }
     }
 
     private async void OnWindowLoaded(object sender, RoutedEventArgs e)
@@ -90,6 +141,7 @@ public partial class MainWindow : Window
 
         // Configure Role-Based Menu Visibility
         MenuAuditLog.Visibility = (user.Role == UserRole.Owner) ? Visibility.Visible : Visibility.Collapsed;
+        MenuDataMigration.Visibility = (user.Role == UserRole.Owner) ? Visibility.Visible : Visibility.Collapsed;
         MenuRepledge.Visibility = _permissionService.HasPermission(user.Role, Permission.ManageBankRepledge) ? Visibility.Visible : Visibility.Collapsed;
         MenuNoticesAuction.Visibility = _permissionService.HasPermission(user.Role, Permission.ManageAuction) ? Visibility.Visible : Visibility.Collapsed;
         MenuAccounts.Visibility = _permissionService.HasPermission(user.Role, Permission.ViewAccounts) ? Visibility.Visible : Visibility.Collapsed;
@@ -163,6 +215,17 @@ public partial class MainWindow : Window
             return;
         }
         var view = new Controls.AuditLogControl(_services.GetRequiredService<IAuditService>());
+        MainContentArea.Content = view;
+    }
+
+    private void OnDataMigrationClick(object sender, RoutedEventArgs e)
+    {
+        if (_currentUser?.Role != UserRole.Owner)
+        {
+            MessageBox.Show("Data Migration is restricted to Owner only.", "Access Denied", MessageBoxButton.OK, MessageBoxImage.Warning);
+            return;
+        }
+        var view = new Controls.DataMigrationControl(_services.GetRequiredService<JGF.Application.Migration.IDataMigrationService>());
         MainContentArea.Content = view;
     }
 
