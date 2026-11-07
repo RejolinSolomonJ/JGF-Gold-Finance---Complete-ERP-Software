@@ -77,3 +77,4 @@ public class ConcurrencyTests
         await act.Should().ThrowAsync<DbUpdateConcurrencyException>();
     }
 }
+

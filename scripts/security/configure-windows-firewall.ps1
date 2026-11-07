@@ -1,4 +1,4 @@
-﻿<#
+<#
 .SYNOPSIS
     Configures Windows Advanced Firewall for JGF Gold-Loan Finance 2-PC LAN deployment.
 .DESCRIPTION
@@ -52,3 +52,4 @@ Write-Host "    - Port: 5432 (TCP)" -ForegroundColor Gray
 Write-Host "    - Allowed Remotes: 127.0.0.1 (PC1 Local), $Pc2IpAddress (PC2 LAN)" -ForegroundColor Gray
 Write-Host "    - Network Profiles: Domain & Private ONLY (Public networks completely blocked)" -ForegroundColor Gray
 Write-Host "`n✔ Firewall Hardening Complete!" -ForegroundColor Cyan
+

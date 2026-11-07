@@ -1,4 +1,4 @@
-﻿<#
+<#
 .SYNOPSIS
     Silent Updater and Database Schema Migration Runner for JGF Gold-Loan Finance.
 .DESCRIPTION
@@ -67,3 +67,4 @@ if (Test-Path $appExe) {
 
 Write-Host "`n✔ JGF Update Completed Successfully!" -ForegroundColor Cyan
 Write-Host "Backup snapshot retained at: $backupDir" -ForegroundColor Gray
+

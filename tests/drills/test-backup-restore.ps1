@@ -1,4 +1,4 @@
-﻿<#
+<#
 .SYNOPSIS
     Production Backup and Test Restore Drill for JGF Jewel Gold Finance.
 .DESCRIPTION
@@ -92,3 +92,4 @@ if ($allMatch) {
     Write-Host "✖ DRILL FAILED: Table count mismatches detected." -ForegroundColor Red
 }
 Write-Host "==========================================================" -ForegroundColor Cyan
+

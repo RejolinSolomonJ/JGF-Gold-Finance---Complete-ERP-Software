@@ -9,6 +9,7 @@ using JGF.Application.Reports;
 using JGF.Application.Repledge;
 using JGF.Application.Security;
 using JGF.Application.Services;
+using JGF.Application.Updates;
 using JGF.Infrastructure.Persistence;
 using JGF.Infrastructure.Persistence.Seed;
 using JGF.Infrastructure.Services;
@@ -93,6 +94,7 @@ public partial class App : System.Windows.Application
                     services.AddScoped<IReceiptService, ReceiptService>();
                     services.AddScoped<IOverdueNoticeService, OverdueNoticeService>();
                     services.AddScoped<JGF.Application.Migration.IDataMigrationService, DataMigrationService>();
+                    services.AddScoped<ISafeUpdateService, SafeUpdateService>();
 
                     // ViewModels & Views
                     services.AddSingleton<Views.MainWindow>();

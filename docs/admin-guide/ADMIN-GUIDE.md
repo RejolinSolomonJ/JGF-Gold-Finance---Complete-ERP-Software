@@ -61,6 +61,7 @@
 
 ### Disaster Restore Procedure
 If PC1 hardware suffers failure or data corruption:
+*(For comprehensive step-by-step rollback of failed application updates, see [ROLLBACK-AND-UPDATE-GUIDE.md](file:///c:/Users/Rejolin%20Solomon%20J/Downloads/JGF%20Finance%20Software/docs/admin-guide/ROLLBACK-AND-UPDATE-GUIDE.md)).*
 1. Provision replacement PC with Windows 11 and install PostgreSQL 18.
 2. Open PowerShell as Administrator.
 3. Run the automated restore verification script or command:
@@ -98,3 +99,4 @@ Under the Tamil Nadu Pawn Brokers Act, rate structures can be adjusted per schem
    - **Grace Period**: Number of days before penal or next slab triggers.
    - **Slab Rules**: e.g. 12% for months 1–3, 15% for months 4–6, 18% for months 7–12.
 4. Changes apply prospectively to new loans or next interest calculations as configured.
+

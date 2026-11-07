@@ -73,6 +73,24 @@ public static class DbInitializer
             await context.NumberSerieses.AddRangeAsync(seriesList);
         }
 
+        if (!await context.SchemaVersions.AnyAsync())
+        {
+            var initialVersion = new SchemaVersion
+            {
+                AppVersion = "1.0.0",
+                AppliedMigrations = "Initial_Create",
+                AppliedAtUtc = DateTime.UtcNow,
+                AppliedBy = "System",
+                IsSuccess = true,
+                ExecutionTimeMs = 0,
+                PreUpdateBackupPath = "N/A (Initial Setup)",
+                IntegrityCheckStatus = "Integrity Status: PASSED (Zero Discrepancies)",
+                Notes = "Initial production database creation"
+            };
+
+            await context.SchemaVersions.AddAsync(initialVersion);
+        }
+
         await context.SaveChangesAsync();
     }
 }

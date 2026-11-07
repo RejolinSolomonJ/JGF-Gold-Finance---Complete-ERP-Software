@@ -15,5 +15,8 @@ public enum BackupType
     Manual,
 
     /// <summary>Automatically scheduled backup.</summary>
-    Scheduled
+    Scheduled,
+
+    /// <summary>Mandatory automated backup taken immediately prior to applying a schema migration or software update.</summary>
+    PreUpdate
 }

@@ -1,4 +1,4 @@
-﻿<#
+<#
 .SYNOPSIS
     Automated Production Installer for PC1 (Server + Primary Counter).
 .DESCRIPTION
@@ -108,3 +108,4 @@ $shortcut.Save()
 
 Write-Host "[+] Desktop shortcut created." -ForegroundColor Green
 Write-Host "`n✔ PC1 Server Installation Completed Successfully!" -ForegroundColor Cyan
+

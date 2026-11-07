@@ -1,4 +1,4 @@
-﻿<#
+<#
 .SYNOPSIS
     Hardens PostgreSQL for JGF Gold-Loan Finance Software in a 2-PC Production Environment.
 .DESCRIPTION
@@ -160,3 +160,4 @@ if ($pgService) {
 
 Write-Host "`n✔ PostgreSQL Hardening Complete!" -ForegroundColor Cyan
 Write-Host "Next Step: Run 'psql -U postgres -f create_jgf_app_role.sql' to apply the jgf_app role." -ForegroundColor Yellow
+

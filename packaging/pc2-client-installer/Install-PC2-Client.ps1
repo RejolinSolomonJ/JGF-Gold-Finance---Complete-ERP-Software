@@ -1,4 +1,4 @@
-﻿<#
+<#
 .SYNOPSIS
     Automated Production Installer for PC2 (Secondary Counter / Cashier Client).
 .DESCRIPTION
@@ -86,3 +86,4 @@ $shortcut.Save()
 
 Write-Host "[+] Desktop shortcut created for Counter 2." -ForegroundColor Green
 Write-Host "`n✔ PC2 Client Installation Completed Successfully!" -ForegroundColor Cyan
+

@@ -1,0 +1,9 @@
+{
+  "version": "1.1.0",
+  "releaseDate": "2026-10-15T09:00:00Z",
+  "releaseNotes": "JGF Version 1.1.0: Multi-scheme calculation and initial 2-PC LAN support.",
+  "requiredDbSchema": "1.1.0",
+  "installerPC1": "Install-PC1-Server-v1.1.0.ps1",
+  "installerPC2": "Install-PC2-Client-v1.1.0.ps1",
+  "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+}

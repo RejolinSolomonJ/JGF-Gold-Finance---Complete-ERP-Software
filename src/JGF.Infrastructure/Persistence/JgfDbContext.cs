@@ -91,6 +91,9 @@ public class JgfDbContext : DbContext
     /// <summary>System backup logs.</summary>
     public DbSet<BackupLog> BackupLogs => Set<BackupLog>();
 
+    /// <summary>Application and database schema versions history.</summary>
+    public DbSet<SchemaVersion> SchemaVersions => Set<SchemaVersion>();
+
     // ──────────────────────────────────────────────────────────────────────────
 
     public JgfDbContext(DbContextOptions<JgfDbContext> options) : base(options)

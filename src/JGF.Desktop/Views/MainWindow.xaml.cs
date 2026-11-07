@@ -8,6 +8,7 @@ using JGF.Application.Reports;
 using JGF.Application.Repledge;
 using JGF.Application.Security;
 using JGF.Application.Services;
+using JGF.Application.Updates;
 using JGF.Domain.Entities;
 using JGF.Domain.Enums;
 using Microsoft.Extensions.DependencyInjection;
@@ -90,6 +91,8 @@ public partial class MainWindow : Window
         try
         {
             var authService = _services.GetRequiredService<IAuthService>();
+            var updateService = _services.GetRequiredService<ISafeUpdateService>();
+
             if (await authService.IsFirstRunAsync())
             {
                 var wizard = new FirstRunWizardDialog(authService);
@@ -98,6 +101,22 @@ public partial class MainWindow : Window
                     Close();
                     return;
                 }
+            }
+
+            // Version check prior to login: If app is older than DB, block login!
+            var versionStatus = await updateService.CheckVersionStatusAsync();
+            if (versionStatus.Status == VersionComparisonResult.AppOlderThanDb)
+            {
+                MessageBox.Show(
+                    $"Please update this PC to version {versionStatus.DatabaseVersion.Raw}.\n\n" +
+                    $"Current Application Version: {versionStatus.CurrentAppVersion.Raw}\n" +
+                    $"Database Schema Version: {versionStatus.DatabaseVersion.Raw}\n\n" +
+                    "The database has been updated. You must install the latest JGF update before using this workstation.",
+                    "Update Required",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Stop);
+                Close();
+                return;
             }
 
             // Prompt Login
@@ -109,6 +128,44 @@ public partial class MainWindow : Window
             }
 
             _currentUser = loginDlg.AuthenticatedUser;
+
+            // If app is newer than DB and pending migrations exist:
+            if (versionStatus.Status == VersionComparisonResult.AppNewerThanDb)
+            {
+                if (_currentUser.Role == UserRole.Cashier)
+                {
+                    MessageBox.Show(
+                        "System update pending, contact the owner.\n\n" +
+                        $"The database must be upgraded to version {versionStatus.CurrentAppVersion.Raw} by the Owner or Manager before cashier operations can proceed.",
+                        "System Update Pending",
+                        MessageBoxButton.OK,
+                        MessageBoxImage.Warning);
+                    Close();
+                    return;
+                }
+                else
+                {
+                    var askUpgrade = MessageBox.Show(
+                        $"Database schema upgrade required!\n\n" +
+                        $"Database Version: {versionStatus.DatabaseVersion.Raw}\n" +
+                        $"Application Version: {versionStatus.CurrentAppVersion.Raw}\n\n" +
+                        "Would you like to open the Safe Update Wizard now to perform the verified pre-update backup and schema upgrade?",
+                        "Database Update Pending",
+                        MessageBoxButton.YesNo,
+                        MessageBoxImage.Question);
+
+                    if (askUpgrade == MessageBoxResult.Yes)
+                    {
+                        var wizard = new SafeUpdateWizardDialog(updateService, _services) { Owner = this };
+                        wizard.ShowDialog();
+                    }
+                }
+            }
+
+            // Record workstation heartbeat
+            var workstationName = Environment.MachineName.ToLowerInvariant().Contains("pc2") ? "PC2" : "PC1";
+            await updateService.RecordWorkstationHeartbeatAsync(workstationName, _currentUser.Username);
+
             TxtDbStatus.Text = "● DB: Connected (LAN PC1)";
             TxtDbStatus.Foreground = System.Windows.Media.Brushes.LightGreen;
             ApplyUserSession(_currentUser);
@@ -146,6 +203,7 @@ public partial class MainWindow : Window
         MenuNoticesAuction.Visibility = _permissionService.HasPermission(user.Role, Permission.ManageAuction) ? Visibility.Visible : Visibility.Collapsed;
         MenuAccounts.Visibility = _permissionService.HasPermission(user.Role, Permission.ViewAccounts) ? Visibility.Visible : Visibility.Collapsed;
         MenuSettings.Visibility = (user.Role == UserRole.Owner || user.Role == UserRole.Manager) ? Visibility.Visible : Visibility.Collapsed;
+        MenuSafeUpdate.Visibility = (user.Role == UserRole.Owner || user.Role == UserRole.Manager) ? Visibility.Visible : Visibility.Collapsed;
 
         // Check recent backup warning
         _ = CheckBackupStatusAsync();
@@ -343,6 +401,21 @@ public partial class MainWindow : Window
         var view = new Controls.DayEndCloseControl(_services.GetRequiredService<IDayCloseService>());
         MainContentArea.Content = view;
     }
+
+    private void OnSafeUpdateWizardClick(object sender, RoutedEventArgs e)
+    {
+        var updateService = _services.GetRequiredService<ISafeUpdateService>();
+        var dlg = new SafeUpdateWizardDialog(updateService, _services) { Owner = this };
+        dlg.ShowDialog();
+    }
+
+    private void OnAboutClick(object sender, RoutedEventArgs e)
+    {
+        var updateService = _services.GetRequiredService<ISafeUpdateService>();
+        var dlg = new AboutDialog(updateService, _services) { Owner = this };
+        dlg.ShowDialog();
+    }
+
     private void OnExitClick(object sender, RoutedEventArgs e) => Close();
 }
 

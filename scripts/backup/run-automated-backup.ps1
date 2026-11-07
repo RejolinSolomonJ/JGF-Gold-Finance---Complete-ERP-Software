@@ -58,3 +58,4 @@ if (Test-Path $backupFile) {
 } else {
     Add-Content -Path $logFile -Value "[$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')] ERROR: Backup file was not generated."
 }
+

@@ -61,3 +61,4 @@ For daily offline backups:
 - [ ] **Daily Password Discipline**:
   - No shared logins: Cashier 1 must use account `cashier1`, Cashier 2 must use `cashier2`.
   - Passwords changed every 90 days.
+

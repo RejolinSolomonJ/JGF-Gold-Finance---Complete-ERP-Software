@@ -66,6 +66,9 @@
                 <MenuItem Header="Data Migration &amp; Legacy Import (Owner Only)" x:Name="MenuDataMigration" Click="OnDataMigrationClick"/>
                 <MenuItem Header="Database Backup &amp; Test Restore" Click="OnBackupSettingsClick"/>
                 <MenuItem Header="Database Connection Settings (PC2 / LAN)" Click="OnDbSettingsClick"/>
+                <Separator/>
+                <MenuItem Header="Safe Update Wizard (Owner / Manager)" x:Name="MenuSafeUpdate" Click="OnSafeUpdateWizardClick"/>
+                <MenuItem Header="About JGF &amp; System Version" Click="OnAboutClick"/>
             </MenuItem>
             <MenuItem Header="E_xit (Alt+F4)" Click="OnExitClick"/>
         </Menu>

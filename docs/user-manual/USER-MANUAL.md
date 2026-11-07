@@ -130,3 +130,4 @@ The software runs in a **2-PC LAN architecture**:
 3. Enable **Dry Run** mode to test data validity, check for duplicate phone numbers, verify item net weights, and view error logs.
 4. Click **Run Import** to commit records to the database.
 5. Review the automated **Reconciliation Summary** ensuring zero rupee discrepancy against legacy totals.
+

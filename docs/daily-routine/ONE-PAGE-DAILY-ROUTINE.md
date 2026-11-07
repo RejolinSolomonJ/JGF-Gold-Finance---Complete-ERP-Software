@@ -56,3 +56,4 @@
    - Exit JGF on PC2 and shut down PC2.
    - Exit JGF on PC1 and safely shut down PC1 via Windows Start Menu.
    - Turn off UPS power after PCs have completely powered down.
+

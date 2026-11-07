@@ -68,3 +68,4 @@ JGF incorporates enterprise-grade reliability patterns designed specifically for
 4. Close the JGF application on PC2, then shut down PC2.
 5. Close the JGF application on PC1, then perform a standard Windows **Start -> Shut down** on PC1.
 6. Switch off UPS only after PC1 has completely turned off.
+
