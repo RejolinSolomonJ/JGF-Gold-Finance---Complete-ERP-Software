@@ -8,31 +8,44 @@ using Microsoft.EntityFrameworkCore;
 
 namespace JGF.Infrastructure.Services;
 
-public class AccountingReportService : IAccountingReportService
+public class AccountingReportService : DbServiceBase, IAccountingReportService
 {
-    private readonly JgfDbContext _context;
     private readonly INumberSeriesService _numberSeries;
     private readonly IPermissionService _permissionService;
+
+    public AccountingReportService(
+        IDbContextFactory<JgfDbContext> contextFactory,
+        INumberSeriesService numberSeries,
+        IPermissionService permissionService)
+        : base(contextFactory)
+    {
+        _numberSeries = numberSeries;
+        _permissionService = permissionService;
+    }
 
     public AccountingReportService(
         JgfDbContext context,
         INumberSeriesService numberSeries,
         IPermissionService permissionService)
+        : base(context)
     {
-        _context = context;
         _numberSeries = numberSeries;
         _permissionService = permissionService;
     }
 
     public async Task<DayBookSummaryDto> GetDayBookAsync(DateOnly fromDate, DateOnly toDate, CancellationToken ct = default)
     {
+        await using var scope = await GetContextAsync(ct);
+        var context = scope.Context;
+
         // 1. Calculate Opening Cash prior to fromDate
-        var headCash = await _context.LedgerHeads.FirstOrDefaultAsync(l => l.Code == "1001", ct);
+        var headCash = await context.LedgerHeads.AsNoTracking().FirstOrDefaultAsync(l => l.Code == "1001", ct);
         decimal openingCash = headCash?.OpeningBalance ?? 0m;
 
         if (headCash != null)
         {
-            var priorCashLines = await _context.VoucherLines
+            var priorCashLines = await context.VoucherLines
+                .AsNoTracking()
                 .Include(vl => vl.Voucher)
                 .Where(vl => vl.LedgerHeadId == headCash.Id && vl.Voucher.IsPosted && vl.Voucher.VoucherDate < fromDate)
                 .ToListAsync(ct);
@@ -40,8 +53,9 @@ public class AccountingReportService : IAccountingReportService
             openingCash += priorCashLines.Sum(l => l.DebitAmount - l.CreditAmount);
         }
 
-        // 2. Fetch all voucher lines in the date range (excluding the Cash line itself to view counterparties)
-        var vouchers = await _context.Vouchers
+        // 2. Fetch all voucher lines in the date range
+        var vouchers = await context.Vouchers
+            .AsNoTracking()
             .Include(v => v.Lines).ThenInclude(l => l.LedgerHead)
             .Where(v => v.IsPosted && v.VoucherDate >= fromDate && v.VoucherDate <= toDate)
             .OrderBy(v => v.VoucherDate).ThenBy(v => v.VoucherNumber)
@@ -53,19 +67,15 @@ public class AccountingReportService : IAccountingReportService
 
         foreach (var v in vouchers)
         {
-            // In double-entry, if voucher type is Receipt, credit lines represent income/liability sources
-            // If voucher type is Payment, debit lines represent expense/asset uses
             foreach (var line in v.Lines)
             {
                 if (headCash != null && line.LedgerHeadId == headCash.Id)
                 {
-                    // Track cash movement
                     totalReceipts += line.DebitAmount;
                     totalPayments += line.CreditAmount;
                     continue;
                 }
 
-                // If non-cash line
                 var receiptAmt = (v.VoucherType == VoucherType.Receipt) ? line.CreditAmount : 0m;
                 var paymentAmt = (v.VoucherType == VoucherType.Payment) ? line.DebitAmount : 0m;
 
@@ -100,8 +110,12 @@ public class AccountingReportService : IAccountingReportService
 
     public async Task<TrialBalanceReportDto> GetTrialBalanceAsync(DateOnly asOfDate, CancellationToken ct = default)
     {
-        var heads = await _context.LedgerHeads.OrderBy(l => l.Code).ToListAsync(ct);
-        var lines = await _context.VoucherLines
+        await using var scope = await GetContextAsync(ct);
+        var context = scope.Context;
+
+        var heads = await context.LedgerHeads.AsNoTracking().OrderBy(l => l.Code).ToListAsync(ct);
+        var lines = await context.VoucherLines
+            .AsNoTracking()
             .Include(vl => vl.Voucher)
             .Where(vl => vl.Voucher.IsPosted && vl.Voucher.VoucherDate <= asOfDate)
             .ToListAsync(ct);
@@ -116,7 +130,6 @@ public class AccountingReportService : IAccountingReportService
             var totalDr = headLines.Sum(l => l.DebitAmount);
             var totalCr = headLines.Sum(l => l.CreditAmount);
 
-            // Factor in Opening Balance
             if (head.NormalBalance == "Debit") totalDr += head.OpeningBalance;
             else totalCr += head.OpeningBalance;
 
@@ -140,7 +153,11 @@ public class AccountingReportService : IAccountingReportService
 
     public async Task<ProfitAndLossReportDto> GetProfitAndLossAsync(DateOnly fromDate, DateOnly toDate, CancellationToken ct = default)
     {
-        var incomeLines = await _context.VoucherLines
+        await using var scope = await GetContextAsync(ct);
+        var context = scope.Context;
+
+        var incomeLines = await context.VoucherLines
+            .AsNoTracking()
             .Include(vl => vl.LedgerHead)
             .Include(vl => vl.Voucher)
             .Where(vl => vl.Voucher.IsPosted && 
@@ -149,7 +166,8 @@ public class AccountingReportService : IAccountingReportService
                          vl.LedgerHead.AccountGroup == LedgerHeadType.Income)
             .ToListAsync(ct);
 
-        var expenseLines = await _context.VoucherLines
+        var expenseLines = await context.VoucherLines
+            .AsNoTracking()
             .Include(vl => vl.LedgerHead)
             .Include(vl => vl.Voucher)
             .Where(vl => vl.Voucher.IsPosted && 
@@ -185,8 +203,12 @@ public class AccountingReportService : IAccountingReportService
 
     public async Task<BalanceSheetReportDto> GetBalanceSheetAsync(DateOnly asOfDate, CancellationToken ct = default)
     {
-        var heads = await _context.LedgerHeads.OrderBy(l => l.Code).ToListAsync(ct);
-        var lines = await _context.VoucherLines
+        await using var scope = await GetContextAsync(ct);
+        var context = scope.Context;
+
+        var heads = await context.LedgerHeads.AsNoTracking().OrderBy(l => l.Code).ToListAsync(ct);
+        var lines = await context.VoucherLines
+            .AsNoTracking()
             .Include(vl => vl.Voucher)
             .Where(vl => vl.Voucher.IsPosted && vl.Voucher.VoucherDate <= asOfDate)
             .ToListAsync(ct);
@@ -247,8 +269,11 @@ public class AccountingReportService : IAccountingReportService
 
     public async Task<AccountingIntegrityCheckDto> RunIntegrityAuditAsync(DateOnly asOfDate, CancellationToken ct = default)
     {
+        await using var scope = await GetContextAsync(ct);
+        var context = scope.Context;
+
         // 1. Audit Vouchers where TotalDebit != TotalCredit
-        var vouchers = await _context.Vouchers.Include(v => v.Lines).Where(v => v.IsPosted).ToListAsync(ct);
+        var vouchers = await context.Vouchers.AsNoTracking().Include(v => v.Lines).Where(v => v.IsPosted).ToListAsync(ct);
         var unbalanced = new List<string>();
 
         foreach (var v in vouchers)
@@ -270,7 +295,8 @@ public class AccountingReportService : IAccountingReportService
         var cashDiff = Math.Abs(dbSummary.ClosingCash - bsCash);
 
         // 4. Audit Loan Module Outstanding Principal vs Jewel Loan Ledger (1002)
-        var activeLoansPrincipal = await _context.Loans
+        var activeLoansPrincipal = await context.Loans
+            .AsNoTracking()
             .Where(l => l.Status == LoanStatus.Active || l.Status == LoanStatus.PartiallyPaid)
             .SumAsync(l => l.LoanAmount, ct);
 
@@ -278,7 +304,8 @@ public class AccountingReportService : IAccountingReportService
         var loanDiff = Math.Abs(activeLoansPrincipal - bsJewelLoan);
 
         // 5. Audit Bank Repledge Module vs Ledger (2001)
-        var activeRepledgeAmount = await _context.BankPledges
+        var activeRepledgeAmount = await context.BankPledges
+            .AsNoTracking()
             .Where(b => b.Status == BankPledgeStatus.Active || b.Status == BankPledgeStatus.PartiallyReleased)
             .SumAsync(b => b.DisbursedAmount, ct);
 
@@ -308,13 +335,17 @@ public class AccountingReportService : IAccountingReportService
     {
         _permissionService.EnsurePermission(dto.UserRole, Permission.ManageVouchers);
 
-        var targetHead = await _context.LedgerHeads.FindAsync(new object[] { dto.LedgerHeadId }, ct)
+        await using var scope = await GetContextAsync(ct);
+        var context = scope.Context;
+
+        var targetHead = await context.LedgerHeads.FindAsync(new object[] { dto.LedgerHeadId }, ct)
             ?? throw new ArgumentException("Ledger head not found.");
 
-        var cashHead = await _context.LedgerHeads.FirstOrDefaultAsync(l => l.Code == "1001", ct)
+        var cashHead = await context.LedgerHeads.FirstOrDefaultAsync(l => l.Code == "1001", ct)
             ?? throw new InvalidOperationException("Cash ledger head 1001 not configured.");
 
-        using var tx = await _context.Database.BeginTransactionAsync(ct);
+        var isRelational = context.Database.IsRelational();
+        using var tx = isRelational ? await context.Database.BeginTransactionAsync(ct) : null;
 
         var fy = "2024-25";
         var voucherNumber = await _numberSeries.GetNextNumberAsync(NumberSeriesType.VoucherNumber, fy, null, ct);
@@ -335,7 +366,6 @@ public class AccountingReportService : IAccountingReportService
 
         if (dto.VoucherType == VoucherType.Receipt)
         {
-            // Cash Inflow: Debit Cash, Credit Target Account (e.g. Capital, Income)
             voucher.Lines.Add(new VoucherLine
             {
                 LedgerHeadId = cashHead.Id,
@@ -356,7 +386,6 @@ public class AccountingReportService : IAccountingReportService
         }
         else // Payment
         {
-            // Cash Outflow: Debit Target Account (e.g. Rent, Salary, Drawings), Credit Cash
             voucher.Lines.Add(new VoucherLine
             {
                 LedgerHeadId = targetHead.Id,
@@ -376,11 +405,10 @@ public class AccountingReportService : IAccountingReportService
             });
         }
 
-        await _context.Vouchers.AddAsync(voucher, ct);
-        await _context.SaveChangesAsync(ct);
-        await tx.CommitAsync(ct);
+        await context.Vouchers.AddAsync(voucher, ct);
+        await context.SaveChangesAsync(ct);
+        if (tx != null) await tx.CommitAsync(ct);
 
         return voucher.VoucherNumber;
     }
 }
-

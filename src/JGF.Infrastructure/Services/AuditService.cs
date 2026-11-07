@@ -6,13 +6,16 @@ using Microsoft.EntityFrameworkCore;
 
 namespace JGF.Infrastructure.Services;
 
-public class AuditService : IAuditService
+public class AuditService : DbServiceBase, IAuditService
 {
-    private readonly JgfDbContext _context;
+    public AuditService(IDbContextFactory<JgfDbContext> contextFactory)
+        : base(contextFactory)
+    {
+    }
 
     public AuditService(JgfDbContext context)
+        : base(context)
     {
-        _context = context;
     }
 
     public async Task<List<AuditLog>> QueryAuditLogsAsync(
@@ -25,7 +28,8 @@ public class AuditService : IAuditService
         int take = 100,
         CancellationToken ct = default)
     {
-        var query = _context.AuditLogs.AsNoTracking().AsQueryable();
+        await using var scope = await GetContextAsync(ct);
+        var query = scope.Context.AuditLogs.AsNoTracking().AsQueryable();
 
         if (!string.IsNullOrWhiteSpace(tableName))
             query = query.Where(a => a.TableName == tableName);
@@ -49,4 +53,3 @@ public class AuditService : IAuditService
             .ToListAsync(ct);
     }
 }
-

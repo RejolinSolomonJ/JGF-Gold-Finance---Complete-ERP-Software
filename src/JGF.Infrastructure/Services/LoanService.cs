@@ -9,25 +9,36 @@ using Microsoft.EntityFrameworkCore;
 
 namespace JGF.Infrastructure.Services;
 
-public class LoanService : ILoanService
+public class LoanService : DbServiceBase, ILoanService
 {
-    private readonly JgfDbContext _context;
     private readonly INumberSeriesService _numberSeries;
     private readonly IPermissionService _permissionService;
+
+    public LoanService(
+        IDbContextFactory<JgfDbContext> contextFactory,
+        INumberSeriesService numberSeries,
+        IPermissionService permissionService)
+        : base(contextFactory)
+    {
+        _numberSeries = numberSeries;
+        _permissionService = permissionService;
+    }
 
     public LoanService(
         JgfDbContext context,
         INumberSeriesService numberSeries,
         IPermissionService permissionService)
+        : base(context)
     {
-        _context = context;
         _numberSeries = numberSeries;
         _permissionService = permissionService;
     }
 
     public async Task<Loan?> GetLoanByIdAsync(Guid loanId, CancellationToken ct = default)
     {
-        return await _context.Loans
+        await using var scope = await GetContextAsync(ct);
+        return await scope.Context.Loans
+            .AsNoTracking()
             .Include(l => l.Customer)
             .Include(l => l.Scheme)
             .Include(l => l.Items).ThenInclude(i => i.JewelType)
@@ -38,8 +49,10 @@ public class LoanService : ILoanService
 
     public async Task<Loan?> FindLoanByNumberOrBarcodeAsync(string query, CancellationToken ct = default)
     {
+        await using var scope = await GetContextAsync(ct);
         var q = query.Trim().ToUpper();
-        return await _context.Loans
+        return await scope.Context.Loans
+            .AsNoTracking()
             .Include(l => l.Customer)
             .Include(l => l.Scheme)
             .Include(l => l.Items).ThenInclude(i => i.JewelType)
@@ -48,8 +61,10 @@ public class LoanService : ILoanService
 
     public async Task<List<Loan>> SearchLoansAsync(string query, int take = 50, CancellationToken ct = default)
     {
+        await using var scope = await GetContextAsync(ct);
         var q = query.Trim().ToLower();
-        return await _context.Loans
+        return await scope.Context.Loans
+            .AsNoTracking()
             .Include(l => l.Customer)
             .Include(l => l.Scheme)
             .Where(l => l.LoanNumber.ToLower().Contains(q) ||
@@ -72,10 +87,13 @@ public class LoanService : ILoanService
             throw new UnauthorizedAccessException("Back-dated loan pledge is restricted to the Owner role only.");
         }
 
-        var scheme = await _context.Schemes.FindAsync(new object[] { dto.SchemeId }, ct)
+        await using var scope = await GetContextAsync(ct);
+        var context = scope.Context;
+
+        var scheme = await context.Schemes.FindAsync(new object[] { dto.SchemeId }, ct)
             ?? throw new ArgumentException("Selected scheme does not exist.");
 
-        var customer = await _context.Customers.FindAsync(new object[] { dto.CustomerId }, ct)
+        var customer = await context.Customers.FindAsync(new object[] { dto.CustomerId }, ct)
             ?? throw new ArgumentException("Selected customer does not exist.");
 
         // Calculate totals from items
@@ -98,7 +116,8 @@ public class LoanService : ILoanService
             }
         }
 
-        using var tx = await _context.Database.BeginTransactionAsync(ct);
+        var isRelational = context.Database.IsRelational();
+        using var tx = isRelational ? await context.Database.BeginTransactionAsync(ct) : null;
 
         // 1. Issue unique gapless loan number
         var fy = "2024-25"; // Active financial year
@@ -131,7 +150,7 @@ public class LoanService : ILoanService
             LastInterestPaidDate = dto.PledgeDate
         };
 
-        await _context.Loans.AddAsync(loan, ct);
+        await context.Loans.AddAsync(loan, ct);
 
         // 2. Add LoanItems
         int itemIndex = 1;
@@ -150,7 +169,7 @@ public class LoanService : ILoanService
                 AppraisedValue = itemDto.AppraisedValue,
                 MarketValue = itemDto.AppraisedValue
             };
-            await _context.LoanItems.AddAsync(item, ct);
+            await context.LoanItems.AddAsync(item, ct);
             itemIndex++;
         }
 
@@ -165,13 +184,13 @@ public class LoanService : ILoanService
             Balance = dto.LoanAmount,
             Narration = $"Gold loan disbursement against {loan.LoanNumber} (Net: {totalNet:F3}g)"
         };
-        await _context.LoanLedgerEntries.AddAsync(ledgerEntry, ct);
+        await context.LoanLedgerEntries.AddAsync(ledgerEntry, ct);
 
         // 4. Double-Entry Accounting Voucher:
         // Debit: Jewel Loan Receivable (1002)
         // Credit: Cash on Hand (1001)
-        var headJewelLoan = await _context.LedgerHeads.FirstOrDefaultAsync(l => l.Code == "1002", ct);
-        var headCash = await _context.LedgerHeads.FirstOrDefaultAsync(l => l.Code == "1001", ct);
+        var headJewelLoan = await context.LedgerHeads.FirstOrDefaultAsync(l => l.Code == "1002", ct);
+        var headCash = await context.LedgerHeads.FirstOrDefaultAsync(l => l.Code == "1001", ct);
 
         if (headJewelLoan != null && headCash != null)
         {
@@ -209,11 +228,11 @@ public class LoanService : ILoanService
                 LineOrder = 2
             });
 
-            await _context.Vouchers.AddAsync(voucher, ct);
+            await context.Vouchers.AddAsync(voucher, ct);
         }
 
-        await _context.SaveChangesAsync(ct);
-        await tx.CommitAsync(ct);
+        await context.SaveChangesAsync(ct);
+        if (tx != null) await tx.CommitAsync(ct);
 
         return loan;
     }
@@ -222,7 +241,10 @@ public class LoanService : ILoanService
     {
         _permissionService.EnsurePermission(dto.UserRole, Permission.EditLoan);
 
-        var loan = await _context.Loans
+        await using var scope = await GetContextAsync(ct);
+        var context = scope.Context;
+
+        var loan = await context.Loans
             .Include(l => l.Customer)
             .Include(l => l.Scheme)
             .FirstOrDefaultAsync(l => l.Id == dto.LoanId, ct)
@@ -233,12 +255,13 @@ public class LoanService : ILoanService
             throw new InvalidOperationException("Top-up is only allowed on active loans.");
         }
 
-        using var tx = await _context.Database.BeginTransactionAsync(ct);
+        var isRelational = context.Database.IsRelational();
+        using var tx = isRelational ? await context.Database.BeginTransactionAsync(ct) : null;
 
         loan.LoanAmount += dto.TopUpAmount;
 
         // Sub-ledger
-        var lastBalance = await _context.LoanLedgerEntries
+        var lastBalance = await context.LoanLedgerEntries
             .Where(e => e.LoanId == loan.Id)
             .OrderByDescending(e => e.EntryDate).ThenByDescending(e => e.CreatedAtUtc)
             .Select(e => e.Balance)
@@ -256,12 +279,12 @@ public class LoanService : ILoanService
             Balance = newBalance,
             Narration = $"Top-up loan disbursement: ₹{dto.TopUpAmount:N2}. Reason: {dto.Reason ?? "Market appreciation"}"
         };
-        await _context.LoanLedgerEntries.AddAsync(ledgerEntry, ct);
+        await context.LoanLedgerEntries.AddAsync(ledgerEntry, ct);
 
         // Voucher
         var fy = "2024-25";
-        var headJewelLoan = await _context.LedgerHeads.FirstOrDefaultAsync(l => l.Code == "1002", ct);
-        var headCash = await _context.LedgerHeads.FirstOrDefaultAsync(l => l.Code == "1001", ct);
+        var headJewelLoan = await context.LedgerHeads.FirstOrDefaultAsync(l => l.Code == "1002", ct);
+        var headCash = await context.LedgerHeads.FirstOrDefaultAsync(l => l.Code == "1001", ct);
 
         if (headJewelLoan != null && headCash != null)
         {
@@ -299,11 +322,11 @@ public class LoanService : ILoanService
                 LineOrder = 2
             });
 
-            await _context.Vouchers.AddAsync(voucher, ct);
+            await context.Vouchers.AddAsync(voucher, ct);
         }
 
-        await _context.SaveChangesAsync(ct);
-        await tx.CommitAsync(ct);
+        await context.SaveChangesAsync(ct);
+        if (tx != null) await tx.CommitAsync(ct);
 
         return loan;
     }
@@ -312,13 +335,17 @@ public class LoanService : ILoanService
     {
         _permissionService.EnsurePermission(dto.UserRole, Permission.CreateLoan);
 
-        var oldLoan = await _context.Loans
+        await using var scope = await GetContextAsync(ct);
+        var context = scope.Context;
+
+        var oldLoan = await context.Loans
             .Include(l => l.Customer)
             .Include(l => l.Items)
             .FirstOrDefaultAsync(l => l.Id == dto.ExistingLoanId, ct)
             ?? throw new ArgumentException("Existing loan not found.");
 
-        using var tx = await _context.Database.BeginTransactionAsync(ct);
+        var isRelational = context.Database.IsRelational();
+        using var tx = isRelational ? await context.Database.BeginTransactionAsync(ct) : null;
 
         // 1. Create renewal closure receipt for the old loan
         var fy = "2024-25";
@@ -338,7 +365,7 @@ public class LoanService : ILoanService
             InterestCalculatedToDate = dto.RenewalDate,
             Notes = "Loan renewal: interest settled, principal rolled into new loan"
         };
-        await _context.Receipts.AddAsync(closingReceipt, ct);
+        await context.Receipts.AddAsync(closingReceipt, ct);
 
         // 2. Mark old loan closed
         oldLoan.Status = LoanStatus.Closed;
@@ -346,7 +373,7 @@ public class LoanService : ILoanService
         oldLoan.ClosingReceiptId = closingReceipt.Id;
 
         // 3. Issue new loan under selected scheme
-        var newScheme = await _context.Schemes.FindAsync(new object[] { dto.NewSchemeId }, ct)
+        var newScheme = await context.Schemes.FindAsync(new object[] { dto.NewSchemeId }, ct)
             ?? throw new ArgumentException("New scheme not found.");
 
         var newPrincipal = dto.AdjustedPrincipal ?? oldLoan.LoanAmount;
@@ -371,7 +398,7 @@ public class LoanService : ILoanService
             LastInterestPaidDate = dto.RenewalDate,
             Notes = $"Renewed from previous loan {oldLoan.LoanNumber}"
         };
-        await _context.Loans.AddAsync(newLoan, ct);
+        await context.Loans.AddAsync(newLoan, ct);
 
         // Copy collateral items
         foreach (var oldItem in oldLoan.Items)
@@ -389,11 +416,11 @@ public class LoanService : ILoanService
                 AppraisedValue = oldItem.AppraisedValue,
                 MarketValue = oldItem.MarketValue
             };
-            await _context.LoanItems.AddAsync(newItem, ct);
+            await context.LoanItems.AddAsync(newItem, ct);
         }
 
         // Sub-ledger entries
-        await _context.LoanLedgerEntries.AddAsync(new LoanLedgerEntry
+        await context.LoanLedgerEntries.AddAsync(new LoanLedgerEntry
         {
             LoanId = oldLoan.Id,
             EntryDate = dto.RenewalDate,
@@ -404,7 +431,7 @@ public class LoanService : ILoanService
             Narration = $"Rolled over to new loan {newLoan.LoanNumber}"
         }, ct);
 
-        await _context.LoanLedgerEntries.AddAsync(new LoanLedgerEntry
+        await context.LoanLedgerEntries.AddAsync(new LoanLedgerEntry
         {
             LoanId = newLoan.Id,
             EntryDate = dto.RenewalDate,
@@ -415,18 +442,19 @@ public class LoanService : ILoanService
             Narration = $"Disbursed from renewal of {oldLoan.LoanNumber}"
         }, ct);
 
-        await _context.SaveChangesAsync(ct);
-        await tx.CommitAsync(ct);
+        await context.SaveChangesAsync(ct);
+        if (tx != null) await tx.CommitAsync(ct);
 
         return (closingReceipt, newLoan);
     }
 
     public async Task<List<LoanLedgerEntry>> GetLoanHistoryAsync(Guid loanId, CancellationToken ct = default)
     {
-        return await _context.LoanLedgerEntries
+        await using var scope = await GetContextAsync(ct);
+        return await scope.Context.LoanLedgerEntries
+            .AsNoTracking()
             .Where(e => e.LoanId == loanId)
             .OrderBy(e => e.EntryDate).ThenBy(e => e.CreatedAtUtc)
             .ToListAsync(ct);
     }
 }
-

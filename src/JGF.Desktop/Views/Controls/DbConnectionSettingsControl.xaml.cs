@@ -61,7 +61,7 @@ public partial class DbConnectionSettingsControl : UserControl
     private string BuildConnectionString()
     {
         var ssl = (CmbSslMode.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? "Prefer";
-        return $"Host={TxtHost.Text.Trim()};Port={TxtPort.Text.Trim()};Database={TxtDatabase.Text.Trim()};Username={TxtUsername.Text.Trim()};Password={TxtPassword.Password};SSL Mode={ssl}";
+        return $"Host={TxtHost.Text.Trim()};Port={TxtPort.Text.Trim()};Database={TxtDatabase.Text.Trim()};Username={TxtUsername.Text.Trim()};Password={TxtPassword.Password};SSL Mode={ssl};Timeout=5;Command Timeout=15;";
     }
 
     private async Task EnsureDatabaseExistsAsync()
@@ -95,36 +95,42 @@ public partial class DbConnectionSettingsControl : UserControl
             TxtTestResult.Foreground = System.Windows.Media.Brushes.DarkGreen;
             BorderTestResult.Visibility = Visibility.Visible;
         }
-        catch (PostgresException pex) when (pex.SqlState == "3D000")
-        {
-            try
-            {
-                TxtTestResult.Text = $"Database \"{TxtDatabase.Text}\" does not exist yet. Creating database now...";
-                BorderTestResult.Background = System.Windows.Media.Brushes.LightYellow;
-                TxtTestResult.Foreground = System.Windows.Media.Brushes.DarkGoldenrod;
-                BorderTestResult.Visibility = Visibility.Visible;
-
-                await EnsureDatabaseExistsAsync();
-
-                // Re-test connection to the newly created database
-                using var conn = new NpgsqlConnection(connStr);
-                await conn.OpenAsync();
-
-                TxtTestResult.Text = $"Database \"{TxtDatabase.Text}\" created and connected successfully!";
-                BorderTestResult.Background = System.Windows.Media.Brushes.Honeydew;
-                TxtTestResult.Foreground = System.Windows.Media.Brushes.DarkGreen;
-                BorderTestResult.Visibility = Visibility.Visible;
-            }
-            catch (Exception ex)
-            {
-                TxtTestResult.Text = $"Failed to create database: {ex.Message}";
-                BorderTestResult.Background = System.Windows.Media.Brushes.MistyRose;
-                TxtTestResult.Foreground = System.Windows.Media.Brushes.DarkRed;
-                BorderTestResult.Visibility = Visibility.Visible;
-            }
-        }
         catch (Exception ex)
         {
+            var pex = ex as PostgresException ?? ex.InnerException as PostgresException;
+            var isDbNotFound = (pex != null && pex.SqlState == "3D000") || ex.Message.Contains("3D000") || ex.Message.ToLower().Contains("does not exist");
+
+            if (isDbNotFound)
+            {
+                try
+                {
+                    TxtTestResult.Text = $"Database \"{TxtDatabase.Text}\" does not exist yet. Creating database automatically...";
+                    BorderTestResult.Background = System.Windows.Media.Brushes.LightYellow;
+                    TxtTestResult.Foreground = System.Windows.Media.Brushes.DarkGoldenrod;
+                    BorderTestResult.Visibility = Visibility.Visible;
+
+                    await EnsureDatabaseExistsAsync();
+
+                    // Re-test connection to the newly created database
+                    using var conn = new NpgsqlConnection(connStr);
+                    await conn.OpenAsync();
+
+                    TxtTestResult.Text = $"Database \"{TxtDatabase.Text}\" created and connected successfully!";
+                    BorderTestResult.Background = System.Windows.Media.Brushes.Honeydew;
+                    TxtTestResult.Foreground = System.Windows.Media.Brushes.DarkGreen;
+                    BorderTestResult.Visibility = Visibility.Visible;
+                    return;
+                }
+                catch (Exception createEx)
+                {
+                    TxtTestResult.Text = $"Database not found and automatic creation failed: {createEx.Message}";
+                    BorderTestResult.Background = System.Windows.Media.Brushes.MistyRose;
+                    TxtTestResult.Foreground = System.Windows.Media.Brushes.DarkRed;
+                    BorderTestResult.Visibility = Visibility.Visible;
+                    return;
+                }
+            }
+
             TxtTestResult.Text = $"Connection Failed: {ex.Message}";
             BorderTestResult.Background = System.Windows.Media.Brushes.MistyRose;
             TxtTestResult.Foreground = System.Windows.Media.Brushes.DarkRed;

@@ -16,10 +16,26 @@ namespace JGF.Infrastructure.Services;
 public class SafeUpdateService : ISafeUpdateService
 {
     private readonly JgfDbContext _context;
+    private readonly IDbContextFactory<JgfDbContext>? _contextFactory;
     private readonly IBackupService _backupService;
     private readonly IAesEncryptionService _aesEncryption;
     private readonly IAccountingReportService _accountingReportService;
     private readonly ILogger<SafeUpdateService> _logger;
+
+    public SafeUpdateService(
+        IDbContextFactory<JgfDbContext> contextFactory,
+        IBackupService backupService,
+        IAesEncryptionService aesEncryption,
+        IAccountingReportService accountingReportService,
+        ILogger<SafeUpdateService> logger)
+    {
+        _contextFactory = contextFactory;
+        _context = contextFactory.CreateDbContext();
+        _backupService = backupService;
+        _aesEncryption = aesEncryption;
+        _accountingReportService = accountingReportService;
+        _logger = logger;
+    }
 
     public SafeUpdateService(
         JgfDbContext context,
@@ -43,7 +59,10 @@ public class SafeUpdateService : ISafeUpdateService
         SemanticVersion dbVer;
         try
         {
-            var latestSchema = await _context.SchemaVersions
+            await using var db = _contextFactory != null ? await _contextFactory.CreateDbContextAsync(ct) : null;
+            var ctx = db ?? _context;
+
+            var latestSchema = await ctx.SchemaVersions
                 .AsNoTracking()
                 .Where(s => s.IsSuccess)
                 .OrderByDescending(s => s.AppliedAtUtc)

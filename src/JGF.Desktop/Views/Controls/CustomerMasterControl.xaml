@@ -20,9 +20,10 @@
                 <TextBlock Grid.Row="0" Text="CUSTOMERS / வாடிக்கையாளர்கள்" FontWeight="Bold" FontSize="16" Foreground="#B8860B"/>
 
                 <DockPanel Grid.Row="1" Margin="0,8">
-                    <Button Content="+ New Customer" DockPanel.Dock="Right" Background="#B8860B" Click="OnNewCustomerClick"/>
+                    <Button x:Name="BtnNewCustomer" Content="+ New Customer" DockPanel.Dock="Right" Background="#B8860B" Click="OnNewCustomerClick"/>
                     <TextBox x:Name="TxtSearch" TextChanged="OnSearchTextChanged" ToolTip="Search by Name, Code, Mobile, Aadhaar..."/>
                 </DockPanel>
+                <ProgressBar x:Name="PrgLoading" Grid.Row="1" VerticalAlignment="Bottom" Height="3" IsIndeterminate="True" Visibility="Collapsed"/>
 
                 <DataGrid x:Name="GridCustomers" Grid.Row="2" AutoGenerateColumns="False" IsReadOnly="True" 
                           SelectionMode="Single" SelectionChanged="OnCustomerSelected" BorderBrush="#CCCCCC">

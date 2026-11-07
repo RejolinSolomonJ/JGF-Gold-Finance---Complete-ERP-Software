@@ -3,6 +3,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media.Imaging;
 using JGF.Application.Services;
+using JGF.Desktop.Common;
 using JGF.Domain.Entities;
 using JGF.Domain.Enums;
 using Microsoft.Win32;
@@ -12,6 +13,7 @@ namespace JGF.Desktop.Views.Controls;
 public partial class CustomerMasterControl : UserControl
 {
     private readonly ICustomerService _customerService;
+    private readonly Debouncer _searchDebouncer = new(300);
     private Customer? _selectedCustomer;
     private string? _currentPhotoPath;
 
@@ -19,18 +21,49 @@ public partial class CustomerMasterControl : UserControl
     {
         InitializeComponent();
         _customerService = customerService;
-        Loaded += async (s, e) => await LoadCustomersAsync();
+        Loaded += async (s, e) => await InitializeAsync();
     }
 
-    private async Task LoadCustomersAsync(string search = "")
+    private async Task InitializeAsync()
     {
-        var list = await _customerService.SearchCustomersAsync(search);
-        GridCustomers.ItemsSource = list;
+        await LoadCustomersAsync();
+    }
+
+    private async Task LoadCustomersAsync(string search = "", CancellationToken ct = default)
+    {
+        try
+        {
+            SetLoading(true);
+            var list = await _customerService.SearchCustomersAsync(search, take: 50, ct);
+            GridCustomers.ItemsSource = list;
+        }
+        catch (OperationCanceledException)
+        {
+            // Debounced or cancelled
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show($"Failed to load customers: {ex.Message}", "Customer Search", MessageBoxButton.OK, MessageBoxImage.Warning);
+        }
+        finally
+        {
+            SetLoading(false);
+        }
+    }
+
+    private void SetLoading(bool isLoading)
+    {
+        PrgLoading.Visibility = isLoading ? Visibility.Visible : Visibility.Collapsed;
+        BtnNewCustomer.IsEnabled = !isLoading;
     }
 
     private async void OnSearchTextChanged(object sender, TextChangedEventArgs e)
     {
-        await LoadCustomersAsync(TxtSearch.Text);
+        var searchText = TxtSearch.Text;
+        await _searchDebouncer.RunAsync(async ct =>
+        {
+            await LoadCustomersAsync(searchText, ct);
+        });
     }
 
     private void OnCustomerSelected(object sender, SelectionChangedEventArgs e)
@@ -104,64 +137,88 @@ public partial class CustomerMasterControl : UserControl
     {
         if (string.IsNullOrWhiteSpace(TxtFullName.Text) || string.IsNullOrWhiteSpace(TxtMobile.Text))
         {
-            MessageBox.Show("Customer Name and Mobile Number are required.", "Validation Error", MessageBoxButton.OK, MessageBoxImage.Warning);
+            MessageBox.Show("Please enter mandatory fields: Full Name and Mobile Number.", "Validation", MessageBoxButton.OK, MessageBoxImage.Warning);
             return;
         }
 
-        if (_selectedCustomer == null)
+        try
         {
-            var customer = new Customer
+            SetLoading(true);
+            if (_selectedCustomer == null)
             {
-                Code = $"C{DateTime.UtcNow:MMddHHmm}",
-                FullName = TxtFullName.Text.Trim(),
-                NameTamil = TxtNameTamil.Text.Trim(),
-                GuardianName = TxtGuardian.Text.Trim(),
-                Gender = Gender.Male,
-                MobileNumber = TxtMobile.Text.Trim(),
-                AadhaarNumber = TxtAadhaar.Text.Trim(),
-                PanNumber = TxtPan.Text.Trim(),
-                Address = TxtAddress.Text.Trim(),
-                City = TxtCity.Text.Trim(),
-                District = TxtDistrict.Text.Trim(),
-                Pincode = TxtPincode.Text.Trim(),
-                PhotoPath = _currentPhotoPath
-            };
+                // Create
+                var newCustomer = new Customer
+                {
+                    Code = "C" + DateTime.Now.ToString("yyMMddHHmmss"),
+                    FullName = TxtFullName.Text.Trim(),
+                    NameTamil = TxtNameTamil.Text.Trim(),
+                    GuardianName = TxtGuardian.Text.Trim(),
+                    MobileNumber = TxtMobile.Text.Trim(),
+                    AadhaarNumber = TxtAadhaar.Text.Trim(),
+                    PanNumber = TxtPan.Text.Trim(),
+                    Address = TxtAddress.Text.Trim(),
+                    City = TxtCity.Text.Trim(),
+                    District = TxtDistrict.Text.Trim(),
+                    Pincode = TxtPincode.Text.Trim(),
+                    PhotoPath = _currentPhotoPath
+                };
 
-            await _customerService.CreateCustomerAsync(customer);
-            MessageBox.Show("Customer saved successfully!", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
+                await _customerService.CreateCustomerAsync(newCustomer);
+                MessageBox.Show($"Customer {newCustomer.FullName} created successfully!", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+            else
+            {
+                // Update
+                _selectedCustomer.FullName = TxtFullName.Text.Trim();
+                _selectedCustomer.NameTamil = TxtNameTamil.Text.Trim();
+                _selectedCustomer.GuardianName = TxtGuardian.Text.Trim();
+                _selectedCustomer.MobileNumber = TxtMobile.Text.Trim();
+                _selectedCustomer.AadhaarNumber = TxtAadhaar.Text.Trim();
+                _selectedCustomer.PanNumber = TxtPan.Text.Trim();
+                _selectedCustomer.Address = TxtAddress.Text.Trim();
+                _selectedCustomer.City = TxtCity.Text.Trim();
+                _selectedCustomer.District = TxtDistrict.Text.Trim();
+                _selectedCustomer.Pincode = TxtPincode.Text.Trim();
+                _selectedCustomer.PhotoPath = _currentPhotoPath;
+
+                await _customerService.UpdateCustomerAsync(_selectedCustomer);
+                MessageBox.Show($"Customer {_selectedCustomer.FullName} updated successfully!", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+
+            await LoadCustomersAsync();
         }
-        else
+        catch (Exception ex)
         {
-            _selectedCustomer.FullName = TxtFullName.Text.Trim();
-            _selectedCustomer.NameTamil = TxtNameTamil.Text.Trim();
-            _selectedCustomer.GuardianName = TxtGuardian.Text.Trim();
-            _selectedCustomer.MobileNumber = TxtMobile.Text.Trim();
-            _selectedCustomer.AadhaarNumber = TxtAadhaar.Text.Trim();
-            _selectedCustomer.PanNumber = TxtPan.Text.Trim();
-            _selectedCustomer.Address = TxtAddress.Text.Trim();
-            _selectedCustomer.City = TxtCity.Text.Trim();
-            _selectedCustomer.District = TxtDistrict.Text.Trim();
-            _selectedCustomer.Pincode = TxtPincode.Text.Trim();
-            _selectedCustomer.PhotoPath = _currentPhotoPath;
-
-            await _customerService.UpdateCustomerAsync(_selectedCustomer);
-            MessageBox.Show("Customer updated successfully!", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
+            MessageBox.Show($"Failed to save customer: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
         }
-
-        await LoadCustomersAsync();
+        finally
+        {
+            SetLoading(false);
+        }
     }
 
     private async void OnDeleteCustomerClick(object sender, RoutedEventArgs e)
     {
         if (_selectedCustomer == null) return;
 
-        var confirm = MessageBox.Show($"Are you sure you want to soft delete customer '{_selectedCustomer.FullName}'?", "Confirm Delete", MessageBoxButton.YesNo, MessageBoxImage.Question);
+        var confirm = MessageBox.Show($"Are you sure you want to delete customer '{_selectedCustomer.FullName}'?", "Confirm Delete", MessageBoxButton.YesNo, MessageBoxImage.Question);
         if (confirm == MessageBoxResult.Yes)
         {
-            await _customerService.SoftDeleteCustomerAsync(_selectedCustomer.Id);
-            OnNewCustomerClick(sender, e);
-            await LoadCustomersAsync();
+            try
+            {
+                SetLoading(true);
+                await _customerService.SoftDeleteCustomerAsync(_selectedCustomer.Id);
+                OnNewCustomerClick(sender, e);
+                await LoadCustomersAsync();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Failed to delete customer: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+            finally
+            {
+                SetLoading(false);
+            }
         }
     }
 }
-

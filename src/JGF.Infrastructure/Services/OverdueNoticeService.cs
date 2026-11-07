@@ -10,20 +10,31 @@ using Microsoft.EntityFrameworkCore;
 
 namespace JGF.Infrastructure.Services;
 
-public class OverdueNoticeService : IOverdueNoticeService
+public class OverdueNoticeService : DbServiceBase, IOverdueNoticeService
 {
-    private readonly JgfDbContext _context;
     private readonly IInterestCalculator _calculator;
     private readonly INumberSeriesService _numberSeries;
     private readonly IPermissionService _permissionService;
+
+    public OverdueNoticeService(
+        IDbContextFactory<JgfDbContext> contextFactory,
+        IInterestCalculator calculator,
+        INumberSeriesService numberSeries,
+        IPermissionService permissionService)
+        : base(contextFactory)
+    {
+        _calculator = calculator;
+        _numberSeries = numberSeries;
+        _permissionService = permissionService;
+    }
 
     public OverdueNoticeService(
         JgfDbContext context,
         IInterestCalculator calculator,
         INumberSeriesService numberSeries,
         IPermissionService permissionService)
+        : base(context)
     {
-        _context = context;
         _calculator = calculator;
         _numberSeries = numberSeries;
         _permissionService = permissionService;
@@ -31,15 +42,20 @@ public class OverdueNoticeService : IOverdueNoticeService
 
     public async Task<List<OverdueLoanSummaryDto>> GetOverdueLoansAsync(CancellationToken ct = default)
     {
+        await using var scope = await GetContextAsync(ct);
+        var context = scope.Context;
+
         var today = DateOnly.FromDateTime(DateTime.Today);
 
         // Fetch latest gold rate
-        var todayGoldRate = await _context.GoldRates
+        var todayGoldRate = await context.GoldRates
+            .AsNoTracking()
             .OrderByDescending(g => g.Date)
             .FirstOrDefaultAsync(ct);
         var currentRate22K = todayGoldRate?.Rate22K ?? 5500.00m;
 
-        var activeLoans = await _context.Loans
+        var activeLoans = await context.Loans
+            .AsNoTracking()
             .Include(l => l.Customer)
             .Include(l => l.Scheme)
             .Include(l => l.Items)
@@ -126,7 +142,9 @@ public class OverdueNoticeService : IOverdueNoticeService
 
     public async Task<List<Notice>> GetNoticesForLoanAsync(Guid loanId, CancellationToken ct = default)
     {
-        return await _context.Notices
+        await using var scope = await GetContextAsync(ct);
+        return await scope.Context.Notices
+            .AsNoTracking()
             .Where(n => n.LoanId == loanId)
             .OrderByDescending(n => n.NoticeDate)
             .ToListAsync(ct);
@@ -136,10 +154,13 @@ public class OverdueNoticeService : IOverdueNoticeService
     {
         _permissionService.EnsurePermission(dto.UserRole, Permission.CreateLoan);
 
+        await using var scope = await GetContextAsync(ct);
+        var context = scope.Context;
+
         var notices = new List<Notice>();
         foreach (var loanId in dto.LoanIds)
         {
-            var content = await GenerateNoticeHtmlOrTextAsync(loanId, dto.NoticeType, dto.NoticeDate, dto.DueDate, inTamil: true, ct);
+            var content = await GenerateNoticeInternalAsync(context, loanId, dto.NoticeType, dto.NoticeDate, dto.DueDate, inTamil: true, ct);
 
             var notice = new Notice
             {
@@ -157,8 +178,8 @@ public class OverdueNoticeService : IOverdueNoticeService
             notices.Add(notice);
         }
 
-        await _context.Notices.AddRangeAsync(notices, ct);
-        await _context.SaveChangesAsync(ct);
+        await context.Notices.AddRangeAsync(notices, ct);
+        await context.SaveChangesAsync(ct);
         return notices;
     }
 
@@ -170,7 +191,21 @@ public class OverdueNoticeService : IOverdueNoticeService
         bool inTamil = true,
         CancellationToken ct = default)
     {
-        var loan = await _context.Loans
+        await using var scope = await GetContextAsync(ct);
+        return await GenerateNoticeInternalAsync(scope.Context, loanId, noticeType, noticeDate, dueDate, inTamil, ct);
+    }
+
+    private async Task<string> GenerateNoticeInternalAsync(
+        JgfDbContext context,
+        Guid loanId,
+        NoticeType noticeType,
+        DateOnly noticeDate,
+        DateOnly dueDate,
+        bool inTamil,
+        CancellationToken ct)
+    {
+        var loan = await context.Loans
+            .AsNoTracking()
             .Include(l => l.Customer)
             .Include(l => l.Scheme)
             .Include(l => l.Items).ThenInclude(i => i.JewelType)
@@ -266,7 +301,10 @@ public class OverdueNoticeService : IOverdueNoticeService
             throw new UnauthorizedAccessException("Auction approval is strictly restricted to the Owner.");
         }
 
-        var loan = await _context.Loans
+        await using var scope = await GetContextAsync(ct);
+        var context = scope.Context;
+
+        var loan = await context.Loans
             .Include(l => l.Customer)
             .Include(l => l.Notices)
             .FirstOrDefaultAsync(l => l.Id == loanId, ct)
@@ -284,13 +322,13 @@ public class OverdueNoticeService : IOverdueNoticeService
                 "A mandatory Final/Auction Notice must be served at least 15 days prior to the auction date under applicable rules.");
         }
 
-        var existing = await _context.Auctions.FirstOrDefaultAsync(a => a.LoanId == loanId, ct);
+        var existing = await context.Auctions.FirstOrDefaultAsync(a => a.LoanId == loanId, ct);
         if (existing != null)
         {
             existing.AuctionDate = auctionDate;
             existing.ReservePrice = reservePrice;
             existing.Status = AuctionStatus.Scheduled;
-            await _context.SaveChangesAsync(ct);
+            await context.SaveChangesAsync(ct);
             return existing;
         }
 
@@ -303,8 +341,8 @@ public class OverdueNoticeService : IOverdueNoticeService
             Notes = $"Auction approved and scheduled by Owner on {DateTime.UtcNow:dd-MMM-yyyy}"
         };
 
-        await _context.Auctions.AddAsync(auction, ct);
-        await _context.SaveChangesAsync(ct);
+        await context.Auctions.AddAsync(auction, ct);
+        await context.SaveChangesAsync(ct);
         return auction;
     }
 
@@ -316,7 +354,10 @@ public class OverdueNoticeService : IOverdueNoticeService
             throw new UnauthorizedAccessException("Only Owner or Manager can conduct auction settlement.");
         }
 
-        var loan = await _context.Loans
+        await using var scope = await GetContextAsync(ct);
+        var context = scope.Context;
+
+        var loan = await context.Loans
             .Include(l => l.Customer)
             .Include(l => l.Scheme)
             .Include(l => l.Auctions)
@@ -326,8 +367,8 @@ public class OverdueNoticeService : IOverdueNoticeService
         var auction = loan.Auctions.FirstOrDefault(a => a.Status == AuctionStatus.Scheduled)
             ?? throw new InvalidOperationException("No scheduled auction found for this loan. Owner must approve auction first.");
 
-        var isRelational = _context.Database.IsRelational();
-        using var tx = isRelational ? await _context.Database.BeginTransactionAsync(ct) : null;
+        var isRelational = context.Database.IsRelational();
+        using var tx = isRelational ? await context.Database.BeginTransactionAsync(ct) : null;
 
         // Calculate total outstanding on auction date
         var calc = _calculator.CalculateInterest(
@@ -351,38 +392,54 @@ public class OverdueNoticeService : IOverdueNoticeService
         }
         else
         {
-            deficit = totalDues - dto.SalePrice; // Loss / Shortfall
+            deficit = totalDues - dto.SalePrice; // Shortfall loss
         }
 
-        // Update Auction record
+        // Update auction
         auction.SalePrice = dto.SalePrice;
+        auction.AuctionExpenses = dto.AuctionExpenses;
         auction.BuyerName = dto.BuyerName;
         auction.BuyerAddress = dto.BuyerAddress;
-        auction.OutstandingPrincipal = loan.LoanAmount;
-        auction.OutstandingInterest = calc.TotalInterest;
-        auction.AuctionCharges = dto.AuctionExpenses;
         auction.SurplusAmount = surplus;
         auction.DeficitAmount = deficit;
         auction.Status = AuctionStatus.Conducted;
         auction.Notes = dto.Remarks;
 
-        // Mark loan Auctioned & Closed
+        // Close loan with status Auctioned
         loan.Status = LoanStatus.Auctioned;
         loan.ClosedDate = dto.AuctionDate;
 
-        // Post balanced double-entry voucher
-        var fy = "2024-25";
-        var vNumber = await _numberSeries.GetNextNumberAsync(NumberSeriesType.VoucherNumber, fy, null, ct);
+        // Sub-ledger closure entry
+        await context.LoanLedgerEntries.AddAsync(new LoanLedgerEntry
+        {
+            LoanId = loan.Id,
+            EntryDate = dto.AuctionDate,
+            EntryType = LoanLedgerEntryType.Closure,
+            DebitAmount = 0m,
+            CreditAmount = loan.LoanAmount,
+            Balance = 0m,
+            Narration = $"Auction realized: ₹{dto.SalePrice:N2}. Surplus: ₹{surplus:N2}, Shortfall: ₹{deficit:N2}"
+        }, ct);
 
-        var headCash = await _context.LedgerHeads.FirstOrDefaultAsync(l => l.Code == "1001", ct);
-        var headJewelLoan = await _context.LedgerHeads.FirstOrDefaultAsync(l => l.Code == "1002", ct);
-        var headInterest = await _context.LedgerHeads.FirstOrDefaultAsync(l => l.Code == "4001", ct);
-        var headSurplus = await _context.LedgerHeads.FirstOrDefaultAsync(l => l.Code == "2002", ct); // Surplus Payable
-        var headDeficit = await _context.LedgerHeads.FirstOrDefaultAsync(l => l.Code == "5005", ct); // Loss on Auction
+        // Accounting Vouchers:
+        // Cash received: SalePrice -> Cash (1001)
+        // Jewel Loan principal recovered: loan.LoanAmount -> 1002
+        // Interest recovered: calc.TotalInterest -> 4001
+        // Auction expenses: dto.AuctionExpenses -> 5005 (or offset)
+        // Surplus: 2002 (Auction Surplus Payable - Liability)
+        // Shortfall: 5006 (Auction Loss / Bad Debt Expense)
+        var fy = "2024-25";
+        var voucherNumber = await _numberSeries.GetNextNumberAsync(NumberSeriesType.VoucherNumber, fy, null, ct);
+
+        var headCash = await context.LedgerHeads.FirstOrDefaultAsync(l => l.Code == "1001", ct);
+        var headJewelLoan = await context.LedgerHeads.FirstOrDefaultAsync(l => l.Code == "1002", ct);
+        var headInterest = await context.LedgerHeads.FirstOrDefaultAsync(l => l.Code == "4001", ct);
+        var headSurplus = await context.LedgerHeads.FirstOrDefaultAsync(l => l.Code == "2002", ct);
+        var headDeficit = await context.LedgerHeads.FirstOrDefaultAsync(l => l.Code == "5005", ct);
 
         var voucher = new Voucher
         {
-            VoucherNumber = vNumber,
+            VoucherNumber = voucherNumber,
             VoucherDate = dto.AuctionDate,
             VoucherType = VoucherType.Journal,
             TotalDebit = 0m,
@@ -445,7 +502,7 @@ public class OverdueNoticeService : IOverdueNoticeService
         // Cr Auction Charges / Expense Reimbursement
         if (dto.AuctionExpenses > 0)
         {
-            var headExpenses = await _context.LedgerHeads.FirstOrDefaultAsync(l => l.Code == "4003" || l.Code == "5005", ct) ?? headCash;
+            var headExpenses = await context.LedgerHeads.FirstOrDefaultAsync(l => l.Code == "4003" || l.Code == "5005", ct) ?? headCash;
             voucher.Lines.Add(new VoucherLine
             {
                 LedgerHeadId = headExpenses!.Id,
@@ -457,11 +514,11 @@ public class OverdueNoticeService : IOverdueNoticeService
         }
 
         // If Surplus: Cr Auction Surplus Payable (2002)
-        if (surplus > 0)
+        if (surplus > 0 && headSurplus != null)
         {
             voucher.Lines.Add(new VoucherLine
             {
-                LedgerHeadId = headSurplus!.Id,
+                LedgerHeadId = headSurplus.Id,
                 DebitAmount = 0m,
                 CreditAmount = surplus,
                 Narration = $"Auction surplus payable to customer {loan.Customer.FullName}",
@@ -470,31 +527,14 @@ public class OverdueNoticeService : IOverdueNoticeService
         }
 
         // Calculate balanced totals
-        var totalDr = voucher.Lines.Sum(l => l.DebitAmount);
-        var totalCr = voucher.Lines.Sum(l => l.CreditAmount);
-        voucher.TotalDebit = totalDr;
-        voucher.TotalCredit = totalCr;
+        voucher.TotalDebit = voucher.Lines.Sum(l => l.DebitAmount);
+        voucher.TotalCredit = voucher.Lines.Sum(l => l.CreditAmount);
 
-        await _context.Vouchers.AddAsync(voucher, ct);
+        await context.Vouchers.AddAsync(voucher, ct);
         auction.VoucherId = voucher.Id;
 
-        // Sub-ledger closure
-        await _context.LoanLedgerEntries.AddAsync(new LoanLedgerEntry
-        {
-            LoanId = loan.Id,
-            EntryDate = dto.AuctionDate,
-            EntryType = LoanLedgerEntryType.Closure,
-            DebitAmount = 0m,
-            CreditAmount = loan.LoanAmount,
-            Balance = 0m,
-            Narration = $"Loan liquidated in auction. Sale: ₹{dto.SalePrice:N2}, Surplus: ₹{surplus:N2}, Deficit: ₹{deficit:N2}"
-        }, ct);
-
-        await _context.SaveChangesAsync(ct);
-        if (tx != null)
-        {
-            await tx.CommitAsync(ct);
-        }
+        await context.SaveChangesAsync(ct);
+        if (tx != null) await tx.CommitAsync(ct);
 
         return new AuctionSettlementResultDto(
             auction.Id,
@@ -504,17 +544,18 @@ public class OverdueNoticeService : IOverdueNoticeService
             dto.AuctionExpenses,
             surplus,
             deficit,
-            vNumber
+            voucher.VoucherNumber
         );
     }
 
     public async Task<List<Auction>> GetAuctionRegisterAsync(CancellationToken ct = default)
     {
-        return await _context.Auctions
+        await using var scope = await GetContextAsync(ct);
+        return await scope.Context.Auctions
+            .AsNoTracking()
             .Include(a => a.Loan).ThenInclude(l => l.Customer)
             .Include(a => a.Loan).ThenInclude(l => l.Items)
             .OrderByDescending(a => a.AuctionDate)
             .ToListAsync(ct);
     }
 }
-

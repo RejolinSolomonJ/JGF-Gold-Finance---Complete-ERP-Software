@@ -13,16 +13,19 @@
 
             <!-- 1. Header & Live Status -->
             <Border Grid.Row="0" Margin="0,0,0,16">
-                <DockPanel LastChildFill="True">
-                    <StackPanel Orientation="Horizontal" DockPanel.Dock="Left">
-                        <TextBlock Text="📊 JGF EXECUTIVE DASHBOARD" FontSize="20" FontWeight="Bold" Foreground="#1E293B"/>
-                        <TextBlock Text=" | வணிக கட்டுப்பாட்டு மையம்" FontSize="14" Foreground="#64748B" Margin="8,4,0,0"/>
-                    </StackPanel>
-                    <StackPanel Orientation="Horizontal" DockPanel.Dock="Right">
-                        <TextBlock x:Name="TxtLastRefreshed" Text="Updated: Just now" Foreground="#64748B" VerticalAlignment="Center" Margin="0,0,12,0"/>
-                        <Button Content="🔄 Refresh Data" Background="#1E3A8A" Foreground="White" FontWeight="Bold" Padding="12,6" Click="OnRefreshClick"/>
-                    </StackPanel>
-                </DockPanel>
+                <StackPanel>
+                    <DockPanel LastChildFill="True">
+                        <StackPanel Orientation="Horizontal" DockPanel.Dock="Left">
+                            <TextBlock Text="📊 JGF EXECUTIVE DASHBOARD" FontSize="20" FontWeight="Bold" Foreground="#1E293B"/>
+                            <TextBlock Text=" | வணிக கட்டுப்பாட்டு மையம்" FontSize="14" Foreground="#64748B" Margin="8,4,0,0"/>
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal" DockPanel.Dock="Right">
+                            <TextBlock x:Name="TxtLastRefreshed" Text="Updated: Just now" Foreground="#64748B" VerticalAlignment="Center" Margin="0,0,12,0"/>
+                            <Button x:Name="BtnRefresh" Content="🔄 Refresh Data" Background="#1E3A8A" Foreground="White" FontWeight="Bold" Padding="12,6" Click="OnRefreshClick"/>
+                        </StackPanel>
+                    </DockPanel>
+                    <ProgressBar x:Name="PrgLoading" Height="4" IsIndeterminate="True" Visibility="Collapsed" Margin="0,8,0,0"/>
+                </StackPanel>
             </Border>
 
             <!-- 2. KPI Cards Grid (3 Columns x 3 Rows) -->

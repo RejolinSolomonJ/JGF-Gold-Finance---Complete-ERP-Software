@@ -29,46 +29,49 @@
                 </StackPanel>
                 <StackPanel Orientation="Horizontal" DockPanel.Dock="Right">
                     <Button x:Name="BtnNewPostalCharge" Content="✉ Record Postal Charge" Background="#7C3AED" Foreground="White" FontWeight="Bold" Padding="10,6" Margin="0,0,8,0" Visibility="Collapsed" Click="OnNewPostalChargeClick"/>
-                    <Button Content="📤 Export Excel (.xlsx)" Background="#059669" Foreground="White" FontWeight="Bold" Padding="12,6" Margin="0,0,8,0" Click="OnExportExcelClick"/>
-                    <Button Content="🖨 Print / PDF" Background="#2563EB" Foreground="White" FontWeight="Bold" Padding="12,6" Click="OnPrintPdfClick"/>
+                    <Button x:Name="BtnExportExcel" Content="📤 Export Excel (.xlsx)" Background="#059669" Foreground="White" FontWeight="Bold" Padding="12,6" Margin="0,0,8,0" Click="OnExportExcelClick"/>
+                    <Button x:Name="BtnPrintPdf" Content="🖨 Print / PDF" Background="#2563EB" Foreground="White" FontWeight="Bold" Padding="12,6" Click="OnPrintPdfClick"/>
                 </StackPanel>
             </DockPanel>
         </Border>
 
         <!-- 2. Dynamic Filters Toolbar -->
         <Border Grid.Row="1" Background="#F8FAFC" BorderBrush="#E2E8F0" BorderThickness="1" Padding="10" Margin="0,0,0,10" CornerRadius="6">
-            <WrapPanel VerticalAlignment="Center">
-                <TextBlock Text="From:" VerticalAlignment="Center" Margin="0,0,4,0"/>
-                <DatePicker x:Name="DpFromDate" Width="110" Margin="0,0,10,0"/>
+            <Grid>
+                <WrapPanel VerticalAlignment="Center">
+                    <TextBlock Text="From:" VerticalAlignment="Center" Margin="0,0,4,0"/>
+                    <DatePicker x:Name="DpFromDate" Width="110" Margin="0,0,10,0"/>
 
-                <TextBlock Text="To:" VerticalAlignment="Center" Margin="0,0,4,0"/>
-                <DatePicker x:Name="DpToDate" Width="110" Margin="0,0,10,0"/>
+                    <TextBlock Text="To:" VerticalAlignment="Center" Margin="0,0,4,0"/>
+                    <DatePicker x:Name="DpToDate" Width="110" Margin="0,0,10,0"/>
 
-                <TextBlock Text="Scheme:" VerticalAlignment="Center" Margin="0,0,4,0"/>
-                <ComboBox x:Name="CmbSchemeFilter" Width="130" DisplayMemberPath="Name" SelectedValuePath="Id" Margin="0,0,10,0"/>
+                    <TextBlock Text="Scheme:" VerticalAlignment="Center" Margin="0,0,4,0"/>
+                    <ComboBox x:Name="CmbSchemeFilter" Width="130" DisplayMemberPath="Name" SelectedValuePath="Id" Margin="0,0,10,0"/>
 
-                <TextBlock Text="Status:" VerticalAlignment="Center" Margin="0,0,4,0"/>
-                <ComboBox x:Name="CmbStatusFilter" Width="110" SelectedIndex="0" Margin="0,0,10,0">
-                    <ComboBoxItem Content="All"/>
-                    <ComboBoxItem Content="Active"/>
-                    <ComboBoxItem Content="PartiallyPaid"/>
-                    <ComboBoxItem Content="Closed"/>
-                    <ComboBoxItem Content="Overdue"/>
-                </ComboBox>
+                    <TextBlock Text="Status:" VerticalAlignment="Center" Margin="0,0,4,0"/>
+                    <ComboBox x:Name="CmbStatusFilter" Width="110" SelectedIndex="0" Margin="0,0,10,0">
+                        <ComboBoxItem Content="All"/>
+                        <ComboBoxItem Content="Active"/>
+                        <ComboBoxItem Content="PartiallyPaid"/>
+                        <ComboBoxItem Content="Closed"/>
+                        <ComboBoxItem Content="Overdue"/>
+                    </ComboBox>
 
-                <TextBlock Text="Location:" VerticalAlignment="Center" Margin="0,0,4,0"/>
-                <ComboBox x:Name="CmbLocationFilter" Width="110" SelectedIndex="0" Margin="0,0,10,0">
-                    <ComboBoxItem Content="All"/>
-                    <ComboBoxItem Content="ShopLocker"/>
-                    <ComboBoxItem Content="BankCustody"/>
-                </ComboBox>
+                    <TextBlock Text="Location:" VerticalAlignment="Center" Margin="0,0,4,0"/>
+                    <ComboBox x:Name="CmbLocationFilter" Width="110" SelectedIndex="0" Margin="0,0,10,0">
+                        <ComboBoxItem Content="All"/>
+                        <ComboBoxItem Content="ShopLocker"/>
+                        <ComboBoxItem Content="BankCustody"/>
+                    </ComboBox>
 
-                <TextBlock Text="Search:" VerticalAlignment="Center" Margin="0,0,4,0"/>
-                <TextBox x:Name="TxtSearchFilter" Width="140" Margin="0,0,12,0"/>
+                    <TextBlock Text="Search:" VerticalAlignment="Center" Margin="0,0,4,0"/>
+                    <TextBox x:Name="TxtSearchFilter" Width="140" Margin="0,0,12,0"/>
 
-                <Button Content="🔍 Filter" Background="#1E293B" Foreground="White" FontWeight="Bold" Padding="14,4" Margin="0,0,6,0" Click="OnFilterApplyClick"/>
-                <Button Content="🔄 Reset" Background="#64748B" Foreground="White" Padding="10,4" Click="OnFilterResetClick"/>
-            </WrapPanel>
+                    <Button x:Name="BtnApplyFilter" Content="🔍 Filter" Background="#1E293B" Foreground="White" FontWeight="Bold" Padding="14,4" Margin="0,0,6,0" Click="OnFilterApplyClick"/>
+                    <Button x:Name="BtnResetFilter" Content="🔄 Reset" Background="#64748B" Foreground="White" Padding="10,4" Click="OnFilterResetClick"/>
+                </WrapPanel>
+                <ProgressBar x:Name="PrgLoading" VerticalAlignment="Bottom" Height="3" IsIndeterminate="True" Visibility="Collapsed"/>
+            </Grid>
         </Border>
 
         <!-- 3. Dynamic Multi-View Reports Area -->

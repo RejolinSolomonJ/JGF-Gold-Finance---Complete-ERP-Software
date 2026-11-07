@@ -7,28 +7,36 @@ using Microsoft.EntityFrameworkCore;
 
 namespace JGF.Infrastructure.Services;
 
-public class DashboardService : IDashboardService
+public class DashboardService : DbServiceBase, IDashboardService
 {
-    private readonly JgfDbContext _context;
     private readonly IBackupService _backupService;
 
-    public DashboardService(JgfDbContext context, IBackupService backupService)
+    public DashboardService(IDbContextFactory<JgfDbContext> contextFactory, IBackupService backupService)
+        : base(contextFactory)
     {
-        _context = context;
+        _backupService = backupService;
+    }
+
+    public DashboardService(JgfDbContext context, IBackupService backupService)
+        : base(context)
+    {
         _backupService = backupService;
     }
 
     public async Task<DashboardSummaryDto> GetDashboardSummaryAsync(CancellationToken ct = default)
     {
+        await using var scope = await GetContextAsync(ct);
+        var context = scope.Context;
+
         var today = DateOnly.FromDateTime(DateTime.Today);
         var firstDayOfMonth = new DateOnly(today.Year, today.Month, 1);
 
         // 1. Current Cash Balance (Head 1001)
-        var headCash = await _context.LedgerHeads.AsNoTracking().FirstOrDefaultAsync(l => l.Code == "1001", ct);
+        var headCash = await context.LedgerHeads.AsNoTracking().FirstOrDefaultAsync(l => l.Code == "1001", ct);
         decimal currentCash = headCash?.OpeningBalance ?? 0m;
         if (headCash != null)
         {
-            var cashLines = await _context.VoucherLines
+            var cashLines = await context.VoucherLines
                 .AsNoTracking()
                 .Where(vl => vl.LedgerHeadId == headCash.Id && vl.Voucher.IsPosted)
                 .Select(vl => new { vl.DebitAmount, vl.CreditAmount })
@@ -38,13 +46,13 @@ public class DashboardService : IDashboardService
         }
 
         // 2. Loans Issued Today & This Month
-        var loansToday = await _context.Loans
+        var loansToday = await context.Loans
             .AsNoTracking()
             .Where(l => l.PledgeDate == today)
             .Select(l => l.LoanAmount)
             .ToListAsync(ct);
 
-        var loansMonth = await _context.Loans
+        var loansMonth = await context.Loans
             .AsNoTracking()
             .Where(l => l.PledgeDate >= firstDayOfMonth && l.PledgeDate <= today)
             .Select(l => l.LoanAmount)
@@ -57,7 +65,7 @@ public class DashboardService : IDashboardService
         decimal loansIssuedThisMonthAmount = loansMonth.Sum();
 
         // 3. Collections Today
-        var receiptsToday = await _context.Receipts
+        var receiptsToday = await context.Receipts
             .AsNoTracking()
             .Where(r => r.ReceiptDate == today)
             .Select(r => new { r.TotalAmount, r.PrincipalAmount, r.InterestAmount, r.PenalInterestAmount })
@@ -67,12 +75,18 @@ public class DashboardService : IDashboardService
         decimal collectionsTodayPrincipal = receiptsToday.Sum(r => r.PrincipalAmount);
         decimal collectionsTodayInterest = receiptsToday.Sum(r => r.InterestAmount + r.PenalInterestAmount);
 
-        // 4. Active Loans & Outstanding Principal & Custody Split
-        var activeLoans = await _context.Loans
+        // 4. Active Loans & Outstanding Principal & Custody Split (Server-side projected)
+        var activeLoans = await context.Loans
             .AsNoTracking()
-            .Include(l => l.Receipts)
-            .Include(l => l.BankPledgeLoans)
             .Where(l => l.Status == LoanStatus.Active || l.Status == LoanStatus.PartiallyPaid)
+            .Select(l => new
+            {
+                l.LoanAmount,
+                l.NetWeight,
+                l.MaturityDate,
+                PrincipalPaid = l.Receipts.Sum(r => r.PrincipalAmount),
+                IsBankCustody = l.BankPledgeLoans.Any(bpl => !bpl.IsReleased && !bpl.IsDeleted)
+            })
             .ToListAsync(ct);
 
         int totalActiveLoansCount = activeLoans.Count;
@@ -84,11 +98,10 @@ public class DashboardService : IDashboardService
 
         foreach (var loan in activeLoans)
         {
-            var principalBalance = Math.Max(0m, loan.LoanAmount - loan.Receipts.Sum(r => r.PrincipalAmount));
+            var principalBalance = Math.Max(0m, loan.LoanAmount - loan.PrincipalPaid);
             totalOutstandingPrincipal += principalBalance;
 
-            var isBankCustody = loan.BankPledgeLoans.Any(bpl => !bpl.IsReleased && !bpl.IsDeleted);
-            if (isBankCustody)
+            if (loan.IsBankCustody)
             {
                 bankCustodyWeight += loan.NetWeight;
             }
@@ -105,7 +118,7 @@ public class DashboardService : IDashboardService
         }
 
         // 5. Bank Repledge Exposure & Upcoming Dues
-        var activeBankPledges = await _context.BankPledges
+        var activeBankPledges = await context.BankPledges
             .AsNoTracking()
             .Include(bp => bp.Bank)
             .Where(bp => bp.Status == BankPledgeStatus.Active || bp.Status == BankPledgeStatus.PartiallyReleased)
@@ -134,7 +147,7 @@ public class DashboardService : IDashboardService
         upcomingDues = upcomingDues.OrderBy(u => u.DaysRemaining).ToList();
 
         // 6. Backup Health
-        var lastBackupLog = await _context.BackupLogs
+        var lastBackupLog = await context.BackupLogs
             .AsNoTracking()
             .OrderByDescending(b => b.CreatedAtUtc)
             .FirstOrDefaultAsync(ct);
@@ -150,12 +163,12 @@ public class DashboardService : IDashboardService
             var mStart = new DateOnly(targetMonthDate.Year, targetMonthDate.Month, 1);
             var mEnd = mStart.AddMonths(1).AddDays(-1);
 
-            var mLoansDisbursed = await _context.Loans
+            var mLoansDisbursed = await context.Loans
                 .AsNoTracking()
                 .Where(l => l.PledgeDate >= mStart && l.PledgeDate <= mEnd)
                 .SumAsync(l => l.LoanAmount, ct);
 
-            var mReceipts = await _context.Receipts
+            var mReceipts = await context.Receipts
                 .AsNoTracking()
                 .Where(r => r.ReceiptDate >= mStart && r.ReceiptDate <= mEnd)
                 .Select(r => new { r.TotalAmount, r.InterestAmount, r.PenalInterestAmount })
@@ -199,4 +212,3 @@ public class DashboardService : IDashboardService
         );
     }
 }
-

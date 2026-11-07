@@ -8,33 +8,46 @@ using Microsoft.Extensions.Logging;
 
 namespace JGF.Infrastructure.Services;
 
-public class AuthService : IAuthService
+public class AuthService : DbServiceBase, IAuthService
 {
-    private readonly JgfDbContext _context;
     private readonly IPasswordHasher _passwordHasher;
     private readonly ILogger<AuthService> _logger;
+
+    public AuthService(
+        IDbContextFactory<JgfDbContext> contextFactory,
+        IPasswordHasher passwordHasher,
+        ILogger<AuthService> logger)
+        : base(contextFactory)
+    {
+        _passwordHasher = passwordHasher;
+        _logger = logger;
+    }
 
     public AuthService(
         JgfDbContext context,
         IPasswordHasher passwordHasher,
         ILogger<AuthService> logger)
+        : base(context)
     {
-        _context = context;
         _passwordHasher = passwordHasher;
         _logger = logger;
     }
 
     public async Task<bool> IsFirstRunAsync(CancellationToken ct = default)
     {
-        return !await _context.Users.AnyAsync(ct);
+        await using var scope = await GetContextAsync(ct);
+        return !await scope.Context.Users.AsNoTracking().AnyAsync(ct);
     }
 
     public async Task<AuthResult> LoginAsync(string username, string password, string? ipAddress = null, CancellationToken ct = default)
     {
-        var user = await _context.Users.FirstOrDefaultAsync(u => u.Username == username, ct);
+        await using var scope = await GetContextAsync(ct);
+        var context = scope.Context;
+
+        var user = await context.Users.FirstOrDefaultAsync(u => u.Username == username, ct);
         if (user == null)
         {
-            await LogLoginAttemptAsync(null, username, AuditAction.FailedLogin, ipAddress, "User does not exist", ct);
+            await LogLoginAttemptAsync(context, null, username, AuditAction.FailedLogin, ipAddress, "User does not exist", ct);
             return new AuthResult(false, "Invalid username or password.");
         }
 
@@ -49,27 +62,27 @@ public class AuthService : IAuthService
             return new AuthResult(false, "User account is disabled. Please contact the Owner.");
         }
 
-        var isPasswordValid = _passwordHasher.VerifyPassword(password, user.PasswordHash);
-        if (!isPasswordValid)
+        var isValid = _passwordHasher.VerifyPassword(password, user.PasswordHash);
+        if (!isValid)
         {
-            user.FailedLoginAttempts += 1;
+            user.FailedLoginAttempts++;
             if (user.FailedLoginAttempts >= 5)
             {
                 user.LockedUntilUtc = DateTime.UtcNow.AddMinutes(15);
-                _logger.LogWarning("User {Username} locked out after 5 failed attempts.", username);
+                _logger.LogWarning("User {Username} locked out due to excessive failed attempts.", username);
             }
-            await _context.SaveChangesAsync(ct);
-            await LogLoginAttemptAsync(user.Id, username, AuditAction.FailedLogin, ipAddress, "Invalid password", ct);
+            await context.SaveChangesAsync(ct);
+            await LogLoginAttemptAsync(context, user.Id, username, AuditAction.FailedLogin, ipAddress, $"Failed attempt {user.FailedLoginAttempts}", ct);
             return new AuthResult(false, "Invalid username or password.");
         }
 
-        // Login succeeded
+        // Successful login
         user.FailedLoginAttempts = 0;
         user.LockedUntilUtc = null;
         user.LastLoginAtUtc = DateTime.UtcNow;
-        await _context.SaveChangesAsync(ct);
+        await context.SaveChangesAsync(ct);
 
-        await LogLoginAttemptAsync(user.Id, username, AuditAction.Login, ipAddress, "Successful login", ct);
+        await LogLoginAttemptAsync(context, user.Id, username, AuditAction.Login, ipAddress, "Successful login", ct);
         return new AuthResult(true, null, user);
     }
 
@@ -80,7 +93,10 @@ public class AuthService : IAuthService
         CompanyProfileDto company,
         CancellationToken ct = default)
     {
-        if (await _context.Users.AnyAsync(ct))
+        await using var scope = await GetContextAsync(ct);
+        var context = scope.Context;
+
+        if (await context.Users.AnyAsync(ct))
         {
             throw new InvalidOperationException("First-run setup has already been completed.");
         }
@@ -94,7 +110,7 @@ public class AuthService : IAuthService
             IsActive = true
         };
 
-        await _context.Users.AddAsync(owner, ct);
+        await context.Users.AddAsync(owner, ct);
 
         // Store company details in Settings
         var settings = new List<Setting>
@@ -108,27 +124,81 @@ public class AuthService : IAuthService
             new() { Key = "Company.FinancialYear", Value = company.FinancialYear, DisplayName = "Active Financial Year", Category = "Company" }
         };
 
-        await _context.Settings.AddRangeAsync(settings, ct);
-        await _context.SaveChangesAsync(ct);
+        await context.Settings.AddRangeAsync(settings, ct);
+        await context.SaveChangesAsync(ct);
 
         return owner;
     }
 
-    private async Task LogLoginAttemptAsync(Guid? userId, string username, AuditAction action, string? ipAddress, string reason, CancellationToken ct)
+    public async Task<User> CreateUserAsync(string username, string password, string fullName, UserRole role, CancellationToken ct = default)
     {
-        var audit = new AuditLog
+        await using var scope = await GetContextAsync(ct);
+        var context = scope.Context;
+
+        var exists = await context.Users.AnyAsync(u => u.Username == username, ct);
+        if (exists)
         {
-            TableName = "Users",
-            RecordId = userId,
-            Action = action,
-            Timestamp = DateTime.UtcNow,
-            UserId = userId,
-            UserName = username,
-            NewValues = $"{{\"Event\": \"{action}\", \"Reason\": \"{reason}\"}}",
-            IpAddress = ipAddress
+            throw new InvalidOperationException($"Username '{username}' already exists.");
+        }
+
+        var user = new User
+        {
+            Username = username,
+            PasswordHash = _passwordHasher.HashPassword(password),
+            FullName = fullName,
+            Role = role,
+            IsActive = true
         };
-        await _context.AuditLogs.AddAsync(audit, ct);
-        await _context.SaveChangesAsync(ct);
+
+        await context.Users.AddAsync(user, ct);
+        await context.SaveChangesAsync(ct);
+        return user;
+    }
+
+    public async Task<bool> ChangePasswordAsync(Guid userId, string oldPassword, string newPassword, CancellationToken ct = default)
+    {
+        await using var scope = await GetContextAsync(ct);
+        var context = scope.Context;
+
+        var user = await context.Users.FirstOrDefaultAsync(u => u.Id == userId, ct);
+        if (user == null) return false;
+
+        if (!_passwordHasher.VerifyPassword(oldPassword, user.PasswordHash))
+        {
+            return false;
+        }
+
+        user.PasswordHash = _passwordHasher.HashPassword(newPassword);
+        await context.SaveChangesAsync(ct);
+        return true;
+    }
+
+    public async Task<List<User>> GetAllUsersAsync(CancellationToken ct = default)
+    {
+        await using var scope = await GetContextAsync(ct);
+        return await scope.Context.Users.AsNoTracking().OrderBy(u => u.Username).ToListAsync(ct);
+    }
+
+    private async Task LogLoginAttemptAsync(JgfDbContext context, Guid? userId, string username, AuditAction action, string? ipAddress, string notes, CancellationToken ct)
+    {
+        try
+        {
+            var log = new AuditLog
+            {
+                UserId = userId,
+                UserName = username,
+                Action = action,
+                TableName = "Users",
+                IpAddress = ipAddress,
+                NewValues = notes,
+                Timestamp = DateTime.UtcNow
+            };
+            await context.AuditLogs.AddAsync(log, ct);
+            await context.SaveChangesAsync(ct);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to write audit log for user {Username}", username);
+        }
     }
 }
-

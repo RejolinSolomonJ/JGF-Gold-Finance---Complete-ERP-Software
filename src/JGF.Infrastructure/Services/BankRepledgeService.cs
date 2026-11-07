@@ -8,28 +8,41 @@ using Microsoft.EntityFrameworkCore;
 
 namespace JGF.Infrastructure.Services;
 
-public class BankRepledgeService : IBankRepledgeService
+public class BankRepledgeService : DbServiceBase, IBankRepledgeService
 {
-    private readonly JgfDbContext _context;
     private readonly INumberSeriesService _numberSeries;
     private readonly IPermissionService _permissionService;
+
+    public BankRepledgeService(
+        IDbContextFactory<JgfDbContext> contextFactory,
+        INumberSeriesService numberSeries,
+        IPermissionService permissionService)
+        : base(contextFactory)
+    {
+        _numberSeries = numberSeries;
+        _permissionService = permissionService;
+    }
 
     public BankRepledgeService(
         JgfDbContext context,
         INumberSeriesService numberSeries,
         IPermissionService permissionService)
+        : base(context)
     {
-        _context = context;
         _numberSeries = numberSeries;
         _permissionService = permissionService;
     }
 
     public async Task<List<BankPledgeSummaryDto>> GetAllBankPledgesAsync(CancellationToken ct = default)
     {
+        await using var scope = await GetContextAsync(ct);
+        var context = scope.Context;
+
         var today = DateOnly.FromDateTime(DateTime.Today);
         var thresholdDate = today.AddDays(15);
 
-        var pledges = await _context.BankPledges
+        var pledges = await context.BankPledges
+            .AsNoTracking()
             .Include(b => b.Bank)
             .Include(b => b.BankPledgeLoans).ThenInclude(bpl => bpl.Loan)
             .OrderByDescending(b => b.PledgeDate)
@@ -62,7 +75,9 @@ public class BankRepledgeService : IBankRepledgeService
 
     public async Task<BankPledge?> GetBankPledgeDetailsAsync(Guid bankPledgeId, CancellationToken ct = default)
     {
-        return await _context.BankPledges
+        await using var scope = await GetContextAsync(ct);
+        return await scope.Context.BankPledges
+            .AsNoTracking()
             .Include(b => b.Bank)
             .Include(b => b.BankPledgeLoans).ThenInclude(l => l.Loan).ThenInclude(cl => cl.Customer)
             .Include(b => b.BankPledgeLoans).ThenInclude(l => l.Loan).ThenInclude(cl => cl.Items).ThenInclude(i => i.JewelType)
@@ -71,13 +86,17 @@ public class BankRepledgeService : IBankRepledgeService
 
     public async Task<List<Loan>> GetAvailableLoansForRepledgeAsync(CancellationToken ct = default)
     {
-        // Eligible customer loans that are Active and NOT currently pledged in an active bank pledge
-        var alreadyPledgedLoanIds = await _context.BankPledgeLoans
+        await using var scope = await GetContextAsync(ct);
+        var context = scope.Context;
+
+        var alreadyPledgedLoanIds = await context.BankPledgeLoans
+            .AsNoTracking()
             .Where(bpl => !bpl.IsReleased)
             .Select(bpl => bpl.LoanId)
             .ToListAsync(ct);
 
-        return await _context.Loans
+        return await context.Loans
+            .AsNoTracking()
             .Include(l => l.Customer)
             .Include(l => l.Items).ThenInclude(i => i.JewelType)
             .Where(l => (l.Status == LoanStatus.Active || l.Status == LoanStatus.PartiallyPaid) 
@@ -90,13 +109,16 @@ public class BankRepledgeService : IBankRepledgeService
     {
         _permissionService.EnsurePermission(dto.UserRole, Permission.ManageBankRepledge);
 
-        var bank = await _context.Banks.FindAsync(new object[] { dto.BankId }, ct)
+        await using var scope = await GetContextAsync(ct);
+        var context = scope.Context;
+
+        var bank = await context.Banks.FindAsync(new object[] { dto.BankId }, ct)
             ?? throw new ArgumentException("Selected Bank/NBFC not found.");
 
-        var isRelational = _context.Database.IsRelational();
-        using var tx = isRelational ? await _context.Database.BeginTransactionAsync(ct) : null;
+        var isRelational = context.Database.IsRelational();
+        using var tx = isRelational ? await context.Database.BeginTransactionAsync(ct) : null;
 
-        var selectedLoans = await _context.Loans
+        var selectedLoans = await context.Loans
             .Where(l => dto.LoanIdsToPledge.Contains(l.Id))
             .ToListAsync(ct);
 
@@ -119,7 +141,7 @@ public class BankRepledgeService : IBankRepledgeService
             Remarks = dto.Remarks
         };
 
-        await _context.BankPledges.AddAsync(bankPledge, ct);
+        await context.BankPledges.AddAsync(bankPledge, ct);
 
         foreach (var loan in selectedLoans)
         {
@@ -131,14 +153,13 @@ public class BankRepledgeService : IBankRepledgeService
                 PledgedDate = dto.PledgeDate,
                 IsReleased = false
             };
-            await _context.BankPledgeLoans.AddAsync(bpl, ct);
+            await context.BankPledgeLoans.AddAsync(bpl, ct);
         }
 
-        // Double-entry Voucher:
-        // Cash Inflow from Bank Refinance: Debit Cash (1001), Credit Bank Loan Payable (2001)
+        // Double-entry Voucher
         var fy = "2024-25";
-        var headCash = await _context.LedgerHeads.FirstOrDefaultAsync(l => l.Code == "1001", ct);
-        var headBankLoan = await _context.LedgerHeads.FirstOrDefaultAsync(l => l.Code == "2001", ct);
+        var headCash = await context.LedgerHeads.FirstOrDefaultAsync(l => l.Code == "1001", ct);
+        var headBankLoan = await context.LedgerHeads.FirstOrDefaultAsync(l => l.Code == "2001", ct);
 
         if (headCash != null && headBankLoan != null)
         {
@@ -176,14 +197,11 @@ public class BankRepledgeService : IBankRepledgeService
                 LineOrder = 2
             });
 
-            await _context.Vouchers.AddAsync(voucher, ct);
+            await context.Vouchers.AddAsync(voucher, ct);
         }
 
-        await _context.SaveChangesAsync(ct);
-        if (tx != null)
-        {
-            await tx.CommitAsync(ct);
-        }
+        await context.SaveChangesAsync(ct);
+        if (tx != null) await tx.CommitAsync(ct);
 
         return bankPledge;
     }
@@ -192,18 +210,20 @@ public class BankRepledgeService : IBankRepledgeService
     {
         _permissionService.EnsurePermission(dto.UserRole, Permission.ManageBankRepledge);
 
-        var bankPledge = await _context.BankPledges
+        await using var scope = await GetContextAsync(ct);
+        var context = scope.Context;
+
+        var bankPledge = await context.BankPledges
             .Include(b => b.Bank)
             .Include(b => b.BankPledgeLoans)
             .FirstOrDefaultAsync(b => b.Id == dto.BankPledgeId, ct)
             ?? throw new ArgumentException("Bank pledge not found.");
 
-        var isRelational = _context.Database.IsRelational();
-        using var tx = isRelational ? await _context.Database.BeginTransactionAsync(ct) : null;
+        var isRelational = context.Database.IsRelational();
+        using var tx = isRelational ? await context.Database.BeginTransactionAsync(ct) : null;
 
-        // Separate RZ sequence series for bank payments
         var fy = "24-25";
-        var rzSeries = await _context.NumberSerieses
+        var rzSeries = await context.NumberSerieses
             .FirstOrDefaultAsync(s => s.Prefix == "RZ" && s.FinancialYear == fy, ct);
 
         if (rzSeries == null)
@@ -217,7 +237,7 @@ public class BankRepledgeService : IBankRepledgeService
                 PadLength = 5,
                 Separator = "/"
             };
-            await _context.NumberSerieses.AddAsync(rzSeries, ct);
+            await context.NumberSerieses.AddAsync(rzSeries, ct);
         }
 
         rzSeries.LastNumber += 1;
@@ -225,7 +245,6 @@ public class BankRepledgeService : IBankRepledgeService
 
         var totalAmount = dto.PrincipalPaid + dto.InterestPaid + dto.PostalCharges;
 
-        // Create BankPayment record
         var payment = new BankPayment
         {
             BankPledgeId = bankPledge.Id,
@@ -240,15 +259,13 @@ public class BankRepledgeService : IBankRepledgeService
             ReferenceNumber = dto.ReferenceNumber,
             Notes = dto.Remarks
         };
-        await _context.Set<BankPayment>().AddAsync(payment, ct);
+        await context.Set<BankPayment>().AddAsync(payment, ct);
 
-        // Update Bank Pledge principal
         if (dto.PrincipalPaid > 0)
         {
             bankPledge.DisbursedAmount = Math.Max(0m, bankPledge.DisbursedAmount - dto.PrincipalPaid);
         }
 
-        // Release associated customer loans (marking jewels back in shop locker)
         if (dto.ReleasedLoanIds != null && dto.ReleasedLoanIds.Count > 0)
         {
             var loansToRelease = bankPledge.BankPledgeLoans
@@ -277,10 +294,10 @@ public class BankRepledgeService : IBankRepledgeService
         }
 
         // Post balanced voucher
-        var headCash = await _context.LedgerHeads.FirstOrDefaultAsync(l => l.Code == "1001", ct);
-        var headBankLoan = await _context.LedgerHeads.FirstOrDefaultAsync(l => l.Code == "2001", ct);
-        var headInterestExp = await _context.LedgerHeads.FirstOrDefaultAsync(l => l.Code == "5001", ct);
-        var headPostalExp = await _context.LedgerHeads.FirstOrDefaultAsync(l => l.Code == "5004", ct);
+        var headCash = await context.LedgerHeads.FirstOrDefaultAsync(l => l.Code == "1001", ct);
+        var headBankLoan = await context.LedgerHeads.FirstOrDefaultAsync(l => l.Code == "2001", ct);
+        var headInterestExp = await context.LedgerHeads.FirstOrDefaultAsync(l => l.Code == "5001", ct);
+        var headPostalExp = await context.LedgerHeads.FirstOrDefaultAsync(l => l.Code == "5004", ct);
 
         var vNumber = await _numberSeries.GetNextNumberAsync(NumberSeriesType.VoucherNumber, fy, null, ct);
         var voucher = new Voucher
@@ -344,27 +361,30 @@ public class BankRepledgeService : IBankRepledgeService
             LineOrder = line++
         });
 
-        await _context.Vouchers.AddAsync(voucher, ct);
+        await context.Vouchers.AddAsync(voucher, ct);
         payment.VoucherId = voucher.Id;
 
-        await _context.SaveChangesAsync(ct);
-        if (tx != null)
-        {
-            await tx.CommitAsync(ct);
-        }
+        await context.SaveChangesAsync(ct);
+        if (tx != null) await tx.CommitAsync(ct);
 
         return (payment, rzNumber);
     }
 
     public async Task<bool> IsLoanInBankCustodyAsync(Guid loanId, CancellationToken ct = default)
     {
-        return await _context.BankPledgeLoans
+        await using var scope = await GetContextAsync(ct);
+        return await scope.Context.BankPledgeLoans
+            .AsNoTracking()
             .AnyAsync(bpl => bpl.LoanId == loanId && !bpl.IsReleased, ct);
     }
 
     public async Task<List<PawnVsBankDifferenceDto>> GetPawnVsBankDifferenceReportAsync(CancellationToken ct = default)
     {
-        var activePledges = await _context.BankPledges
+        await using var scope = await GetContextAsync(ct);
+        var context = scope.Context;
+
+        var activePledges = await context.BankPledges
+            .AsNoTracking()
             .Include(b => b.Bank)
             .Include(b => b.BankPledgeLoans).ThenInclude(bpl => bpl.Loan).ThenInclude(l => l.Customer)
             .Where(b => b.Status == BankPledgeStatus.Active || b.Status == BankPledgeStatus.PartiallyReleased)
@@ -379,10 +399,9 @@ public class BankRepledgeService : IBankRepledgeService
 
             foreach (var bpl in unreleasedLoans)
             {
-                // Apportion bank borrowing based on loan proportion
                 var proportion = totalCustAmt > 0 ? (bpl.Loan.LoanAmount / totalCustAmt) : 0m;
                 var bankPortion = Math.Round(p.DisbursedAmount * proportion, 2);
-                var diff = bpl.Loan.LoanAmount - bankPortion; // Difference in capital
+                var diff = bpl.Loan.LoanAmount - bankPortion;
 
                 list.Add(new PawnVsBankDifferenceDto(
                     p.Bank.Name,
@@ -402,7 +421,11 @@ public class BankRepledgeService : IBankRepledgeService
 
     public async Task<List<JewelCustodyStockDto>> GetJewelStockCustodyReportAsync(CancellationToken ct = default)
     {
-        var activeLoans = await _context.Loans
+        await using var scope = await GetContextAsync(ct);
+        var context = scope.Context;
+
+        var activeLoans = await context.Loans
+            .AsNoTracking()
             .Include(l => l.Customer)
             .Include(l => l.Items).ThenInclude(i => i.JewelType)
             .Include(l => l.BankPledgeLoans).ThenInclude(bpl => bpl.BankPledge).ThenInclude(bp => bp.Bank)

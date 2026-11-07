@@ -8,6 +8,7 @@ public partial class DashboardControl : UserControl
 {
     private readonly IDashboardService _dashboardService;
     private readonly Action<string>? _navigationCallback;
+    private bool _isLoading;
 
     public DashboardControl(IDashboardService dashboardService, Action<string>? navigationCallback = null)
     {
@@ -15,14 +16,25 @@ public partial class DashboardControl : UserControl
         _dashboardService = dashboardService;
         _navigationCallback = navigationCallback;
 
-        Loaded += async (s, e) => await LoadDashboardDataAsync();
+        Loaded += async (s, e) => await InitializeAsync();
     }
 
-    public async Task LoadDashboardDataAsync()
+    public async Task InitializeAsync()
     {
+        await LoadDashboardDataAsync();
+    }
+
+    public async Task LoadDashboardDataAsync(CancellationToken ct = default)
+    {
+        if (_isLoading) return;
+        _isLoading = true;
+
         try
         {
-            var data = await _dashboardService.GetDashboardSummaryAsync();
+            PrgLoading.Visibility = Visibility.Visible;
+            BtnRefresh.IsEnabled = false;
+
+            var data = await _dashboardService.GetDashboardSummaryAsync(ct);
 
             TxtTodayCash.Text = $"₹ {data.TodayCashBalance:N2}";
             TxtLoansToday.Text = $"₹ {data.LoansIssuedTodayAmount:N2}";
@@ -60,9 +72,19 @@ public partial class DashboardControl : UserControl
 
             TxtLastRefreshed.Text = $"Updated: {DateTime.Now:hh:mm:ss tt}";
         }
+        catch (OperationCanceledException)
+        {
+            // Ignored
+        }
         catch (Exception ex)
         {
             MessageBox.Show($"Failed to load dashboard KPIs: {ex.Message}", "Dashboard Error", MessageBoxButton.OK, MessageBoxImage.Warning);
+        }
+        finally
+        {
+            _isLoading = false;
+            PrgLoading.Visibility = Visibility.Collapsed;
+            BtnRefresh.IsEnabled = true;
         }
     }
 
@@ -78,4 +100,3 @@ public partial class DashboardControl : UserControl
     private void OnReportsClick(object sender, RoutedEventArgs e) => _navigationCallback?.Invoke("Reports");
     private void OnDayBookClick(object sender, RoutedEventArgs e) => _navigationCallback?.Invoke("DayBook");
 }
-

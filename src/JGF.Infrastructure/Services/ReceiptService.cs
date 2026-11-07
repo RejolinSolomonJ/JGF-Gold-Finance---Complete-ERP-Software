@@ -9,25 +9,36 @@ using Microsoft.EntityFrameworkCore;
 
 namespace JGF.Infrastructure.Services;
 
-public class ReceiptService : IReceiptService
+public class ReceiptService : DbServiceBase, IReceiptService
 {
-    private readonly JgfDbContext _context;
     private readonly INumberSeriesService _numberSeries;
     private readonly IPermissionService _permissionService;
+
+    public ReceiptService(
+        IDbContextFactory<JgfDbContext> contextFactory,
+        INumberSeriesService numberSeries,
+        IPermissionService permissionService)
+        : base(contextFactory)
+    {
+        _numberSeries = numberSeries;
+        _permissionService = permissionService;
+    }
 
     public ReceiptService(
         JgfDbContext context,
         INumberSeriesService numberSeries,
         IPermissionService permissionService)
+        : base(context)
     {
-        _context = context;
         _numberSeries = numberSeries;
         _permissionService = permissionService;
     }
 
     public async Task<Receipt?> GetReceiptByIdAsync(Guid receiptId, CancellationToken ct = default)
     {
-        return await _context.Receipts
+        await using var scope = await GetContextAsync(ct);
+        return await scope.Context.Receipts
+            .AsNoTracking()
             .Include(r => r.Loan).ThenInclude(l => l.Customer)
             .Include(r => r.Loan).ThenInclude(l => l.Items)
             .FirstOrDefaultAsync(r => r.Id == receiptId, ct);
@@ -35,7 +46,9 @@ public class ReceiptService : IReceiptService
 
     public async Task<List<Receipt>> GetReceiptsForLoanAsync(Guid loanId, CancellationToken ct = default)
     {
-        return await _context.Receipts
+        await using var scope = await GetContextAsync(ct);
+        return await scope.Context.Receipts
+            .AsNoTracking()
             .Where(r => r.LoanId == loanId)
             .OrderByDescending(r => r.ReceiptDate).ThenByDescending(r => r.CreatedAtUtc)
             .ToListAsync(ct);
@@ -45,7 +58,10 @@ public class ReceiptService : IReceiptService
     {
         _permissionService.EnsurePermission(dto.UserRole, Permission.CreateReceipt);
 
-        var loan = await _context.Loans
+        await using var scope = await GetContextAsync(ct);
+        var context = scope.Context;
+
+        var loan = await context.Loans
             .Include(l => l.Customer)
             .FirstOrDefaultAsync(l => l.Id == dto.LoanId, ct)
             ?? throw new ArgumentException("Loan not found.");
@@ -58,7 +74,7 @@ public class ReceiptService : IReceiptService
         // Safety Check: If closing, verify jewels are not pledged to a Bank/NBFC
         if (dto.ReceiptType == ReceiptType.Closure)
         {
-            var isWithBank = await _context.BankPledgeLoans
+            var isWithBank = await context.BankPledgeLoans
                 .AnyAsync(bpl => bpl.LoanId == loan.Id && !bpl.IsReleased, ct);
 
             if (isWithBank && dto.UserRole != UserRole.Owner)
@@ -69,7 +85,8 @@ public class ReceiptService : IReceiptService
             }
         }
 
-        using var tx = await _context.Database.BeginTransactionAsync(ct);
+        var isRelational = context.Database.IsRelational();
+        using var tx = isRelational ? await context.Database.BeginTransactionAsync(ct) : null;
 
         var fy = "2024-25";
         var rNumber = await _numberSeries.GetNextNumberAsync(NumberSeriesType.ReceiptNumber, fy, null, ct);
@@ -98,12 +115,12 @@ public class ReceiptService : IReceiptService
             Notes = dto.AdjustmentReason != null ? $"Adjustment: {dto.AdjustmentReason}" : null
         };
 
-        await _context.Receipts.AddAsync(receipt, ct);
+        await context.Receipts.AddAsync(receipt, ct);
 
         // Update Loan state
         loan.LastInterestPaidDate = dto.InterestToDate;
 
-        var lastBalance = await _context.LoanLedgerEntries
+        var lastBalance = await context.LoanLedgerEntries
             .Where(e => e.LoanId == loan.Id)
             .OrderByDescending(e => e.EntryDate).ThenByDescending(e => e.CreatedAtUtc)
             .Select(e => e.Balance)
@@ -125,7 +142,7 @@ public class ReceiptService : IReceiptService
         // Sub-ledger entries
         if (dto.InterestAmount > 0 || dto.PenalInterestAmount > 0)
         {
-            await _context.LoanLedgerEntries.AddAsync(new LoanLedgerEntry
+            await context.LoanLedgerEntries.AddAsync(new LoanLedgerEntry
             {
                 LoanId = loan.Id,
                 EntryDate = dto.ReceiptDate,
@@ -140,7 +157,7 @@ public class ReceiptService : IReceiptService
 
         if (dto.PrincipalAmount > 0)
         {
-            await _context.LoanLedgerEntries.AddAsync(new LoanLedgerEntry
+            await context.LoanLedgerEntries.AddAsync(new LoanLedgerEntry
             {
                 LoanId = loan.Id,
                 EntryDate = dto.ReceiptDate,
@@ -170,11 +187,11 @@ public class ReceiptService : IReceiptService
             ReferenceId = receipt.Id
         };
 
-        var headCash = await _context.LedgerHeads.FirstOrDefaultAsync(l => l.Code == "1001", ct);
-        var headJewelLoan = await _context.LedgerHeads.FirstOrDefaultAsync(l => l.Code == "1002", ct);
-        var headInterest = await _context.LedgerHeads.FirstOrDefaultAsync(l => l.Code == "4001", ct);
-        var headPenal = await _context.LedgerHeads.FirstOrDefaultAsync(l => l.Code == "4002", ct);
-        var headPostal = await _context.LedgerHeads.FirstOrDefaultAsync(l => l.Code == "4004", ct);
+        var headCash = await context.LedgerHeads.FirstOrDefaultAsync(l => l.Code == "1001", ct);
+        var headJewelLoan = await context.LedgerHeads.FirstOrDefaultAsync(l => l.Code == "1002", ct);
+        var headInterest = await context.LedgerHeads.FirstOrDefaultAsync(l => l.Code == "4001", ct);
+        var headPenal = await context.LedgerHeads.FirstOrDefaultAsync(l => l.Code == "4002", ct);
+        var headPostal = await context.LedgerHeads.FirstOrDefaultAsync(l => l.Code == "4004", ct);
 
         int line = 1;
         // Debit side (Total money received in Cash or Bank)
@@ -239,11 +256,11 @@ public class ReceiptService : IReceiptService
             });
         }
 
-        await _context.Vouchers.AddAsync(voucher, ct);
+        await context.Vouchers.AddAsync(voucher, ct);
         receipt.VoucherId = voucher.Id;
 
-        await _context.SaveChangesAsync(ct);
-        await tx.CommitAsync(ct);
+        await context.SaveChangesAsync(ct);
+        if (tx != null) await tx.CommitAsync(ct);
 
         return receipt;
     }
@@ -284,7 +301,9 @@ public class ReceiptService : IReceiptService
 
     public async Task<byte[]> GenerateReleaseSlipPdfAsync(Guid loanId, CancellationToken ct = default)
     {
-        var loan = await _context.Loans
+        await using var scope = await GetContextAsync(ct);
+        var loan = await scope.Context.Loans
+            .AsNoTracking()
             .Include(l => l.Customer)
             .Include(l => l.Items).ThenInclude(i => i.JewelType)
             .FirstOrDefaultAsync(l => l.Id == loanId, ct)
@@ -314,4 +333,3 @@ public class ReceiptService : IReceiptService
         return Encoding.UTF8.GetBytes(sb.ToString());
     }
 }
-

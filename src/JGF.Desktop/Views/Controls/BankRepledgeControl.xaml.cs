@@ -36,15 +36,22 @@ public partial class BankRepledgeControl : UserControl
 
     private async Task LoadPledgesAsync()
     {
-        var list = await _repledgeService.GetAllBankPledgesAsync();
-        GridPledges.ItemsSource = list;
-
-        var dueSoonCount = list.Count(p => p.IsDueSoon);
-        var overdueCount = list.Count(p => p.IsOverdue);
-        if (overdueCount > 0 || dueSoonCount > 0)
+        try
         {
-            TxtDashboardNotice.Text = $"⚠ Action Required: {overdueCount} bank pledges OVERDUE! {dueSoonCount} bank pledges due within 15 days.";
-            TxtDashboardNotice.Foreground = System.Windows.Media.Brushes.Crimson;
+            var list = await _repledgeService.GetAllBankPledgesAsync();
+            GridPledges.ItemsSource = list;
+
+            var dueSoonCount = list.Count(p => p.IsDueSoon);
+            var overdueCount = list.Count(p => p.IsOverdue);
+            if (overdueCount > 0 || dueSoonCount > 0)
+            {
+                TxtDashboardNotice.Text = $"⚠ Action Required: {overdueCount} bank pledges OVERDUE! {dueSoonCount} bank pledges due within 15 days.";
+                TxtDashboardNotice.Foreground = System.Windows.Media.Brushes.Crimson;
+            }
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show($"Failed to load bank pledges: {ex.Message}", "Bank Repledge Error", MessageBoxButton.OK, MessageBoxImage.Warning);
         }
     }
 

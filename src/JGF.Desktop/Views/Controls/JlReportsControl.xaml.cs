@@ -27,6 +27,8 @@ public partial class JlReportsControl : UserControl
     private PostalChargeReportSummaryDto? _lastPostal;
     private InterestCollectionReportSummaryDto? _lastInterest;
     private CustomerStatementReportDto? _lastStatement;
+    private CancellationTokenSource? _loadCts;
+    private bool _isLoading;
 
     public JlReportsControl(
         IJlReportService reportService,
@@ -44,11 +46,22 @@ public partial class JlReportsControl : UserControl
         _currentUserId = currentUserId;
         _currentUserRole = currentUserRole;
 
-        Loaded += async (s, e) =>
-        {
-            await LoadSchemesAsync();
-            await LoadReportDataAsync();
-        };
+        Loaded += async (s, e) => await InitializeAsync();
+    }
+
+    private async Task InitializeAsync()
+    {
+        await LoadSchemesAsync();
+        await LoadReportDataAsync();
+    }
+
+    private void SetLoading(bool isLoading)
+    {
+        _isLoading = isLoading;
+        if (PrgLoading != null) PrgLoading.Visibility = isLoading ? Visibility.Visible : Visibility.Collapsed;
+        if (BtnApplyFilter != null) BtnApplyFilter.IsEnabled = !isLoading;
+        if (BtnExportExcel != null) BtnExportExcel.IsEnabled = !isLoading;
+        if (BtnPrintPdf != null) BtnPrintPdf.IsEnabled = !isLoading;
     }
 
     private async Task LoadSchemesAsync()
@@ -127,14 +140,20 @@ public partial class JlReportsControl : UserControl
 
     private async Task LoadReportDataAsync()
     {
+        _loadCts?.Cancel();
+        _loadCts?.Dispose();
+        _loadCts = new CancellationTokenSource();
+        var ct = _loadCts.Token;
+
         var filter = BuildFilter();
 
         try
         {
+            SetLoading(true);
             switch (CmbReportSelect.SelectedIndex)
             {
                 case 0: // Outstanding
-                    _lastOutstanding = await _reportService.GetOutstandingReportAsync(filter);
+                    _lastOutstanding = await _reportService.GetOutstandingReportAsync(filter, ct);
                     GridOutstanding.ItemsSource = _lastOutstanding.Items;
                     TxtOutstandingCount.Text = $"Total Loans: {_lastOutstanding.TotalLoans}";
                     TxtOutstandingNetWt.Text = $"{_lastOutstanding.TotalNetWeight:F3} g";
@@ -143,7 +162,7 @@ public partial class JlReportsControl : UserControl
                     break;
 
                 case 1: // Summary
-                    _lastSummary = await _reportService.GetLoanSummaryReportAsync(filter);
+                    _lastSummary = await _reportService.GetLoanSummaryReportAsync(filter, ct);
                     GridSummary.ItemsSource = _lastSummary.Items;
                     TxtSummaryTotals.Text = $"Schemes: {_lastSummary.TotalSchemes} | Total Loans: {_lastSummary.GrandTotalLoans}";
                     TxtSummaryDisbursed.Text = $"₹ {_lastSummary.GrandDisbursed:N2}";
@@ -152,7 +171,7 @@ public partial class JlReportsControl : UserControl
                     break;
 
                 case 2: // Pledge
-                    _lastPledge = await _reportService.GetPledgeReportAsync(filter);
+                    _lastPledge = await _reportService.GetPledgeReportAsync(filter, ct);
                     GridPledge.ItemsSource = _lastPledge.Items;
                     TxtPledgeCount.Text = $"Total Loans: {_lastPledge.TotalLoans} ({_lastPledge.TotalItems} items)";
                     TxtPledgeGross.Text = $"{_lastPledge.TotalGrossWeight:F3} g";
@@ -161,7 +180,7 @@ public partial class JlReportsControl : UserControl
                     break;
 
                 case 3: // Release
-                    _lastRelease = await _reportService.GetReleaseReportAsync(filter);
+                    _lastRelease = await _reportService.GetReleaseReportAsync(filter, ct);
                     GridRelease.ItemsSource = _lastRelease.Items;
                     TxtReleaseCount.Text = $"Closed Loans: {_lastRelease.TotalClosedLoans}";
                     TxtReleasePrincipal.Text = $"₹ {_lastRelease.TotalPrincipalPaid:N2}";
@@ -235,9 +254,17 @@ public partial class JlReportsControl : UserControl
                     break;
             }
         }
+        catch (OperationCanceledException)
+        {
+            // Cancelled due to user switching report / filter
+        }
         catch (Exception ex)
         {
             MessageBox.Show($"Failed to generate report: {ex.Message}", "Report Error", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
+        finally
+        {
+            SetLoading(false);
         }
     }
 
