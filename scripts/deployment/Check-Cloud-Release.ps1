@@ -40,3 +40,4 @@ if (Test-Path $ManifestPath) {
 } else {
     Write-Host "No pending cloud updates discovered." -ForegroundColor Gray
 }
+

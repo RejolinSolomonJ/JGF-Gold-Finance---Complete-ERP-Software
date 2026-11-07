@@ -42,3 +42,4 @@ public class SchemaVersionConfiguration : IEntityTypeConfiguration<SchemaVersion
             .HasDatabaseName("IX_SchemaVersions_AppliedAtUtc");
     }
 }
+

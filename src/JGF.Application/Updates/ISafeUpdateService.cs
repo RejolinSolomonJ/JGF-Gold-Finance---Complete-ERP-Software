@@ -107,3 +107,4 @@ public interface ISafeUpdateService
     /// </summary>
     Task ClearWorkstationHeartbeatAsync(string workstationName, CancellationToken ct = default);
 }
+

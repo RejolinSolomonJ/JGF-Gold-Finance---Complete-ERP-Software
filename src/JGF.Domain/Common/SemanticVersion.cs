@@ -96,3 +96,4 @@ public record SemanticVersion : IComparable<SemanticVersion>
 
     public override string ToString() => Raw;
 }
+

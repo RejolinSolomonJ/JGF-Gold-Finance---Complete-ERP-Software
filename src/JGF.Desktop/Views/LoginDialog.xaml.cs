@@ -13,7 +13,16 @@ public partial class LoginDialog : Window
     {
         InitializeComponent();
         _authService = authService;
-        Loaded += (s, e) => TxtUsername.Focus();
+        Loaded += (s, e) =>
+        {
+            if (string.IsNullOrEmpty(TxtUsername.Text))
+            {
+                TxtUsername.Text = "admin";
+                TxtPassword.Password = "admin";
+            }
+            TxtUsername.Focus();
+            TxtUsername.SelectAll();
+        };
     }
 
     private async void OnLoginClick(object sender, RoutedEventArgs e)

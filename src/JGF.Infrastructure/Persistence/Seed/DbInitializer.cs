@@ -77,7 +77,7 @@ public static class DbInitializer
         {
             var initialVersion = new SchemaVersion
             {
-                AppVersion = "1.0.0",
+                AppVersion = "1.2.0",
                 AppliedMigrations = "Initial_Create",
                 AppliedAtUtc = DateTime.UtcNow,
                 AppliedBy = "System",
@@ -89,6 +89,167 @@ public static class DbInitializer
             };
 
             await context.SchemaVersions.AddAsync(initialVersion);
+        }
+
+        if (!await context.Users.AnyAsync())
+        {
+            var hasher = new JGF.Application.Security.BCryptPasswordHasher();
+            var users = new List<User>
+            {
+                new()
+                {
+                    Username = "admin",
+                    PasswordHash = hasher.HashPassword("admin"),
+                    FullName = "Admin (Owner)",
+                    Role = UserRole.Owner,
+                    IsActive = true
+                },
+                new()
+                {
+                    Username = "manager",
+                    PasswordHash = hasher.HashPassword("manager"),
+                    FullName = "Manager S",
+                    Role = UserRole.Manager,
+                    IsActive = true
+                },
+                new()
+                {
+                    Username = "cashier",
+                    PasswordHash = hasher.HashPassword("cashier"),
+                    FullName = "Cashier K",
+                    Role = UserRole.Cashier,
+                    IsActive = true
+                }
+            };
+            await context.Users.AddRangeAsync(users);
+        }
+
+        if (!await context.Settings.AnyAsync(s => s.Key == "Company.Name"))
+        {
+            var companySettings = new List<Setting>
+            {
+                new() { Key = "Company.Name", Value = "JGF Jewel Gold Finance", Description = "Company Legal Name" },
+                new() { Key = "Company.Address", Value = "123, Bazaar Street, Madurai - 625001", Description = "Shop Address" },
+                new() { Key = "Company.Phone", Value = "0452-2345678", Description = "Contact Phone" },
+                new() { Key = "Company.RegNo", Value = "TN-PBN-2024-001", Description = "Pawnbroker License Number" },
+                new() { Key = "Company.GstNo", Value = "33AAAAA0000A1Z5", Description = "GSTIN" },
+                new() { Key = "Company.FinancialYear", Value = "2024-25", Description = "Current Financial Year" }
+            };
+            await context.Settings.AddRangeAsync(companySettings);
+        }
+
+        if (!await context.Schemes.AnyAsync())
+        {
+            var schemes = new List<Scheme>
+            {
+                new()
+                {
+                    Code = "S1",
+                    Name = "Standard Gold Loan 12%",
+                    InterestMethod = InterestMethod.Simple,
+                    InterestRatePerMonth = 1.0m, // 12% p.a.
+                    MinimumInterestDays = 7,
+                    MinimumInterestMonths = 1,
+                    MaxLtvPercent = 75.0m,
+                    MaxTenureMonths = 12,
+                    GraceDaysAfterExpiry = 7,
+                    PenalInterestRatePerMonth = 0.5m
+                },
+                new()
+                {
+                    Code = "S2",
+                    Name = "Slab Interest Scheme 12-18%",
+                    InterestMethod = InterestMethod.Simple,
+                    InterestRatePerMonth = 1.5m, // 18% p.a.
+                    MinimumInterestDays = 15,
+                    MinimumInterestMonths = 1,
+                    MaxLtvPercent = 75.0m,
+                    MaxTenureMonths = 12,
+                    GraceDaysAfterExpiry = 7,
+                    PenalInterestRatePerMonth = 0.5m
+                }
+            };
+            await context.Schemes.AddRangeAsync(schemes);
+        }
+
+        if (!await context.GoldRates.AnyAsync())
+        {
+            var today = DateOnly.FromDateTime(DateTime.UtcNow);
+            var goldRate = new GoldRate
+            {
+                Date = today,
+                RatePerGram = 6850.00m,
+                Rate22K = 6850.00m,
+                Rate24K = 7450.00m,
+                Rate18K = 5600.00m,
+                Source = "Madurai Bullion Association",
+                Remarks = "Standard Lending Rate 22K 916"
+            };
+            await context.GoldRates.AddAsync(goldRate);
+        }
+
+        if (!await context.Banks.AnyAsync())
+        {
+            var banks = new List<Bank>
+            {
+                new()
+                {
+                    Code = "SBI",
+                    Name = "State Bank of India",
+                    Branch = "Main Branch, Madurai",
+                    AccountNumber = "10293847561",
+                    IfscCode = "SBIN0000800",
+                    ContactPerson = "R. Sundar (Chief Manager)",
+                    ContactPhone = "0452-2531000",
+                    InterestRate = 8.5m,
+                    SanctionedLimit = 5000000m,
+                    IsActive = true
+                },
+                new()
+                {
+                    Code = "CNB",
+                    Name = "Canara Bank",
+                    Branch = "Town Hall Road, Madurai",
+                    AccountNumber = "98765432101",
+                    IfscCode = "CNRB0001234",
+                    ContactPerson = "K. Meenakshi",
+                    ContactPhone = "0452-2348000",
+                    InterestRate = 9.0m,
+                    SanctionedLimit = 3000000m,
+                    IsActive = true
+                },
+                new()
+                {
+                    Code = "MTH",
+                    Name = "Muthoot Finance Ltd",
+                    Branch = "Bazaar Branch, Madurai",
+                    AccountNumber = "55443322110",
+                    IfscCode = "MUTH0000101",
+                    ContactPerson = "M. Suresh",
+                    ContactPhone = "9840011223",
+                    InterestRate = 10.5m,
+                    SanctionedLimit = 10000000m,
+                    IsActive = true
+                }
+            };
+            await context.Banks.AddRangeAsync(banks);
+        }
+
+        if (!await context.Customers.AnyAsync())
+        {
+            var sampleCustomer = new Customer
+            {
+                Code = "C0001",
+                Name = "Ramasamy M",
+                FatherOrHusbandName = "Muthiah P",
+                Phone = "9876543210",
+                Gender = Gender.Male,
+                Address = "45, North Veli Street, Madurai - 625001",
+                City = "Madurai",
+                Pincode = "625001",
+                AadhaarNumber = "XXXXXXXX1234"
+            };
+            await context.Customers.AddAsync(sampleCustomer);
         }
 
         await context.SaveChangesAsync();

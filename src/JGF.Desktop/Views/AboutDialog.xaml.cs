@@ -74,3 +74,4 @@ public partial class AboutDialog : Window
         Close();
     }
 }
+

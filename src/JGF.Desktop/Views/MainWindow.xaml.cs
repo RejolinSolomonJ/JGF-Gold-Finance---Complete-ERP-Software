@@ -95,7 +95,7 @@ public partial class MainWindow : Window
 
             if (await authService.IsFirstRunAsync())
             {
-                var wizard = new FirstRunWizardDialog(authService);
+                var wizard = new FirstRunWizardDialog(authService) { Owner = this };
                 if (wizard.ShowDialog() != true)
                 {
                     Close();
@@ -120,7 +120,7 @@ public partial class MainWindow : Window
             }
 
             // Prompt Login
-            var loginDlg = new LoginDialog(authService);
+            var loginDlg = new LoginDialog(authService) { Owner = this };
             if (loginDlg.ShowDialog() != true || loginDlg.AuthenticatedUser == null)
             {
                 Close();

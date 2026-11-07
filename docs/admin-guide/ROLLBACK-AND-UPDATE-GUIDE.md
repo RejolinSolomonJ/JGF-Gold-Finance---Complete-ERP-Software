@@ -104,3 +104,4 @@ $pgBin = "C:\Program Files\PostgreSQL\18\bin"
    - Total Voucher Debits == Credits (₹0.00 difference).
    - Loan Principal Outstanding == Ledger Head 1002.
 6. Reconnect PC2 to the LAN and resume counter operations.
+
