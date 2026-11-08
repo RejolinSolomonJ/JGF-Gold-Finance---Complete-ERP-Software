@@ -20,7 +20,7 @@ public partial class DbConnectionSettingsControl : UserControl
     {
         try
         {
-            var configPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "appsettings.json");
+            var configPath = App.GetEffectiveConfigPath();
             if (File.Exists(configPath))
             {
                 var text = File.ReadAllText(configPath);
@@ -163,8 +163,23 @@ public partial class DbConnectionSettingsControl : UserControl
                 }
             }, new JsonSerializerOptions { WriteIndented = true });
 
-            var configPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "appsettings.json");
-            await File.WriteAllTextAsync(configPath, json);
+            // 1. Always save to ProgramData for production durability across updates
+            try
+            {
+                var programDataDir = App.ProgramDataDirectory;
+                Directory.CreateDirectory(programDataDir);
+                var prodConfig = Path.Combine(programDataDir, "appsettings.json");
+                await File.WriteAllTextAsync(prodConfig, json);
+            }
+            catch { }
+
+            // 2. Also try writing to local BaseDirectory if writable
+            try
+            {
+                var configPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "appsettings.json");
+                await File.WriteAllTextAsync(configPath, json);
+            }
+            catch { }
 
             // Also save to root development directory if running from Debug folder
             try

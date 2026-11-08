@@ -15,6 +15,7 @@
   <ItemGroup>
     <Resource Include="Assets\logo.png" />
     <Resource Include="Assets\app.ico" />
+    <Resource Include="Assets\Fonts\NotoSansTamil-Regular.ttf" />
     <None Update="Assets\**">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>

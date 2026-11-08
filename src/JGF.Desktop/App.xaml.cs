@@ -25,13 +25,35 @@ public partial class App : System.Windows.Application
 {
     private IHost? _host;
 
+    public static string ProgramDataDirectory =>
+        Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), "JGF");
+
+    public static string GetEffectiveConfigPath()
+    {
+        var prodConfig = Path.Combine(ProgramDataDirectory, "appsettings.json");
+        return File.Exists(prodConfig) ? prodConfig : Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "appsettings.json");
+    }
+
     protected override void OnStartup(StartupEventArgs e)
     {
         base.OnStartup(e);
 
-        // 1. Initialize Serilog Logging
-        var logDirectory = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Logs");
-        Directory.CreateDirectory(logDirectory);
+        // 1. Initialize Production ProgramData Directories & Serilog Logging
+        string logDirectory;
+        try
+        {
+            var dataDir = ProgramDataDirectory;
+            Directory.CreateDirectory(dataDir);
+            Directory.CreateDirectory(Path.Combine(dataDir, "Logs"));
+            Directory.CreateDirectory(Path.Combine(dataDir, "Backups"));
+            Directory.CreateDirectory(Path.Combine(dataDir, "Data"));
+            logDirectory = Path.Combine(dataDir, "Logs");
+        }
+        catch
+        {
+            logDirectory = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Logs");
+            Directory.CreateDirectory(logDirectory);
+        }
 
         Log.Logger = new LoggerConfiguration()
             .MinimumLevel.Information()
@@ -81,8 +103,20 @@ public partial class App : System.Windows.Application
             _host = Host.CreateDefaultBuilder()
                 .ConfigureAppConfiguration((ctx, cfg) =>
                 {
+                    // 1. Base default application configuration from install directory
                     cfg.SetBasePath(AppDomain.CurrentDomain.BaseDirectory);
                     cfg.AddJsonFile("appsettings.json", optional: true, reloadOnChange: true);
+
+                    // 2. Production overlay configuration from C:\ProgramData\JGF\appsettings.json
+                    try
+                    {
+                        var prodConfigPath = Path.Combine(ProgramDataDirectory, "appsettings.json");
+                        if (File.Exists(prodConfigPath))
+                        {
+                            cfg.AddJsonFile(prodConfigPath, optional: true, reloadOnChange: true);
+                        }
+                    }
+                    catch { }
                 })
                 .UseSerilog()
                 .ConfigureServices((ctx, services) =>

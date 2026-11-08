@@ -3,7 +3,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:local="clr-namespace:JGF.Desktop">
     <Application.Resources>
-        <FontFamily x:Key="TamilFont">Segoe UI, Latha, Nirmala UI</FontFamily>
+        <FontFamily x:Key="TamilFont">pack://application:,,,/Assets/Fonts/#Noto Sans Tamil, Segoe UI, Nirmala UI, Latha</FontFamily>
         <SolidColorBrush x:Key="PrimaryGoldBrush" Color="#B8860B"/>
         <SolidColorBrush x:Key="PrimaryDarkBrush" Color="#1E1E1E"/>
         <SolidColorBrush x:Key="AccentGoldBrush" Color="#DAA520"/>

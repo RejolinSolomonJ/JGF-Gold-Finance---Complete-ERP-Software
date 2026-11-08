@@ -38,7 +38,10 @@ public class BackupService : DbServiceBase, IBackupService
         await using var scope = await GetContextAsync(ct);
         var context = scope.Context;
 
-        var backupDir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Backups");
+        var programData = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), "JGF", "Backups");
+        var backupDir = Directory.Exists(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), "JGF"))
+            ? programData
+            : Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Backups");
         Directory.CreateDirectory(backupDir);
 
         var timestamp = DateTime.UtcNow.ToString("yyyyMMdd_HHmmss");
