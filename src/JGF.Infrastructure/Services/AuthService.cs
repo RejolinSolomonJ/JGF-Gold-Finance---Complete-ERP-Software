@@ -4,6 +4,7 @@ using JGF.Domain.Entities;
 using JGF.Domain.Enums;
 using JGF.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
 namespace JGF.Infrastructure.Services;
@@ -13,6 +14,7 @@ public class AuthService : DbServiceBase, IAuthService
     private readonly IPasswordHasher _passwordHasher;
     private readonly ILogger<AuthService> _logger;
 
+    [ActivatorUtilitiesConstructor]
     public AuthService(
         IDbContextFactory<JgfDbContext> contextFactory,
         IPasswordHasher passwordHasher,

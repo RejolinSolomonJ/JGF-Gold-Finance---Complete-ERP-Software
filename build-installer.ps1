@@ -134,3 +134,4 @@ $artifacts = @($serverInstaller, $clientInstaller) | Where-Object { Test-Path $_
 $artifacts | Format-Table -AutoSize
 Write-Host "Output Directory: $releasesDir" -ForegroundColor Green
 Write-Host "`nAll installers successfully built and ready for deployment!" -ForegroundColor Cyan
+

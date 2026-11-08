@@ -9,6 +9,7 @@ using JGF.Domain.Entities;
 using JGF.Domain.Enums;
 using JGF.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
 namespace JGF.Infrastructure.Services;
@@ -22,6 +23,7 @@ public class SafeUpdateService : ISafeUpdateService
     private readonly IAccountingReportService _accountingReportService;
     private readonly ILogger<SafeUpdateService> _logger;
 
+    [ActivatorUtilitiesConstructor]
     public SafeUpdateService(
         IDbContextFactory<JgfDbContext> contextFactory,
         IBackupService backupService,

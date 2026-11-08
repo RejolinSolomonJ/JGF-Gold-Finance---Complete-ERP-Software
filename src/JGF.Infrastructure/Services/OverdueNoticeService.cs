@@ -7,6 +7,7 @@ using JGF.Domain.Entities;
 using JGF.Domain.Enums;
 using JGF.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace JGF.Infrastructure.Services;
 
@@ -16,6 +17,7 @@ public class OverdueNoticeService : DbServiceBase, IOverdueNoticeService
     private readonly INumberSeriesService _numberSeries;
     private readonly IPermissionService _permissionService;
 
+    [ActivatorUtilitiesConstructor]
     public OverdueNoticeService(
         IDbContextFactory<JgfDbContext> contextFactory,
         IInterestCalculator calculator,

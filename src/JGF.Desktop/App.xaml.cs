@@ -145,9 +145,6 @@ public partial class App : System.Windows.Application
                         });
                     });
 
-                    // Transient DbContext fallback
-                    services.AddTransient<JgfDbContext>(sp => sp.GetRequiredService<IDbContextFactory<JgfDbContext>>().CreateDbContext());
-
                     // Core Security & Auth
                     services.AddSingleton<IPasswordHasher, BCryptPasswordHasher>();
                     services.AddSingleton<IPermissionService, PermissionService>();

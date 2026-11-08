@@ -177,3 +177,4 @@ You can test both installers on a clean virtual machine (Windows Sandbox, Hyper-
   & "C:\Program Files\JGF\scripts\backup\run-automated-backup.ps1"
   ```
 - Inspect backup log at `C:\ProgramData\JGF\Backups\backup_audit.log`.
+

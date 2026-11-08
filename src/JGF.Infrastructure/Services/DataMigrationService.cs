@@ -7,6 +7,7 @@ using JGF.Domain.Entities;
 using JGF.Domain.Enums;
 using JGF.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace JGF.Infrastructure.Services;
 
@@ -14,6 +15,13 @@ public class DataMigrationService : IDataMigrationService
 {
     private readonly JgfDbContext _context;
     private readonly IAccountingReportService _accountingReportService;
+
+    [ActivatorUtilitiesConstructor]
+    public DataMigrationService(IDbContextFactory<JgfDbContext> contextFactory, IAccountingReportService accountingReportService)
+    {
+        _context = contextFactory.CreateDbContext();
+        _accountingReportService = accountingReportService;
+    }
 
     public DataMigrationService(JgfDbContext context, IAccountingReportService accountingReportService)
     {

@@ -5,6 +5,7 @@ using JGF.Domain.Entities;
 using JGF.Domain.Enums;
 using JGF.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace JGF.Infrastructure.Services;
 
@@ -13,6 +14,7 @@ public class AccountingReportService : DbServiceBase, IAccountingReportService
     private readonly INumberSeriesService _numberSeries;
     private readonly IPermissionService _permissionService;
 
+    [ActivatorUtilitiesConstructor]
     public AccountingReportService(
         IDbContextFactory<JgfDbContext> contextFactory,
         INumberSeriesService numberSeries,

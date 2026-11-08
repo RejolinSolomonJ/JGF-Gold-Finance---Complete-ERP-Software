@@ -3,11 +3,13 @@ using JGF.Domain.Entities;
 using JGF.Domain.Enums;
 using JGF.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace JGF.Infrastructure.Services;
 
 public class AuditService : DbServiceBase, IAuditService
 {
+    [ActivatorUtilitiesConstructor]
     public AuditService(IDbContextFactory<JgfDbContext> contextFactory)
         : base(contextFactory)
     {

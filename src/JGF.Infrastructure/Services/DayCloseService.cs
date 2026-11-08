@@ -5,6 +5,7 @@ using JGF.Domain.Entities;
 using JGF.Domain.Enums;
 using JGF.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
 namespace JGF.Infrastructure.Services;
@@ -16,6 +17,7 @@ public class DayCloseService : DbServiceBase, IDayCloseService
     private readonly IPermissionService _permissionService;
     private readonly ILogger<DayCloseService> _logger;
 
+    [ActivatorUtilitiesConstructor]
     public DayCloseService(
         IDbContextFactory<JgfDbContext> contextFactory,
         IAccountingReportService accountingReport,

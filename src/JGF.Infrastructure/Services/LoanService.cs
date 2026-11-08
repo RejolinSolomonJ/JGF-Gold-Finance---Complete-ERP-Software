@@ -6,6 +6,7 @@ using JGF.Domain.Entities;
 using JGF.Domain.Enums;
 using JGF.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace JGF.Infrastructure.Services;
 
@@ -14,6 +15,7 @@ public class LoanService : DbServiceBase, ILoanService
     private readonly INumberSeriesService _numberSeries;
     private readonly IPermissionService _permissionService;
 
+    [ActivatorUtilitiesConstructor]
     public LoanService(
         IDbContextFactory<JgfDbContext> contextFactory,
         INumberSeriesService numberSeries,
