@@ -19,7 +19,7 @@ public partial class FinancialReportsControl : UserControl
 
     private void OnReportTypeChanged(object sender, SelectionChangedEventArgs e)
     {
-        if (PanelTrialBalance == null) return;
+        if (PanelTrialBalance == null || PanelPnL == null || PanelBalanceSheet == null || CmbReportType == null) return;
 
         PanelTrialBalance.Visibility = Visibility.Collapsed;
         PanelPnL.Visibility = Visibility.Collapsed;

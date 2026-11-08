@@ -76,7 +76,7 @@ public partial class JlReportsControl : UserControl
 
     private void OnReportSelectChanged(object sender, SelectionChangedEventArgs e)
     {
-        if (PanelOutstanding == null) return;
+        if (PanelOutstanding == null || PanelSummary == null || PanelPledge == null || PanelRelease == null || PanelJlCash == null || PanelAllStock == null || PanelJlStock == null || PanelPostal == null || PanelInterest == null || PanelStatement == null || BtnNewPostalCharge == null || CmbReportSelect == null) return;
 
         PanelOutstanding.Visibility = Visibility.Collapsed;
         PanelSummary.Visibility = Visibility.Collapsed;

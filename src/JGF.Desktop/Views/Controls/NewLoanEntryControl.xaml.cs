@@ -115,6 +115,9 @@ public partial class NewLoanEntryControl : UserControl
 
     private void RecalculateTotals()
     {
+        if (Items == null || TxtTotalNet == null || TxtTotalValue == null || TxtMaxEligible == null || TxtLoanAmount == null || TxtEstMonthlyInterest == null || TxtOverrideNotice == null)
+            return;
+
         var totalNet = Items.Sum(i => i.NetWeight);
         var totalValue = Items.Sum(i => i.AppraisedValue);
 

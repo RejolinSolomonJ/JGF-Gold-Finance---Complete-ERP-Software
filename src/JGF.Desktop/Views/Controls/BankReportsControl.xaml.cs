@@ -18,7 +18,7 @@ public partial class BankReportsControl : UserControl
 
     private void OnReportChanged(object sender, SelectionChangedEventArgs e)
     {
-        if (GridStockCustody == null) return;
+        if (GridStockCustody == null || GridPawnVsBank == null || GridOverdue == null || CmbReport == null) return;
 
         GridStockCustody.Visibility = Visibility.Collapsed;
         GridPawnVsBank.Visibility = Visibility.Collapsed;

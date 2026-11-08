@@ -134,6 +134,9 @@ public partial class BankPaymentControl : UserControl
 
     private void UpdateTotalOutflow()
     {
+        if (TxtTotalOutflow == null || TxtInterestPaid == null || TxtPrincipalPaid == null || TxtPostalCharges == null)
+            return;
+
         decimal.TryParse(TxtInterestPaid.Text, out var interest);
         decimal.TryParse(TxtPrincipalPaid.Text, out var principal);
         decimal.TryParse(TxtPostalCharges.Text, out var postal);

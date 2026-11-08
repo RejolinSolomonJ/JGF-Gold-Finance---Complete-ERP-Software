@@ -63,7 +63,7 @@ public partial class DayEndCloseControl : UserControl
 
     private void UpdateVariance()
     {
-        if (_currentStatus == null) return;
+        if (_currentStatus == null || TxtCountedCash == null || TxtCashVariance == null) return;
         decimal.TryParse(TxtCountedCash.Text, out var counted);
         var diff = counted - _currentStatus.ClosingCash;
 

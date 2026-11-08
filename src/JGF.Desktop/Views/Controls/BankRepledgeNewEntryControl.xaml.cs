@@ -94,6 +94,7 @@ public partial class BankRepledgeNewEntryControl : UserControl
 
     private void OnBankChanged(object sender, SelectionChangedEventArgs e)
     {
+        if (CmbBank == null || TxtPledgeNumber == null || TxtInterestRate == null) return;
         if (CmbBank.SelectedItem is Bank b)
         {
             TxtPledgeNumber.Text = $"BP-{b.Code}-{DateTime.UtcNow:yyMMdd}";
@@ -110,6 +111,9 @@ public partial class BankRepledgeNewEntryControl : UserControl
 
     private void RecalculateSelectedSummary()
     {
+        if (TxtSelectedCount == null || TxtSelectedPrincipal == null || TxtSelectedWeight == null || TxtBankWeight == null || TxtBankDisbursedAmount == null)
+            return;
+
         var selected = AvailableLoans.Where(l => l.IsSelected).ToList();
         var totalPrincipal = selected.Sum(l => l.LoanAmount);
         var totalWeight = selected.Sum(l => l.NetWeight);

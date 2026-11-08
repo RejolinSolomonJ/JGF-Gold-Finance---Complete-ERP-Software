@@ -421,10 +421,13 @@ public partial class NoticeAuctionControl : UserControl
 
     private void OnAuctionLoanSelectionChanged(object sender, SelectionChangedEventArgs e)
     {
+        if (CmbAuctionEligibleLoans == null) return;
         if (CmbAuctionEligibleLoans.SelectedItem is OverdueLoanSummaryDto loan)
         {
-            TxtAuctionLoanDetails.Text = $"Loan No: {loan.LoanNumber}\nCustomer: {loan.CustomerName} ({loan.CustomerMobile})\nPrincipal: ₹{loan.PrincipalBalance:N2}\nInterest Due: ₹{loan.AccruedInterest:N2}\nTotal Outstanding: ₹{loan.TotalOutstanding:N2}\nGold Value: ₹{loan.CurrentGoldValue:N2}\nLast Notice Date: {loan.LastNoticeDate:dd-MMM-yyyy}\nPre-Notice Served 15+ Days: {(loan.IsAuctionEligible ? "YES (Legal Requirement Met)" : "NO")}";
-            TxtReservePrice.Text = loan.TotalOutstanding.ToString("F2");
+            if (TxtAuctionLoanDetails != null)
+                TxtAuctionLoanDetails.Text = $"Loan No: {loan.LoanNumber}\nCustomer: {loan.CustomerName} ({loan.CustomerMobile})\nPrincipal: ₹{loan.PrincipalBalance:N2}\nInterest Due: ₹{loan.AccruedInterest:N2}\nTotal Outstanding: ₹{loan.TotalOutstanding:N2}\nGold Value: ₹{loan.CurrentGoldValue:N2}\nLast Notice Date: {loan.LastNoticeDate:dd-MMM-yyyy}\nPre-Notice Served 15+ Days: {(loan.IsAuctionEligible ? "YES (Legal Requirement Met)" : "NO")}";
+            if (TxtReservePrice != null)
+                TxtReservePrice.Text = loan.TotalOutstanding.ToString("F2");
         }
     }
 
@@ -478,9 +481,11 @@ public partial class NoticeAuctionControl : UserControl
 
     private void OnScheduledAuctionSelectionChanged(object sender, SelectionChangedEventArgs e)
     {
+        if (CmbScheduledAuctions == null) return;
         if (CmbScheduledAuctions.SelectedItem is ScheduledAuctionViewModel auction)
         {
-            TxtSalePrice.Text = auction.ReservePrice.ToString("F2");
+            if (TxtSalePrice != null)
+                TxtSalePrice.Text = auction.ReservePrice.ToString("F2");
             UpdateAuctionSettlementMath();
         }
     }
@@ -492,6 +497,9 @@ public partial class NoticeAuctionControl : UserControl
 
     private void UpdateAuctionSettlementMath()
     {
+        if (CmbScheduledAuctions == null || TxtSalePrice == null || TxtAuctionExpenses == null || TxtCalcLoanDues == null || TxtCalcSaleNet == null || TxtCalcSurplus == null || TxtCalcDeficit == null)
+            return;
+
         if (CmbScheduledAuctions.SelectedItem is not ScheduledAuctionViewModel auction)
             return;
 

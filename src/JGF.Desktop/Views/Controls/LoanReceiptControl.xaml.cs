@@ -123,6 +123,9 @@ public partial class LoanReceiptControl : UserControl
 
     private void UpdateTotalReceivable()
     {
+        if (TxtTotalReceivable == null || TxtInterestAmount == null || TxtPartPrincipal == null || TxtPostalCharges == null || TxtAdjustment == null)
+            return;
+
         decimal.TryParse(TxtInterestAmount.Text, out var interest);
         decimal.TryParse(TxtPartPrincipal.Text, out var principal);
         decimal.TryParse(TxtPostalCharges.Text, out var postal);
