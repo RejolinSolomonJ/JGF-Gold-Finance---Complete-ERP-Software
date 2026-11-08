@@ -32,7 +32,7 @@ public class DayCloseService : DbServiceBase, IDayCloseService
         _logger = logger;
     }
 
-    public DayCloseService(
+    internal DayCloseService(
         JgfDbContext context,
         IAccountingReportService accountingReport,
         IBackupService backupService,

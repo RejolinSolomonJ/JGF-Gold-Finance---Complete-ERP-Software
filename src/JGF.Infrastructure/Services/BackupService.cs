@@ -25,7 +25,7 @@ public class BackupService : DbServiceBase, IBackupService
         _logger = logger;
     }
 
-    public BackupService(
+    internal BackupService(
         JgfDbContext context,
         IAesEncryptionService aesEncryption,
         ILogger<BackupService> logger)

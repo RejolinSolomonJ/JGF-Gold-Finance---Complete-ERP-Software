@@ -39,7 +39,7 @@ public class SafeUpdateService : ISafeUpdateService
         _logger = logger;
     }
 
-    public SafeUpdateService(
+    internal SafeUpdateService(
         JgfDbContext context,
         IBackupService backupService,
         IAesEncryptionService aesEncryption,

@@ -25,7 +25,7 @@ public class BankRepledgeService : DbServiceBase, IBankRepledgeService
         _permissionService = permissionService;
     }
 
-    public BankRepledgeService(
+    internal BankRepledgeService(
         JgfDbContext context,
         INumberSeriesService numberSeries,
         IPermissionService permissionService)

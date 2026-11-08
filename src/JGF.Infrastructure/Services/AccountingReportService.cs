@@ -25,7 +25,7 @@ public class AccountingReportService : DbServiceBase, IAccountingReportService
         _permissionService = permissionService;
     }
 
-    public AccountingReportService(
+    internal AccountingReportService(
         JgfDbContext context,
         INumberSeriesService numberSeries,
         IPermissionService permissionService)

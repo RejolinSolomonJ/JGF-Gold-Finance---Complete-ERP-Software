@@ -19,7 +19,7 @@ public class DashboardService : DbServiceBase, IDashboardService
         _backupService = backupService;
     }
 
-    public DashboardService(JgfDbContext context, IBackupService backupService)
+    internal DashboardService(JgfDbContext context, IBackupService backupService)
         : base(context)
     {
         _backupService = backupService;

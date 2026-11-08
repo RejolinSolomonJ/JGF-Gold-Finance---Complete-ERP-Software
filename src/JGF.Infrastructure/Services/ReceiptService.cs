@@ -26,7 +26,7 @@ public class ReceiptService : DbServiceBase, IReceiptService
         _permissionService = permissionService;
     }
 
-    public ReceiptService(
+    internal ReceiptService(
         JgfDbContext context,
         INumberSeriesService numberSeries,
         IPermissionService permissionService)

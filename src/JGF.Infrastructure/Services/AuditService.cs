@@ -15,7 +15,7 @@ public class AuditService : DbServiceBase, IAuditService
     {
     }
 
-    public AuditService(JgfDbContext context)
+    internal AuditService(JgfDbContext context)
         : base(context)
     {
     }

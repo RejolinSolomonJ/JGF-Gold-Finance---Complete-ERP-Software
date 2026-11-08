@@ -23,7 +23,7 @@ public class MasterDataService :
     {
     }
 
-    public MasterDataService(JgfDbContext context)
+    internal MasterDataService(JgfDbContext context)
         : base(context)
     {
     }

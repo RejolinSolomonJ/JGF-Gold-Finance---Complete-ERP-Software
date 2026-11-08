@@ -21,6 +21,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <InternalsVisibleTo Include="JGF.Tests" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\JGF.Domain\JGF.Domain.csproj" />
     <ProjectReference Include="..\JGF.Application\JGF.Application.csproj" />
   </ItemGroup>

@@ -26,7 +26,7 @@ public class LoanService : DbServiceBase, ILoanService
         _permissionService = permissionService;
     }
 
-    public LoanService(
+    internal LoanService(
         JgfDbContext context,
         INumberSeriesService numberSeries,
         IPermissionService permissionService)

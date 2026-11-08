@@ -149,12 +149,20 @@ public partial class App : System.Windows.Application
                     services.AddSingleton<IPasswordHasher, BCryptPasswordHasher>();
                     services.AddSingleton<IPermissionService, PermissionService>();
                     services.AddSingleton<IAesEncryptionService, AesEncryptionService>();
-                    services.AddTransient<IAuthService, AuthService>();
-                    services.AddTransient<IAuditService, AuditService>();
-                    services.AddTransient<IBackupService, BackupService>();
+                    services.AddTransient<IAuthService>(sp => new AuthService(
+                        sp.GetRequiredService<IDbContextFactory<JgfDbContext>>(),
+                        sp.GetRequiredService<IPasswordHasher>(),
+                        sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<AuthService>>()));
+                    services.AddTransient<IAuditService>(sp => new AuditService(
+                        sp.GetRequiredService<IDbContextFactory<JgfDbContext>>()));
+                    services.AddTransient<IBackupService>(sp => new BackupService(
+                        sp.GetRequiredService<IDbContextFactory<JgfDbContext>>(),
+                        sp.GetRequiredService<IAesEncryptionService>(),
+                        sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<BackupService>>()));
 
                     // Master services
-                    services.AddTransient<MasterDataService>();
+                    services.AddTransient<MasterDataService>(sp => new MasterDataService(
+                        sp.GetRequiredService<IDbContextFactory<JgfDbContext>>()));
                     services.AddTransient<ICustomerService>(sp => sp.GetRequiredService<MasterDataService>());
                     services.AddTransient<ISchemeService>(sp => sp.GetRequiredService<MasterDataService>());
                     services.AddTransient<IJewelTypeService>(sp => sp.GetRequiredService<MasterDataService>());
@@ -164,20 +172,50 @@ public partial class App : System.Windows.Application
                     services.AddTransient<INumberSeriesService>(sp => sp.GetRequiredService<MasterDataService>());
 
                     // Accounting & Reporting services
-                    services.AddTransient<IAccountingReportService, AccountingReportService>();
-                    services.AddTransient<IDayCloseService, DayCloseService>();
-                    services.AddTransient<IBankRepledgeService, BankRepledgeService>();
+                    services.AddTransient<IAccountingReportService>(sp => new AccountingReportService(
+                        sp.GetRequiredService<IDbContextFactory<JgfDbContext>>(),
+                        sp.GetRequiredService<INumberSeriesService>(),
+                        sp.GetRequiredService<IPermissionService>()));
+                    services.AddTransient<IDayCloseService>(sp => new DayCloseService(
+                        sp.GetRequiredService<IDbContextFactory<JgfDbContext>>(),
+                        sp.GetRequiredService<IAccountingReportService>(),
+                        sp.GetRequiredService<IBackupService>(),
+                        sp.GetRequiredService<IPermissionService>(),
+                        sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<DayCloseService>>()));
+                    services.AddTransient<IBankRepledgeService>(sp => new BankRepledgeService(
+                        sp.GetRequiredService<IDbContextFactory<JgfDbContext>>(),
+                        sp.GetRequiredService<INumberSeriesService>(),
+                        sp.GetRequiredService<IPermissionService>()));
                     services.AddTransient<IExcelExportService, ExcelExportService>();
                     services.AddTransient<IJlReportService, JlReportService>();
-                    services.AddTransient<IDashboardService, DashboardService>();
+                    services.AddTransient<IDashboardService>(sp => new DashboardService(
+                        sp.GetRequiredService<IDbContextFactory<JgfDbContext>>(),
+                        sp.GetRequiredService<IBackupService>()));
 
                     // Loan & Receipt processing services
                     services.AddSingleton<IInterestCalculator, StandardInterestCalculator>();
-                    services.AddTransient<ILoanService, LoanService>();
-                    services.AddTransient<IReceiptService, ReceiptService>();
-                    services.AddTransient<IOverdueNoticeService, OverdueNoticeService>();
-                    services.AddTransient<JGF.Application.Migration.IDataMigrationService, DataMigrationService>();
-                    services.AddTransient<ISafeUpdateService, SafeUpdateService>();
+                    services.AddTransient<ILoanService>(sp => new LoanService(
+                        sp.GetRequiredService<IDbContextFactory<JgfDbContext>>(),
+                        sp.GetRequiredService<INumberSeriesService>(),
+                        sp.GetRequiredService<IPermissionService>()));
+                    services.AddTransient<IReceiptService>(sp => new ReceiptService(
+                        sp.GetRequiredService<IDbContextFactory<JgfDbContext>>(),
+                        sp.GetRequiredService<INumberSeriesService>(),
+                        sp.GetRequiredService<IPermissionService>()));
+                    services.AddTransient<IOverdueNoticeService>(sp => new OverdueNoticeService(
+                        sp.GetRequiredService<IDbContextFactory<JgfDbContext>>(),
+                        sp.GetRequiredService<IInterestCalculator>(),
+                        sp.GetRequiredService<INumberSeriesService>(),
+                        sp.GetRequiredService<IPermissionService>()));
+                    services.AddTransient<JGF.Application.Migration.IDataMigrationService>(sp => new DataMigrationService(
+                        sp.GetRequiredService<IDbContextFactory<JgfDbContext>>(),
+                        sp.GetRequiredService<IAccountingReportService>()));
+                    services.AddTransient<ISafeUpdateService>(sp => new SafeUpdateService(
+                        sp.GetRequiredService<IDbContextFactory<JgfDbContext>>(),
+                        sp.GetRequiredService<IBackupService>(),
+                        sp.GetRequiredService<IAesEncryptionService>(),
+                        sp.GetRequiredService<IAccountingReportService>(),
+                        sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<SafeUpdateService>>()));
 
                     // Main Shell Window
                     services.AddSingleton<Views.MainWindow>();

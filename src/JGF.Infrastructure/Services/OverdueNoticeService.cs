@@ -30,7 +30,7 @@ public class OverdueNoticeService : DbServiceBase, IOverdueNoticeService
         _permissionService = permissionService;
     }
 
-    public OverdueNoticeService(
+    internal OverdueNoticeService(
         JgfDbContext context,
         IInterestCalculator calculator,
         INumberSeriesService numberSeries,

@@ -25,7 +25,7 @@ public class AuthService : DbServiceBase, IAuthService
         _logger = logger;
     }
 
-    public AuthService(
+    internal AuthService(
         JgfDbContext context,
         IPasswordHasher passwordHasher,
         ILogger<AuthService> logger)

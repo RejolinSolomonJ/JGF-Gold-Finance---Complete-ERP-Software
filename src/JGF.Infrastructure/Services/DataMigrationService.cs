@@ -23,7 +23,7 @@ public class DataMigrationService : IDataMigrationService
         _accountingReportService = accountingReportService;
     }
 
-    public DataMigrationService(JgfDbContext context, IAccountingReportService accountingReportService)
+    internal DataMigrationService(JgfDbContext context, IAccountingReportService accountingReportService)
     {
         _context = context;
         _accountingReportService = accountingReportService;
