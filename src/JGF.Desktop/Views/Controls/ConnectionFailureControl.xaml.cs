@@ -25,3 +25,4 @@ public partial class ConnectionFailureControl : UserControl
         OpenSettingsRequested?.Invoke(this, EventArgs.Empty);
     }
 }
+

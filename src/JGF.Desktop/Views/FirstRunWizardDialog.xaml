@@ -1,7 +1,8 @@
 <Window x:Class="JGF.Desktop.Views.FirstRunWizardDialog"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="JGF — First-Run Setup Wizard" Height="580" Width="600"
+        Title="JGF — First-Run Setup Wizard" Height="580" Width="620"
+        Icon="pack://application:,,,/Assets/app.ico"
         WindowStartupLocation="CenterScreen" ResizeMode="NoResize"
         Background="#1E1E1E" Foreground="White">
     <Grid Margin="24">
@@ -13,8 +14,13 @@
 
         <!-- Header -->
         <StackPanel Grid.Row="0" Margin="0,0,0,16">
-            <TextBlock Text="✦ WELCOME TO JGF SETUP" FontSize="18" FontWeight="Bold" Foreground="#DAA520"/>
-            <TextBlock Text="Initial configuration: Owner account &amp; business details" FontSize="12" Foreground="#888888"/>
+            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                <Image Source="pack://application:,,,/Assets/logo.png" Height="48" Width="48" Margin="0,0,14,0" RenderOptions.BitmapScalingMode="HighQuality"/>
+                <StackPanel VerticalAlignment="Center">
+                    <TextBlock Text="✦ WELCOME TO JEBA GOLD FINANCE SETUP" FontSize="16" FontWeight="Bold" Foreground="#DAA520"/>
+                    <TextBlock Text="Initial configuration: Owner account &amp; business details" FontSize="11" Foreground="#888888"/>
+                </StackPanel>
+            </StackPanel>
             <Separator Background="#333333" Margin="0,8"/>
         </StackPanel>
 
@@ -38,7 +44,7 @@
                 <TextBlock Text="2. COMPANY DETAILS" FontWeight="Bold" Foreground="#DAA520" Margin="0,16,0,4"/>
 
                 <TextBlock Text="Business / Firm Name:" Foreground="#CCCCCC"/>
-                <TextBox x:Name="TxtCompanyName" Text="JGF Bankers &amp; Jewel Loan" Background="#2B2B2B" Foreground="White"/>
+                <TextBox x:Name="TxtCompanyName" Text="Jeba Gold Finance" Background="#2B2B2B" Foreground="White"/>
 
                 <TextBlock Text="Pawn License / Reg No:" Foreground="#CCCCCC" Margin="0,8,0,0"/>
                 <TextBox x:Name="TxtRegNo" Text="TN/CHE/PL/2024/001" Background="#2B2B2B" Foreground="White"/>

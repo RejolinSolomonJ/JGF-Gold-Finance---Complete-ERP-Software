@@ -4,7 +4,8 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         mc:Ignorable="d"
-        Title="JGF — Jewel Gold Finance System (தமிழ்நாடு)" 
+        Title="JGF — Jeba Gold Finance (தமிழ்நாடு)" 
+        Icon="pack://application:,,,/Assets/app.ico"
         Height="768" Width="1280"
         WindowStartupLocation="CenterScreen"
         WindowState="Maximized">
@@ -17,11 +18,17 @@
         </Grid.RowDefinitions>
 
         <!-- 1. Top Brand Header -->
-        <Border Grid.Row="0" Background="#1A1A1A" Padding="16,8">
+        <Border Grid.Row="0" Background="#161A1D" Padding="14,8" BorderBrush="#2D3748" BorderThickness="0,0,0,1">
             <DockPanel LastChildFill="True">
-                <StackPanel Orientation="Horizontal" DockPanel.Dock="Left">
-                    <TextBlock Text="✦ JGF JEWEL LOAN" Foreground="#DAA520" FontWeight="Bold" FontSize="18"/>
-                    <TextBlock Text=" | நகை கடன் நிதி மென்பொருள்" Foreground="#AAAAAA" FontSize="14" Margin="10,2,0,0"/>
+                <StackPanel Orientation="Horizontal" DockPanel.Dock="Left" VerticalAlignment="Center">
+                    <Image Source="pack://application:,,,/Assets/logo.png" Height="42" Width="42" Margin="0,0,12,0" RenderOptions.BitmapScalingMode="HighQuality"/>
+                    <StackPanel VerticalAlignment="Center">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="JEBA GOLD FINANCE" Foreground="#DAA520" FontWeight="Bold" FontSize="18" VerticalAlignment="Center"/>
+                            <TextBlock Text=" | நகை கடன் நிதி மென்பொருள்" Foreground="#A0AEC0" FontSize="13" Margin="8,2,0,0" VerticalAlignment="Center"/>
+                        </StackPanel>
+                        <TextBlock Text="TRUST • TRANSPARENCY • PROSPERITY — YOUR TRUST OUR STRENGTH" Foreground="#718096" FontSize="10" FontWeight="SemiBold" Margin="0,1,0,0"/>
+                    </StackPanel>
                 </StackPanel>
                 <StackPanel Orientation="Horizontal" DockPanel.Dock="Right">
                     <TextBlock Text="User: " Foreground="#888888"/>

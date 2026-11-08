@@ -15,3 +15,4 @@ public partial class StartupProgressControl : UserControl
         TxtStatusMessage.Text = message;
     }
 }
+

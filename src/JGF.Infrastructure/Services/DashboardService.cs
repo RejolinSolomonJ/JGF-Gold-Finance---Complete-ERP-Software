@@ -45,77 +45,54 @@ public class DashboardService : DbServiceBase, IDashboardService
             currentCash += cashLines.Sum(l => l.DebitAmount - l.CreditAmount);
         }
 
-        // 2. Loans Issued Today & This Month
-        var loansToday = await context.Loans
-            .AsNoTracking()
-            .Where(l => l.PledgeDate == today)
-            .Select(l => l.LoanAmount)
-            .ToListAsync(ct);
-
-        var loansMonth = await context.Loans
+        // 2. Loans Issued Today & This Month (Single scan on current month)
+        var recentMonthLoans = await context.Loans
             .AsNoTracking()
             .Where(l => l.PledgeDate >= firstDayOfMonth && l.PledgeDate <= today)
-            .Select(l => l.LoanAmount)
+            .Select(l => new { l.PledgeDate, l.LoanAmount })
             .ToListAsync(ct);
 
-        int loansIssuedTodayCount = loansToday.Count;
-        decimal loansIssuedTodayAmount = loansToday.Sum();
+        var todayLoans = recentMonthLoans.Where(l => l.PledgeDate == today).ToList();
+        int loansIssuedTodayCount = todayLoans.Count;
+        decimal loansIssuedTodayAmount = todayLoans.Sum(l => l.LoanAmount);
 
-        int loansIssuedThisMonthCount = loansMonth.Count;
-        decimal loansIssuedThisMonthAmount = loansMonth.Sum();
+        int loansIssuedThisMonthCount = recentMonthLoans.Count;
+        decimal loansIssuedThisMonthAmount = recentMonthLoans.Sum(l => l.LoanAmount);
 
         // 3. Collections Today
-        var receiptsToday = await context.Receipts
-            .AsNoTracking()
-            .Where(r => r.ReceiptDate == today)
-            .Select(r => new { r.TotalAmount, r.PrincipalAmount, r.InterestAmount, r.PenalInterestAmount })
-            .ToListAsync(ct);
+        var receiptsTodayQuery = context.Receipts.AsNoTracking().Where(r => r.ReceiptDate == today);
+        decimal collectionsTodayTotal = await receiptsTodayQuery.SumAsync(r => (decimal?)r.TotalAmount, ct) ?? 0m;
+        decimal collectionsTodayPrincipal = await receiptsTodayQuery.SumAsync(r => (decimal?)r.PrincipalAmount, ct) ?? 0m;
+        decimal collectionsTodayInterest = await receiptsTodayQuery.SumAsync(r => (decimal?)(r.InterestAmount + r.PenalInterestAmount), ct) ?? 0m;
 
-        decimal collectionsTodayTotal = receiptsToday.Sum(r => r.TotalAmount);
-        decimal collectionsTodayPrincipal = receiptsToday.Sum(r => r.PrincipalAmount);
-        decimal collectionsTodayInterest = receiptsToday.Sum(r => r.InterestAmount + r.PenalInterestAmount);
-
-        // 4. Active Loans & Outstanding Principal & Custody Split (Server-side projected)
+        // 4. Active Loans & Outstanding Principal & Custody Split (Single Consolidated Scan)
         var activeLoans = await context.Loans
             .AsNoTracking()
             .Where(l => l.Status == LoanStatus.Active || l.Status == LoanStatus.PartiallyPaid)
-            .Select(l => new
-            {
-                l.LoanAmount,
-                l.NetWeight,
-                l.MaturityDate,
-                PrincipalPaid = l.Receipts.Sum(r => r.PrincipalAmount),
-                IsBankCustody = l.BankPledgeLoans.Any(bpl => !bpl.IsReleased && !bpl.IsDeleted)
-            })
+            .Select(l => new { l.LoanAmount, l.NetWeight, l.MaturityDate })
             .ToListAsync(ct);
 
         int totalActiveLoansCount = activeLoans.Count;
-        decimal totalOutstandingPrincipal = 0m;
-        decimal shopLockerWeight = 0m;
-        decimal bankCustodyWeight = 0m;
-        int overdueLoansCount = 0;
-        decimal overdueLoansPrincipal = 0m;
+        decimal totalLoanAmount = activeLoans.Sum(l => l.LoanAmount);
+        decimal totalNetWeight = activeLoans.Sum(l => l.NetWeight);
 
-        foreach (var loan in activeLoans)
-        {
-            var principalBalance = Math.Max(0m, loan.LoanAmount - loan.PrincipalPaid);
-            totalOutstandingPrincipal += principalBalance;
+        var overdueLoans = activeLoans.Where(l => today > l.MaturityDate).ToList();
+        int overdueLoansCount = overdueLoans.Count;
+        decimal overdueLoansPrincipal = overdueLoans.Sum(l => l.LoanAmount);
 
-            if (loan.IsBankCustody)
-            {
-                bankCustodyWeight += loan.NetWeight;
-            }
-            else
-            {
-                shopLockerWeight += loan.NetWeight;
-            }
+        decimal totalPrincipalPaid = await context.Receipts
+            .AsNoTracking()
+            .Where(r => r.Loan.Status == LoanStatus.Active || r.Loan.Status == LoanStatus.PartiallyPaid)
+            .SumAsync(r => (decimal?)r.PrincipalAmount, ct) ?? 0m;
 
-            if (today > loan.MaturityDate)
-            {
-                overdueLoansCount++;
-                overdueLoansPrincipal += principalBalance;
-            }
-        }
+        decimal totalOutstandingPrincipal = Math.Max(0m, totalLoanAmount - totalPrincipalPaid);
+
+        decimal bankCustodyWeight = await context.BankPledgeLoans
+            .AsNoTracking()
+            .Where(bpl => !bpl.IsReleased && !bpl.IsDeleted && (bpl.Loan.Status == LoanStatus.Active || bpl.Loan.Status == LoanStatus.PartiallyPaid))
+            .SumAsync(bpl => (decimal?)bpl.Loan.NetWeight, ct) ?? 0m;
+
+        decimal shopLockerWeight = Math.Max(0m, totalNetWeight - bankCustodyWeight);
 
         // 5. Bank Repledge Exposure & Upcoming Dues
         var activeBankPledges = await context.BankPledges
@@ -155,35 +132,45 @@ public class DashboardService : DbServiceBase, IDashboardService
         bool hasRecentSuccessfulBackup = await _backupService.HasRecentSuccessfulBackupAsync(TimeSpan.FromHours(24), ct);
         DateTime? lastBackupTimeUtc = lastBackupLog?.CreatedAtUtc;
 
-        // 7. Monthly Trends (Last 6 Months)
-        var monthlyTrends = new List<MonthlyTrendDto>();
+        // 7. Monthly Trends (Consolidated 2-Query Aggregation for 6 Months)
+        var sixMonthsAgo = new DateOnly(today.Year, today.Month, 1).AddMonths(-5);
+        var monthlyLoanStats = await context.Loans
+            .AsNoTracking()
+            .Where(l => l.PledgeDate >= sixMonthsAgo)
+            .GroupBy(l => new { l.PledgeDate.Year, l.PledgeDate.Month })
+            .Select(g => new { g.Key.Year, g.Key.Month, Total = g.Sum(l => l.LoanAmount) })
+            .ToListAsync(ct);
+
+        var monthlyReceiptStats = await context.Receipts
+            .AsNoTracking()
+            .Where(r => r.ReceiptDate >= sixMonthsAgo)
+            .GroupBy(r => new { r.ReceiptDate.Year, r.ReceiptDate.Month })
+            .Select(g => new
+            {
+                g.Key.Year,
+                g.Key.Month,
+                Collections = g.Sum(r => r.TotalAmount),
+                Interest = g.Sum(r => r.InterestAmount + r.PenalInterestAmount)
+            })
+            .ToListAsync(ct);
+
+        var monthlyTrends = new List<MonthlyTrendDto>(6);
         for (int i = 5; i >= 0; i--)
         {
             var targetMonthDate = today.AddMonths(-i);
-            var mStart = new DateOnly(targetMonthDate.Year, targetMonthDate.Month, 1);
-            var mEnd = mStart.AddMonths(1).AddDays(-1);
+            var y = targetMonthDate.Year;
+            var m = targetMonthDate.Month;
 
-            var mLoansDisbursed = await context.Loans
-                .AsNoTracking()
-                .Where(l => l.PledgeDate >= mStart && l.PledgeDate <= mEnd)
-                .SumAsync(l => l.LoanAmount, ct);
-
-            var mReceipts = await context.Receipts
-                .AsNoTracking()
-                .Where(r => r.ReceiptDate >= mStart && r.ReceiptDate <= mEnd)
-                .Select(r => new { r.TotalAmount, r.InterestAmount, r.PenalInterestAmount })
-                .ToListAsync(ct);
-
-            var mCollections = mReceipts.Sum(r => r.TotalAmount);
-            var mInterest = mReceipts.Sum(r => r.InterestAmount + r.PenalInterestAmount);
+            var lStat = monthlyLoanStats.FirstOrDefault(s => s.Year == y && s.Month == m);
+            var rStat = monthlyReceiptStats.FirstOrDefault(s => s.Year == y && s.Month == m);
 
             monthlyTrends.Add(new MonthlyTrendDto(
-                mStart.ToString("MMM yyyy"),
-                mStart.Year,
-                mStart.Month,
-                mLoansDisbursed,
-                mCollections,
-                mInterest
+                targetMonthDate.ToString("MMM yyyy"),
+                y,
+                m,
+                lStat?.Total ?? 0m,
+                rStat?.Collections ?? 0m,
+                rStat?.Interest ?? 0m
             ));
         }
 

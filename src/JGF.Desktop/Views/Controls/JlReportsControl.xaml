@@ -29,7 +29,7 @@
                 </StackPanel>
                 <StackPanel Orientation="Horizontal" DockPanel.Dock="Right">
                     <Button x:Name="BtnNewPostalCharge" Content="✉ Record Postal Charge" Background="#7C3AED" Foreground="White" FontWeight="Bold" Padding="10,6" Margin="0,0,8,0" Visibility="Collapsed" Click="OnNewPostalChargeClick"/>
-                    <Button x:Name="BtnExportExcel" Content="📤 Export Excel (.xlsx)" Background="#059669" Foreground="White" FontWeight="Bold" Padding="12,6" Margin="0,0,8,0" Click="OnExportExcelClick"/>
+                    <Button x:Name="BtnExportExcel" Content=" Export Excel (.xlsx)" Background="#059669" Foreground="White" FontWeight="Bold" Padding="12,6" Margin="0,0,8,0" Click="OnExportExcelClick"/>
                     <Button x:Name="BtnPrintPdf" Content="🖨 Print / PDF" Background="#2563EB" Foreground="White" FontWeight="Bold" Padding="12,6" Click="OnPrintPdfClick"/>
                 </StackPanel>
             </DockPanel>
@@ -67,8 +67,8 @@
                     <TextBlock Text="Search:" VerticalAlignment="Center" Margin="0,0,4,0"/>
                     <TextBox x:Name="TxtSearchFilter" Width="140" Margin="0,0,12,0"/>
 
-                    <Button x:Name="BtnApplyFilter" Content="🔍 Filter" Background="#1E293B" Foreground="White" FontWeight="Bold" Padding="14,4" Margin="0,0,6,0" Click="OnFilterApplyClick"/>
-                    <Button x:Name="BtnResetFilter" Content="🔄 Reset" Background="#64748B" Foreground="White" Padding="10,4" Click="OnFilterResetClick"/>
+                    <Button x:Name="BtnApplyFilter" Content=" Filter" Background="#1E293B" Foreground="White" FontWeight="Bold" Padding="14,4" Margin="0,0,6,0" Click="OnFilterApplyClick"/>
+                    <Button x:Name="BtnResetFilter" Content=" Reset" Background="#64748B" Foreground="White" Padding="10,4" Click="OnFilterResetClick"/>
                 </WrapPanel>
                 <ProgressBar x:Name="PrgLoading" VerticalAlignment="Bottom" Height="3" IsIndeterminate="True" Visibility="Collapsed"/>
             </Grid>

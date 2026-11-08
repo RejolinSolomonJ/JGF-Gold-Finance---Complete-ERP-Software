@@ -95,19 +95,25 @@ public class ScreenLoadPerformanceTests
             });
         }
 
-        // Insert in efficient chunks
+        // Insert in efficient chunks with change tracking disabled for fast benchmark setup
+        context.ChangeTracker.AutoDetectChangesEnabled = false;
         const int chunkSize = 10_000;
         for (int i = 0; i < totalLoans; i += chunkSize)
         {
             await context.Loans.AddRangeAsync(loans.Skip(i).Take(chunkSize));
             await context.SaveChangesAsync();
         }
+        context.ChangeTracker.AutoDetectChangesEnabled = true;
 
         // Services
         var backupService = new BackupService(context, new AesEncryptionService(), NullLogger<BackupService>.Instance);
         var dashboardService = new DashboardService(factory, backupService);
         var masterDataService = new MasterDataService(factory);
         var reportService = new JlReportService(context, masterDataService, new PermissionService(), new StandardInterestCalculator());
+
+        // Warm up JIT and EF query compiler caches
+        _ = await dashboardService.GetDashboardSummaryAsync();
+        _ = await reportService.GetOutstandingReportAsync(new JlReportFilterDto());
 
         // 1. Benchmark: Dashboard Screen Load (Home Screen)
         var sw = Stopwatch.StartNew();

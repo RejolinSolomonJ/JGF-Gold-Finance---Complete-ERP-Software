@@ -33,12 +33,7 @@ public class JlReportService : IJlReportService
         var today = DateOnly.FromDateTime(DateTime.Today);
 
         var query = _context.Loans
-            .AsNoTracking()
-            .Include(l => l.Customer)
-            .Include(l => l.Scheme)
-            .Include(l => l.Receipts)
-            .Include(l => l.BankPledgeLoans).ThenInclude(bpl => bpl.BankPledge).ThenInclude(bp => bp.Bank)
-            .AsQueryable();
+            .AsNoTracking();
 
         // Status filter: Default to active/partially paid if null
         if (filter.Status.HasValue)
@@ -68,9 +63,40 @@ public class JlReportService : IJlReportService
                                      (l.PacketNumber != null && l.PacketNumber.ToLower().Contains(st)));
         }
 
-        var loans = await query.OrderBy(l => l.PledgeDate).ThenBy(l => l.LoanNumber).ToListAsync(ct);
+        // Server-side paging / screen limit: no screen may load an unbounded table (Requirement 4)
+        var loans = await query
+            .OrderBy(l => l.PledgeDate)
+            .ThenBy(l => l.LoanNumber)
+            .Take(1000)
+            .Select(l => new
+            {
+                l.Id,
+                l.LoanNumber,
+                l.PledgeDate,
+                l.MaturityDate,
+                CustomerName = l.Customer.FullName,
+                CustomerMobile = l.Customer.MobileNumber,
+                SchemeName = l.Scheme.Name,
+                l.Scheme.InterestRatePerMonth,
+                l.Scheme.PenalInterestRatePerMonth,
+                l.Scheme.TenureMonths,
+                l.Scheme.GracePeriodDays,
+                l.Scheme.MinimumInterestDays,
+                l.GrossWeight,
+                l.NetWeight,
+                l.LoanAmount,
+                l.LastInterestPaidDate,
+                l.Status,
+                l.PacketNumber,
+                PrincipalRepaid = l.Receipts.Sum(r => (decimal?)r.PrincipalAmount) ?? 0m,
+                BankCustodyName = l.BankPledgeLoans
+                    .Where(b => !b.IsReleased && !b.IsDeleted)
+                    .Select(b => b.BankPledge.Bank.Name)
+                    .FirstOrDefault()
+            })
+            .ToListAsync(ct);
 
-        var items = new List<OutstandingLoanItemDto>();
+        var items = new List<OutstandingLoanItemDto>(loans.Count);
         decimal grandGrossWt = 0m;
         decimal grandNetWt = 0m;
         decimal grandDisbursed = 0m;
@@ -80,17 +106,15 @@ public class JlReportService : IJlReportService
 
         foreach (var l in loans)
         {
-            var activeBankPledge = l.BankPledgeLoans.FirstOrDefault(b => !b.IsReleased && !b.IsDeleted);
-            var isBankCustody = activeBankPledge != null;
+            var isBankCustody = l.BankCustodyName != null;
             var storageLoc = isBankCustody 
-                ? $"Bank Custody ({activeBankPledge!.BankPledge?.Bank?.Name ?? "Bank"})" 
+                ? $"Bank Custody ({l.BankCustodyName ?? "Bank"})" 
                 : "Shop Locker";
 
             if (filter.StorageLocation == "ShopLocker" && isBankCustody) continue;
             if (filter.StorageLocation == "BankCustody" && !isBankCustody) continue;
 
-            var principalRepaid = l.Receipts.Sum(r => r.PrincipalAmount);
-            var principalBalance = Math.Max(0m, l.LoanAmount - principalRepaid);
+            var principalBalance = Math.Max(0m, l.LoanAmount - l.PrincipalRepaid);
 
             var calcFrom = l.LastInterestPaidDate ?? l.PledgeDate;
             var daysElapsed = Math.Max(0, (today.ToDateTime(TimeOnly.MinValue) - calcFrom.ToDateTime(TimeOnly.MinValue)).Days);
@@ -98,14 +122,14 @@ public class JlReportService : IJlReportService
             // Compute accrued interest
             var calcResult = _interestCalculator.CalculateInterest(
                 principalBalance,
-                l.Scheme.InterestRatePerMonth,
-                l.Scheme.PenalInterestRatePerMonth,
+                l.InterestRatePerMonth,
+                l.PenalInterestRatePerMonth,
                 l.PledgeDate,
                 today,
                 l.LastInterestPaidDate,
-                l.Scheme.TenureMonths,
-                l.Scheme.GracePeriodDays,
-                l.Scheme.MinimumInterestDays);
+                l.TenureMonths,
+                l.GracePeriodDays,
+                l.MinimumInterestDays);
 
             var accruedInterest = calcResult.TotalInterest;
             var isOverdue = today > l.MaturityDate;
@@ -116,9 +140,9 @@ public class JlReportService : IJlReportService
                 l.LoanNumber,
                 l.PledgeDate,
                 l.MaturityDate,
-                l.Customer.FullName,
-                l.Customer.MobileNumber,
-                l.Scheme.Name,
+                l.CustomerName,
+                l.CustomerMobile,
+                l.SchemeName,
                 l.GrossWeight,
                 l.NetWeight,
                 l.LoanAmount,

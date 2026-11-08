@@ -92,3 +92,4 @@ public class AsyncRelayCommand : ICommand
         _cts?.Cancel();
     }
 }
+

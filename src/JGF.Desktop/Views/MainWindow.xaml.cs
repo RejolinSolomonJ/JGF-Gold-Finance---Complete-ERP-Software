@@ -129,6 +129,46 @@ public partial class MainWindow : Window
             Log.Warning(ex, "Database connection test failed for {Host}:{Port}", host, port);
         }
 
+        // If direct connection failed, check if PostgreSQL server is online and auto-create the database if missing
+        if (!canConnect)
+        {
+            try
+            {
+                var targetDb = builder.Database;
+                if (!string.IsNullOrWhiteSpace(targetDb) && !targetDb.Equals("postgres", StringComparison.OrdinalIgnoreCase))
+                {
+                    progress.UpdateStatus($"Checking PostgreSQL server ({host}:{port}) for database \"{targetDb}\"...");
+                    var adminBuilder = new NpgsqlConnectionStringBuilder(connStr)
+                    {
+                        Database = "postgres",
+                        Timeout = 5,
+                        CommandTimeout = 15
+                    };
+
+                    await using var adminConn = new NpgsqlConnection(adminBuilder.ConnectionString);
+                    await adminConn.OpenAsync();
+
+                    await using var checkCmd = new NpgsqlCommand($"SELECT 1 FROM pg_database WHERE datname = '{targetDb}'", adminConn);
+                    var exists = await checkCmd.ExecuteScalarAsync();
+                    if (exists == null)
+                    {
+                        progress.UpdateStatus($"Database \"{targetDb}\" not found. Creating database automatically on server...");
+                        await using var createCmd = new NpgsqlCommand($"CREATE DATABASE \"{targetDb}\"", adminConn);
+                        await createCmd.ExecuteNonQueryAsync();
+                    }
+
+                    var dbFactory = _services.GetRequiredService<IDbContextFactory<JgfDbContext>>();
+                    await using var testDb = await dbFactory.CreateDbContextAsync();
+                    canConnect = await testDb.Database.CanConnectAsync();
+                }
+            }
+            catch (Exception autoEx)
+            {
+                Log.Warning(autoEx, "Automatic database creation check did not succeed: {Message}", autoEx.Message);
+                errorMessage = autoEx.Message;
+            }
+        }
+
         // 3. Handle Connection Failure Gracefully
         if (!canConnect)
         {

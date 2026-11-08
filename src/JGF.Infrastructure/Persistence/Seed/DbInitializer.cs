@@ -128,11 +128,12 @@ public static class DbInitializer
         {
             var companySettings = new List<Setting>
             {
-                new() { Key = "Company.Name", Value = "JGF Jewel Gold Finance", Description = "Company Legal Name" },
+                new() { Key = "Company.Name", Value = "Jeba Gold Finance", Description = "Company Legal Name" },
                 new() { Key = "Company.Address", Value = "123, Bazaar Street, Madurai - 625001", Description = "Shop Address" },
                 new() { Key = "Company.Phone", Value = "0452-2345678", Description = "Contact Phone" },
                 new() { Key = "Company.RegNo", Value = "TN-PBN-2024-001", Description = "Pawnbroker License Number" },
                 new() { Key = "Company.GstNo", Value = "33AAAAA0000A1Z5", Description = "GSTIN" },
+                new() { Key = "Company.LogoPath", Value = "Assets/logo.png", Description = "Company Logo File Path" },
                 new() { Key = "Company.FinancialYear", Value = "2024-25", Description = "Current Financial Year" }
             };
             await context.Settings.AddRangeAsync(companySettings);

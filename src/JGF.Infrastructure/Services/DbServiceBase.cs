@@ -44,3 +44,4 @@ public abstract class DbServiceBase
         return new DbContextScope(_directContext!, shouldDispose: false);
     }
 }
+
