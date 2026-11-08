@@ -87,184 +87,188 @@ public class ReceiptService : DbServiceBase, IReceiptService
             }
         }
 
-        var isRelational = context.Database.IsRelational();
-        using var tx = isRelational ? await context.Database.BeginTransactionAsync(ct) : null;
-
-        var fy = "2024-25";
-        var rNumber = await _numberSeries.GetNextNumberAsync(NumberSeriesType.ReceiptNumber, fy, null, ct);
-
-        var totalAmount = dto.PrincipalAmount + dto.InterestAmount + dto.PenalInterestAmount 
-                        + dto.PostalCharges + dto.OtherCharges - dto.AdjustmentAmount;
-
-        var receipt = new Receipt
+        var strategy = context.Database.CreateExecutionStrategy();
+        return await strategy.ExecuteAsync(async () =>
         {
-            ReceiptNumber = rNumber,
-            LoanId = loan.Id,
-            ReceiptDate = dto.ReceiptDate,
-            ReceiptType = dto.ReceiptType,
-            PaymentMode = dto.PaymentMode,
-            PrincipalAmount = dto.PrincipalAmount,
-            InterestAmount = dto.InterestAmount,
-            PenalInterestAmount = dto.PenalInterestAmount,
-            PostalCharges = dto.PostalCharges,
-            OtherCharges = dto.OtherCharges,
-            OtherChargesDescription = dto.OtherChargesDescription,
-            TotalAmount = totalAmount,
-            ReferenceNumber = dto.ReferenceNumber,
-            InterestCalculatedFromDate = dto.InterestFromDate,
-            InterestCalculatedToDate = dto.InterestToDate,
-            DaysCharged = dto.DaysCharged,
-            Notes = dto.AdjustmentReason != null ? $"Adjustment: {dto.AdjustmentReason}" : null
-        };
+            var isRelational = context.Database.IsRelational();
+            await using var tx = isRelational ? await context.Database.BeginTransactionAsync(ct) : null;
 
-        await context.Receipts.AddAsync(receipt, ct);
+            var fy = "2024-25";
+            var rNumber = await _numberSeries.GetNextNumberAsync(NumberSeriesType.ReceiptNumber, fy, null, ct);
 
-        // Update Loan state
-        loan.LastInterestPaidDate = dto.InterestToDate;
+            var totalAmount = dto.PrincipalAmount + dto.InterestAmount + dto.PenalInterestAmount 
+                            + dto.PostalCharges + dto.OtherCharges - dto.AdjustmentAmount;
 
-        var lastBalance = await context.LoanLedgerEntries
-            .Where(e => e.LoanId == loan.Id)
-            .OrderByDescending(e => e.EntryDate).ThenByDescending(e => e.CreatedAtUtc)
-            .Select(e => e.Balance)
-            .FirstOrDefaultAsync(ct);
-
-        var newPrincipalBalance = Math.Max(0m, lastBalance - dto.PrincipalAmount);
-
-        if (dto.ReceiptType == ReceiptType.Closure || newPrincipalBalance == 0)
-        {
-            loan.Status = LoanStatus.Closed;
-            loan.ClosedDate = dto.ReceiptDate;
-            loan.ClosingReceiptId = receipt.Id;
-        }
-        else if (dto.PrincipalAmount > 0)
-        {
-            loan.Status = LoanStatus.PartiallyPaid;
-        }
-
-        // Sub-ledger entries
-        if (dto.InterestAmount > 0 || dto.PenalInterestAmount > 0)
-        {
-            await context.LoanLedgerEntries.AddAsync(new LoanLedgerEntry
+            var receipt = new Receipt
             {
+                ReceiptNumber = rNumber,
                 LoanId = loan.Id,
-                EntryDate = dto.ReceiptDate,
-                EntryType = LoanLedgerEntryType.InterestPayment,
-                DebitAmount = 0m,
-                CreditAmount = dto.InterestAmount + dto.PenalInterestAmount,
-                Balance = lastBalance,
-                ReceiptId = receipt.Id,
-                Narration = $"Interest payment received up to {dto.InterestToDate:dd-MMM-yyyy} (Receipt {receipt.ReceiptNumber})"
-            }, ct);
-        }
+                ReceiptDate = dto.ReceiptDate,
+                ReceiptType = dto.ReceiptType,
+                PaymentMode = dto.PaymentMode,
+                PrincipalAmount = dto.PrincipalAmount,
+                InterestAmount = dto.InterestAmount,
+                PenalInterestAmount = dto.PenalInterestAmount,
+                PostalCharges = dto.PostalCharges,
+                OtherCharges = dto.OtherCharges,
+                OtherChargesDescription = dto.OtherChargesDescription,
+                TotalAmount = totalAmount,
+                ReferenceNumber = dto.ReferenceNumber,
+                InterestCalculatedFromDate = dto.InterestFromDate,
+                InterestCalculatedToDate = dto.InterestToDate,
+                DaysCharged = dto.DaysCharged,
+                Notes = dto.AdjustmentReason != null ? $"Adjustment: {dto.AdjustmentReason}" : null
+            };
 
-        if (dto.PrincipalAmount > 0)
-        {
-            await context.LoanLedgerEntries.AddAsync(new LoanLedgerEntry
+            await context.Receipts.AddAsync(receipt, ct);
+
+            // Update Loan state
+            loan.LastInterestPaidDate = dto.InterestToDate;
+
+            var lastBalance = await context.LoanLedgerEntries
+                .Where(e => e.LoanId == loan.Id)
+                .OrderByDescending(e => e.EntryDate).ThenByDescending(e => e.CreatedAtUtc)
+                .Select(e => e.Balance)
+                .FirstOrDefaultAsync(ct);
+
+            var newPrincipalBalance = Math.Max(0m, lastBalance - dto.PrincipalAmount);
+
+            if (dto.ReceiptType == ReceiptType.Closure || newPrincipalBalance == 0)
             {
-                LoanId = loan.Id,
-                EntryDate = dto.ReceiptDate,
-                EntryType = LoanLedgerEntryType.PrincipalPayment,
-                DebitAmount = 0m,
-                CreditAmount = dto.PrincipalAmount,
-                Balance = newPrincipalBalance,
-                ReceiptId = receipt.Id,
-                Narration = $"Principal repayment (Receipt {receipt.ReceiptNumber})"
-            }, ct);
-        }
+                loan.Status = LoanStatus.Closed;
+                loan.ClosedDate = dto.ReceiptDate;
+                loan.ClosingReceiptId = receipt.Id;
+            }
+            else if (dto.PrincipalAmount > 0)
+            {
+                loan.Status = LoanStatus.PartiallyPaid;
+            }
 
-        // Multi-line balanced voucher
-        var voucherNumber = await _numberSeries.GetNextNumberAsync(NumberSeriesType.VoucherNumber, fy, null, ct);
-        var voucher = new Voucher
-        {
-            VoucherNumber = voucherNumber,
-            VoucherDate = dto.ReceiptDate,
-            VoucherType = VoucherType.Receipt,
-            TotalDebit = totalAmount,
-            TotalCredit = totalAmount,
-            Narration = $"Receipt {receipt.ReceiptNumber} for Loan {loan.LoanNumber} ({loan.Customer.FullName})",
-            IsPosted = true,
-            PostedAtUtc = DateTime.UtcNow,
-            PostedByUserId = dto.UserId,
-            ReferenceType = "Receipt",
-            ReferenceId = receipt.Id
-        };
+            // Sub-ledger entries
+            if (dto.InterestAmount > 0 || dto.PenalInterestAmount > 0)
+            {
+                await context.LoanLedgerEntries.AddAsync(new LoanLedgerEntry
+                {
+                    LoanId = loan.Id,
+                    EntryDate = dto.ReceiptDate,
+                    EntryType = LoanLedgerEntryType.InterestPayment,
+                    DebitAmount = 0m,
+                    CreditAmount = dto.InterestAmount + dto.PenalInterestAmount,
+                    Balance = lastBalance,
+                    ReceiptId = receipt.Id,
+                    Narration = $"Interest payment received up to {dto.InterestToDate:dd-MMM-yyyy} (Receipt {receipt.ReceiptNumber})"
+                }, ct);
+            }
 
-        var headCash = await context.LedgerHeads.FirstOrDefaultAsync(l => l.Code == "1001", ct);
-        var headJewelLoan = await context.LedgerHeads.FirstOrDefaultAsync(l => l.Code == "1002", ct);
-        var headInterest = await context.LedgerHeads.FirstOrDefaultAsync(l => l.Code == "4001", ct);
-        var headPenal = await context.LedgerHeads.FirstOrDefaultAsync(l => l.Code == "4002", ct);
-        var headPostal = await context.LedgerHeads.FirstOrDefaultAsync(l => l.Code == "4004", ct);
+            if (dto.PrincipalAmount > 0)
+            {
+                await context.LoanLedgerEntries.AddAsync(new LoanLedgerEntry
+                {
+                    LoanId = loan.Id,
+                    EntryDate = dto.ReceiptDate,
+                    EntryType = LoanLedgerEntryType.PrincipalPayment,
+                    DebitAmount = 0m,
+                    CreditAmount = dto.PrincipalAmount,
+                    Balance = newPrincipalBalance,
+                    ReceiptId = receipt.Id,
+                    Narration = $"Principal repayment (Receipt {receipt.ReceiptNumber})"
+                }, ct);
+            }
 
-        int line = 1;
-        // Debit side (Total money received in Cash or Bank)
-        voucher.Lines.Add(new VoucherLine
-        {
-            LedgerHeadId = headCash!.Id,
-            DebitAmount = totalAmount,
-            CreditAmount = 0m,
-            Narration = $"Collection on receipt {receipt.ReceiptNumber}",
-            LineOrder = line++
+            // Multi-line balanced voucher
+            var voucherNumber = await _numberSeries.GetNextNumberAsync(NumberSeriesType.VoucherNumber, fy, null, ct);
+            var voucher = new Voucher
+            {
+                VoucherNumber = voucherNumber,
+                VoucherDate = dto.ReceiptDate,
+                VoucherType = VoucherType.Receipt,
+                TotalDebit = totalAmount,
+                TotalCredit = totalAmount,
+                Narration = $"Receipt {receipt.ReceiptNumber} for Loan {loan.LoanNumber} ({loan.Customer.FullName})",
+                IsPosted = true,
+                PostedAtUtc = DateTime.UtcNow,
+                PostedByUserId = dto.UserId,
+                ReferenceType = "Receipt",
+                ReferenceId = receipt.Id
+            };
+
+            var headCash = await context.LedgerHeads.FirstOrDefaultAsync(l => l.Code == "1001", ct);
+            var headJewelLoan = await context.LedgerHeads.FirstOrDefaultAsync(l => l.Code == "1002", ct);
+            var headInterest = await context.LedgerHeads.FirstOrDefaultAsync(l => l.Code == "4001", ct);
+            var headPenal = await context.LedgerHeads.FirstOrDefaultAsync(l => l.Code == "4002", ct);
+            var headPostal = await context.LedgerHeads.FirstOrDefaultAsync(l => l.Code == "4004", ct);
+
+            int line = 1;
+            // Debit side (Total money received in Cash or Bank)
+            voucher.Lines.Add(new VoucherLine
+            {
+                LedgerHeadId = headCash!.Id,
+                DebitAmount = totalAmount,
+                CreditAmount = 0m,
+                Narration = $"Collection on receipt {receipt.ReceiptNumber}",
+                LineOrder = line++
+            });
+
+            // Credit side (Principal reduction)
+            if (dto.PrincipalAmount > 0)
+            {
+                voucher.Lines.Add(new VoucherLine
+                {
+                    LedgerHeadId = headJewelLoan!.Id,
+                    DebitAmount = 0m,
+                    CreditAmount = dto.PrincipalAmount,
+                    Narration = $"Principal credit {loan.LoanNumber}",
+                    LineOrder = line++
+                });
+            }
+
+            // Credit side (Interest income)
+            if (dto.InterestAmount > 0)
+            {
+                voucher.Lines.Add(new VoucherLine
+                {
+                    LedgerHeadId = headInterest!.Id,
+                    DebitAmount = 0m,
+                    CreditAmount = dto.InterestAmount,
+                    Narration = $"Interest income {loan.LoanNumber}",
+                    LineOrder = line++
+                });
+            }
+
+            // Credit side (Penal interest income)
+            if (dto.PenalInterestAmount > 0)
+            {
+                voucher.Lines.Add(new VoucherLine
+                {
+                    LedgerHeadId = headPenal!.Id,
+                    DebitAmount = 0m,
+                    CreditAmount = dto.PenalInterestAmount,
+                    Narration = $"Penal interest income {loan.LoanNumber}",
+                    LineOrder = line++
+                });
+            }
+
+            // Credit side (Postal charges recovery)
+            if (dto.PostalCharges > 0)
+            {
+                voucher.Lines.Add(new VoucherLine
+                {
+                    LedgerHeadId = headPostal!.Id,
+                    DebitAmount = 0m,
+                    CreditAmount = dto.PostalCharges,
+                    Narration = $"Postal charges recovered {loan.LoanNumber}",
+                    LineOrder = line++
+                });
+            }
+
+            await context.Vouchers.AddAsync(voucher, ct);
+            receipt.VoucherId = voucher.Id;
+
+            await context.SaveChangesAsync(ct);
+            if (tx != null) await tx.CommitAsync(ct);
+
+            return receipt;
         });
-
-        // Credit side (Principal reduction)
-        if (dto.PrincipalAmount > 0)
-        {
-            voucher.Lines.Add(new VoucherLine
-            {
-                LedgerHeadId = headJewelLoan!.Id,
-                DebitAmount = 0m,
-                CreditAmount = dto.PrincipalAmount,
-                Narration = $"Principal credit {loan.LoanNumber}",
-                LineOrder = line++
-            });
-        }
-
-        // Credit side (Interest income)
-        if (dto.InterestAmount > 0)
-        {
-            voucher.Lines.Add(new VoucherLine
-            {
-                LedgerHeadId = headInterest!.Id,
-                DebitAmount = 0m,
-                CreditAmount = dto.InterestAmount,
-                Narration = $"Interest income {loan.LoanNumber}",
-                LineOrder = line++
-            });
-        }
-
-        // Credit side (Penal interest income)
-        if (dto.PenalInterestAmount > 0)
-        {
-            voucher.Lines.Add(new VoucherLine
-            {
-                LedgerHeadId = headPenal!.Id,
-                DebitAmount = 0m,
-                CreditAmount = dto.PenalInterestAmount,
-                Narration = $"Penal interest income {loan.LoanNumber}",
-                LineOrder = line++
-            });
-        }
-
-        // Credit side (Postal charges recovery)
-        if (dto.PostalCharges > 0)
-        {
-            voucher.Lines.Add(new VoucherLine
-            {
-                LedgerHeadId = headPostal!.Id,
-                DebitAmount = 0m,
-                CreditAmount = dto.PostalCharges,
-                Narration = $"Postal charges recovered {loan.LoanNumber}",
-                LineOrder = line++
-            });
-        }
-
-        await context.Vouchers.AddAsync(voucher, ct);
-        receipt.VoucherId = voucher.Id;
-
-        await context.SaveChangesAsync(ct);
-        if (tx != null) await tx.CommitAsync(ct);
-
-        return receipt;
     }
 
     public async Task<byte[]> GenerateReceiptPdfAsync(Guid receiptId, bool isDuplicate = false, CancellationToken ct = default)

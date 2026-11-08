@@ -369,8 +369,11 @@ public class OverdueNoticeService : DbServiceBase, IOverdueNoticeService
         var auction = loan.Auctions.FirstOrDefault(a => a.Status == AuctionStatus.Scheduled)
             ?? throw new InvalidOperationException("No scheduled auction found for this loan. Owner must approve auction first.");
 
-        var isRelational = context.Database.IsRelational();
-        using var tx = isRelational ? await context.Database.BeginTransactionAsync(ct) : null;
+        var strategy = context.Database.CreateExecutionStrategy();
+        return await strategy.ExecuteAsync(async () =>
+        {
+            var isRelational = context.Database.IsRelational();
+            await using var tx = isRelational ? await context.Database.BeginTransactionAsync(ct) : null;
 
         // Calculate total outstanding on auction date
         var calc = _calculator.CalculateInterest(
@@ -538,16 +541,17 @@ public class OverdueNoticeService : DbServiceBase, IOverdueNoticeService
         await context.SaveChangesAsync(ct);
         if (tx != null) await tx.CommitAsync(ct);
 
-        return new AuctionSettlementResultDto(
-            auction.Id,
-            loan.LoanNumber,
-            dto.SalePrice,
-            totalDues,
-            dto.AuctionExpenses,
-            surplus,
-            deficit,
-            voucher.VoucherNumber
-        );
+            return new AuctionSettlementResultDto(
+                auction.Id,
+                loan.LoanNumber,
+                dto.SalePrice,
+                totalDues,
+                dto.AuctionExpenses,
+                surplus,
+                deficit,
+                voucher.VoucherNumber
+            );
+        });
     }
 
     public async Task<List<Auction>> GetAuctionRegisterAsync(CancellationToken ct = default)

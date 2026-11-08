@@ -346,71 +346,75 @@ public class AccountingReportService : DbServiceBase, IAccountingReportService
         var cashHead = await context.LedgerHeads.FirstOrDefaultAsync(l => l.Code == "1001", ct)
             ?? throw new InvalidOperationException("Cash ledger head 1001 not configured.");
 
-        var isRelational = context.Database.IsRelational();
-        using var tx = isRelational ? await context.Database.BeginTransactionAsync(ct) : null;
-
-        var fy = "2024-25";
-        var voucherNumber = await _numberSeries.GetNextNumberAsync(NumberSeriesType.VoucherNumber, fy, null, ct);
-
-        var voucher = new Voucher
+        var strategy = context.Database.CreateExecutionStrategy();
+        return await strategy.ExecuteAsync(async () =>
         {
-            VoucherNumber = voucherNumber,
-            VoucherDate = dto.VoucherDate,
-            VoucherType = dto.VoucherType,
-            TotalDebit = dto.Amount,
-            TotalCredit = dto.Amount,
-            Narration = dto.Narration,
-            IsPosted = true,
-            PostedAtUtc = DateTime.UtcNow,
-            PostedByUserId = dto.UserId,
-            ReferenceType = "ManualEntry"
-        };
+            var isRelational = context.Database.IsRelational();
+            await using var tx = isRelational ? await context.Database.BeginTransactionAsync(ct) : null;
 
-        if (dto.VoucherType == VoucherType.Receipt)
-        {
-            voucher.Lines.Add(new VoucherLine
+            var fy = "2024-25";
+            var voucherNumber = await _numberSeries.GetNextNumberAsync(NumberSeriesType.VoucherNumber, fy, null, ct);
+
+            var voucher = new Voucher
             {
-                LedgerHeadId = cashHead.Id,
-                DebitAmount = dto.Amount,
-                CreditAmount = 0m,
+                VoucherNumber = voucherNumber,
+                VoucherDate = dto.VoucherDate,
+                VoucherType = dto.VoucherType,
+                TotalDebit = dto.Amount,
+                TotalCredit = dto.Amount,
                 Narration = dto.Narration,
-                LineOrder = 1
-            });
+                IsPosted = true,
+                PostedAtUtc = DateTime.UtcNow,
+                PostedByUserId = dto.UserId,
+                ReferenceType = "ManualEntry"
+            };
 
-            voucher.Lines.Add(new VoucherLine
+            if (dto.VoucherType == VoucherType.Receipt)
             {
-                LedgerHeadId = targetHead.Id,
-                DebitAmount = 0m,
-                CreditAmount = dto.Amount,
-                Narration = dto.Narration,
-                LineOrder = 2
-            });
-        }
-        else // Payment
-        {
-            voucher.Lines.Add(new VoucherLine
+                voucher.Lines.Add(new VoucherLine
+                {
+                    LedgerHeadId = cashHead.Id,
+                    DebitAmount = dto.Amount,
+                    CreditAmount = 0m,
+                    Narration = dto.Narration,
+                    LineOrder = 1
+                });
+
+                voucher.Lines.Add(new VoucherLine
+                {
+                    LedgerHeadId = targetHead.Id,
+                    DebitAmount = 0m,
+                    CreditAmount = dto.Amount,
+                    Narration = dto.Narration,
+                    LineOrder = 2
+                });
+            }
+            else // Payment
             {
-                LedgerHeadId = targetHead.Id,
-                DebitAmount = dto.Amount,
-                CreditAmount = 0m,
-                Narration = dto.Narration,
-                LineOrder = 1
-            });
+                voucher.Lines.Add(new VoucherLine
+                {
+                    LedgerHeadId = targetHead.Id,
+                    DebitAmount = dto.Amount,
+                    CreditAmount = 0m,
+                    Narration = dto.Narration,
+                    LineOrder = 1
+                });
 
-            voucher.Lines.Add(new VoucherLine
-            {
-                LedgerHeadId = cashHead.Id,
-                DebitAmount = 0m,
-                CreditAmount = dto.Amount,
-                Narration = dto.Narration,
-                LineOrder = 2
-            });
-        }
+                voucher.Lines.Add(new VoucherLine
+                {
+                    LedgerHeadId = cashHead.Id,
+                    DebitAmount = 0m,
+                    CreditAmount = dto.Amount,
+                    Narration = dto.Narration,
+                    LineOrder = 2
+                });
+            }
 
-        await context.Vouchers.AddAsync(voucher, ct);
-        await context.SaveChangesAsync(ct);
-        if (tx != null) await tx.CommitAsync(ct);
+            await context.Vouchers.AddAsync(voucher, ct);
+            await context.SaveChangesAsync(ct);
+            if (tx != null) await tx.CommitAsync(ct);
 
-        return voucher.VoucherNumber;
+            return voucher.VoucherNumber;
+        });
     }
 }

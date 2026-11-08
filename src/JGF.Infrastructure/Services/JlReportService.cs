@@ -604,71 +604,75 @@ public class JlReportService : IJlReportService
         var postalIncomeHead = await _context.LedgerHeads.FirstOrDefaultAsync(l => l.Code == "4004", ct)
             ?? throw new InvalidOperationException("Postal Charges Recovered account 4004 not found.");
 
-        using var tx = _context.Database.IsRelational() ? await _context.Database.BeginTransactionAsync(ct) : null;
-
-        var fy = "2024-25";
-        var voucherNumber = await _numberSeries.GetNextNumberAsync(NumberSeriesType.VoucherNumber, fy, null, ct);
-
-        // Balanced double-entry voucher: Debit Cash (1001), Credit Postal Charges Recovered (4004)
-        var voucher = new Voucher
+        var strategy = _context.Database.CreateExecutionStrategy();
+        return await strategy.ExecuteAsync(async () =>
         {
-            VoucherNumber = voucherNumber,
-            VoucherDate = dto.ChargeDate,
-            VoucherType = VoucherType.Receipt,
-            TotalDebit = dto.Amount,
-            TotalCredit = dto.Amount,
-            Narration = $"Postal charge recovery for Loan {loan.LoanNumber}: {dto.Narration}",
-            IsPosted = true,
-            PostedAtUtc = DateTime.UtcNow,
-            PostedByUserId = dto.UserId,
-            ReferenceType = "PostalCharge",
-            ReferenceId = loan.Id
-        };
+            using var tx = _context.Database.IsRelational() ? await _context.Database.BeginTransactionAsync(ct) : null;
 
-        voucher.Lines.Add(new VoucherLine
-        {
-            LedgerHeadId = cashHead.Id,
-            DebitAmount = dto.Amount,
-            CreditAmount = 0m,
-            Narration = $"Postal charge cash collection for {loan.LoanNumber}",
-            LineOrder = 1
+            var fy = "2024-25";
+            var voucherNumber = await _numberSeries.GetNextNumberAsync(NumberSeriesType.VoucherNumber, fy, null, ct);
+
+            // Balanced double-entry voucher: Debit Cash (1001), Credit Postal Charges Recovered (4004)
+            var voucher = new Voucher
+            {
+                VoucherNumber = voucherNumber,
+                VoucherDate = dto.ChargeDate,
+                VoucherType = VoucherType.Receipt,
+                TotalDebit = dto.Amount,
+                TotalCredit = dto.Amount,
+                Narration = $"Postal charge recovery for Loan {loan.LoanNumber}: {dto.Narration}",
+                IsPosted = true,
+                PostedAtUtc = DateTime.UtcNow,
+                PostedByUserId = dto.UserId,
+                ReferenceType = "PostalCharge",
+                ReferenceId = loan.Id
+            };
+
+            voucher.Lines.Add(new VoucherLine
+            {
+                LedgerHeadId = cashHead.Id,
+                DebitAmount = dto.Amount,
+                CreditAmount = 0m,
+                Narration = $"Postal charge cash collection for {loan.LoanNumber}",
+                LineOrder = 1
+            });
+
+            voucher.Lines.Add(new VoucherLine
+            {
+                LedgerHeadId = postalIncomeHead.Id,
+                DebitAmount = 0m,
+                CreditAmount = dto.Amount,
+                Narration = $"Postal recovery {loan.LoanNumber}",
+                LineOrder = 2
+            });
+
+            await _context.Vouchers.AddAsync(voucher, ct);
+
+            // Record loan ledger charge
+            var lastBalance = await _context.LoanLedgerEntries
+                .Where(e => e.LoanId == loan.Id)
+                .OrderByDescending(e => e.EntryDate).ThenByDescending(e => e.CreatedAtUtc)
+                .Select(e => e.Balance)
+                .FirstOrDefaultAsync(ct);
+
+            await _context.LoanLedgerEntries.AddAsync(new LoanLedgerEntry
+            {
+                LoanId = loan.Id,
+                EntryDate = dto.ChargeDate,
+                EntryType = LoanLedgerEntryType.Charge,
+                DebitAmount = dto.Amount,
+                CreditAmount = dto.Amount,
+                Balance = lastBalance,
+                ReferenceType = "PostalVoucher",
+                ReferenceId = voucher.Id,
+                Narration = $"Postal charge recovered: {dto.Narration}"
+            }, ct);
+
+            await _context.SaveChangesAsync(ct);
+            if (tx != null) await tx.CommitAsync(ct);
+
+            return voucherNumber;
         });
-
-        voucher.Lines.Add(new VoucherLine
-        {
-            LedgerHeadId = postalIncomeHead.Id,
-            DebitAmount = 0m,
-            CreditAmount = dto.Amount,
-            Narration = $"Postal recovery {loan.LoanNumber}",
-            LineOrder = 2
-        });
-
-        await _context.Vouchers.AddAsync(voucher, ct);
-
-        // Record loan ledger charge
-        var lastBalance = await _context.LoanLedgerEntries
-            .Where(e => e.LoanId == loan.Id)
-            .OrderByDescending(e => e.EntryDate).ThenByDescending(e => e.CreatedAtUtc)
-            .Select(e => e.Balance)
-            .FirstOrDefaultAsync(ct);
-
-        await _context.LoanLedgerEntries.AddAsync(new LoanLedgerEntry
-        {
-            LoanId = loan.Id,
-            EntryDate = dto.ChargeDate,
-            EntryType = LoanLedgerEntryType.Charge,
-            DebitAmount = dto.Amount,
-            CreditAmount = dto.Amount,
-            Balance = lastBalance,
-            ReferenceType = "PostalVoucher",
-            ReferenceId = voucher.Id,
-            Narration = $"Postal charge recovered: {dto.Narration}"
-        }, ct);
-
-        await _context.SaveChangesAsync(ct);
-        if (tx != null) await tx.CommitAsync(ct);
-
-        return voucherNumber;
     }
 
     public async Task<PostalChargeReportSummaryDto> GetPostalChargeReportAsync(JlReportFilterDto filter, CancellationToken ct = default)
