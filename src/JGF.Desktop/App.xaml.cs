@@ -137,10 +137,6 @@ public partial class App : System.Windows.Application
                     {
                         opts.UseNpgsql(connStr, npgsqlOpts =>
                         {
-                            npgsqlOpts.EnableRetryOnFailure(
-                                maxRetryCount: 5,
-                                maxRetryDelay: TimeSpan.FromSeconds(5),
-                                errorCodesToAdd: null);
                             npgsqlOpts.CommandTimeout(15);
                         });
                     });

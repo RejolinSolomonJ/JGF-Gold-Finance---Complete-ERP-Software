@@ -4,8 +4,10 @@ using System.Windows;
 using System.Windows.Controls;
 using JGF.Application.Repledge;
 using JGF.Application.Services;
+using JGF.Desktop.Common;
 using JGF.Domain.Entities;
 using JGF.Domain.Enums;
+using Serilog;
 
 namespace JGF.Desktop.Views.Controls;
 
@@ -40,16 +42,19 @@ public partial class BankRepledgeNewEntryControl : UserControl
 {
     private readonly IBankRepledgeService _repledgeService;
     private readonly IBankService _bankService;
+    private readonly User? _currentUser;
 
     public ObservableCollection<LoanRepledgeSelectionViewModel> AvailableLoans { get; } = new();
 
     public BankRepledgeNewEntryControl(
         IBankRepledgeService repledgeService,
-        IBankService bankService)
+        IBankService bankService,
+        User? currentUser = null)
     {
         InitializeComponent();
         _repledgeService = repledgeService;
         _bankService = bankService;
+        _currentUser = currentUser;
 
         GridAvailableLoans.ItemsSource = AvailableLoans;
         DpPledgeDate.SelectedDate = DateTime.Today;
@@ -60,36 +65,52 @@ public partial class BankRepledgeNewEntryControl : UserControl
 
     private async Task InitializeAsync()
     {
-        var banks = await _bankService.GetAllBanksAsync(activeOnly: true);
-        CmbBank.ItemsSource = banks;
-        CmbBank.DisplayMemberPath = "Name";
-        if (banks.Count > 0) CmbBank.SelectedIndex = 0;
+        try
+        {
+            var banks = await _bankService.GetAllBanksAsync(activeOnly: true);
+            CmbBank.ItemsSource = banks;
+            CmbBank.DisplayMemberPath = "Name";
+            if (banks.Count > 0) CmbBank.SelectedIndex = 0;
 
-        await LoadAvailableLoansAsync();
+            await LoadAvailableLoansAsync();
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "Failed to initialize Bank Repledge screen.");
+            MessageBox.Show($"Failed to load banks: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
     }
 
     private async Task LoadAvailableLoansAsync()
     {
-        AvailableLoans.Clear();
-        var loans = await _repledgeService.GetAvailableLoansForRepledgeAsync();
-
-        foreach (var l in loans)
+        try
         {
-            var vm = new LoanRepledgeSelectionViewModel
-            {
-                LoanId = l.Id,
-                LoanNumber = l.LoanNumber,
-                CustomerName = l.Customer?.FullName ?? "-",
-                PledgeDate = l.PledgeDate,
-                NetWeight = l.NetWeight,
-                LoanAmount = l.LoanAmount,
-                PacketNumber = l.PacketNumber ?? "-"
-            };
-            vm.PropertyChanged += (s, e) => RecalculateSelectedSummary();
-            AvailableLoans.Add(vm);
-        }
+            AvailableLoans.Clear();
+            var loans = await _repledgeService.GetAvailableLoansForRepledgeAsync();
 
-        RecalculateSelectedSummary();
+            foreach (var l in loans)
+            {
+                var vm = new LoanRepledgeSelectionViewModel
+                {
+                    LoanId = l.Id,
+                    LoanNumber = l.LoanNumber,
+                    CustomerName = l.Customer?.FullName ?? "-",
+                    PledgeDate = l.PledgeDate,
+                    NetWeight = l.NetWeight,
+                    LoanAmount = l.LoanAmount,
+                    PacketNumber = l.PacketNumber ?? "-"
+                };
+                vm.PropertyChanged += (s, e) => RecalculateSelectedSummary();
+                AvailableLoans.Add(vm);
+            }
+
+            RecalculateSelectedSummary();
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "Failed to load available loans for repledge.");
+            MessageBox.Show($"Failed to load loans: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
     }
 
     private void OnBankChanged(object sender, SelectionChangedEventArgs e)
@@ -119,11 +140,10 @@ public partial class BankRepledgeNewEntryControl : UserControl
         var totalWeight = selected.Sum(l => l.NetWeight);
 
         TxtSelectedCount.Text = $"{selected.Count} loans selected";
-        TxtSelectedPrincipal.Text = $"₹ {totalPrincipal:N2}";
-        TxtSelectedWeight.Text = $"{totalWeight:F3} g";
+        TxtSelectedPrincipal.Text = ValidationHelper.FormatCurrency(totalPrincipal);
+        TxtSelectedWeight.Text = ValidationHelper.FormatWeight(totalWeight);
         TxtBankWeight.Text = totalWeight.ToString("F3");
 
-        // By default, assume bank lends ~70-75% of customer principal
         var estimatedBankLtv = 0.70m;
         var estBankDisbursed = Math.Round(totalPrincipal * estimatedBankLtv, 2);
         TxtBankDisbursedAmount.Text = estBankDisbursed.ToString("F2");
@@ -133,32 +153,52 @@ public partial class BankRepledgeNewEntryControl : UserControl
     {
         if (CmbBank.SelectedItem is not Bank bank)
         {
-            MessageBox.Show("Select a Bank/NBFC.", "Validation", MessageBoxButton.OK, MessageBoxImage.Warning);
+            MessageBox.Show("Please select a Bank or NBFC.", "Validation Error", MessageBoxButton.OK, MessageBoxImage.Warning);
             return;
         }
 
         var selected = AvailableLoans.Where(l => l.IsSelected).ToList();
         if (selected.Count == 0)
         {
-            MessageBox.Show("Select at least one customer loan to pledge.", "Validation", MessageBoxButton.OK, MessageBoxImage.Warning);
+            MessageBox.Show("Please select at least one customer loan to re-pledge.", "Selection Required", MessageBoxButton.OK, MessageBoxImage.Warning);
             return;
         }
 
-        decimal.TryParse(TxtBankDisbursedAmount.Text, out var bankDisbursed);
-        decimal.TryParse(TxtInterestRate.Text, out var interestRate);
-        decimal.TryParse(TxtBankWeight.Text, out var bankWeight);
-
-        if (bankDisbursed <= 0)
+        if (!decimal.TryParse(TxtBankDisbursedAmount.Text, out var bankDisbursed) || bankDisbursed <= 0)
         {
-            MessageBox.Show("Bank Disbursed Amount must be greater than zero.", "Validation", MessageBoxButton.OK, MessageBoxImage.Warning);
+            MessageBox.Show("Bank Disbursed Amount must be greater than zero.", "Validation Error", MessageBoxButton.OK, MessageBoxImage.Warning);
             return;
         }
+
+        if (!decimal.TryParse(TxtInterestRate.Text, out var interestRate) || interestRate < 0)
+        {
+            MessageBox.Show("Bank Interest Rate cannot be negative.", "Validation Error", MessageBoxButton.OK, MessageBoxImage.Warning);
+            return;
+        }
+
+        if (!decimal.TryParse(TxtBankWeight.Text, out var bankWeight) || bankWeight < 0)
+        {
+            MessageBox.Show("Bank Appraised Weight cannot be negative.", "Validation Error", MessageBoxButton.OK, MessageBoxImage.Warning);
+            return;
+        }
+
+        var pledgeDate = DateOnly.FromDateTime(DpPledgeDate.SelectedDate ?? DateTime.Today);
+        var maturityDate = DateOnly.FromDateTime(DpMaturityDate.SelectedDate ?? DateTime.Today.AddMonths(12));
+
+        if (maturityDate <= pledgeDate)
+        {
+            MessageBox.Show("Maturity Date must be later than the Pledging Date.", "Validation Error", MessageBoxButton.OK, MessageBoxImage.Warning);
+            return;
+        }
+
+        var userId = _currentUser?.Id ?? Guid.Empty;
+        var userRole = _currentUser?.Role ?? UserRole.Owner;
 
         var dto = new CreateBankPledgeDto(
             bank.Id,
             TxtPledgeNumber.Text.Trim(),
-            DateOnly.FromDateTime(DpPledgeDate.SelectedDate ?? DateTime.Today),
-            DateOnly.FromDateTime(DpMaturityDate.SelectedDate ?? DateTime.Today.AddMonths(12)),
+            pledgeDate,
+            maturityDate,
             bankDisbursed,
             interestRate,
             bankWeight,
@@ -167,8 +207,8 @@ public partial class BankRepledgeNewEntryControl : UserControl
             null,
             selected.Select(l => l.LoanId).ToList(),
             $"Pledged {selected.Count} customer loans to {bank.Name}",
-            Guid.Empty,
-            UserRole.Owner
+            userId,
+            userRole
         );
 
         try
@@ -176,10 +216,10 @@ public partial class BankRepledgeNewEntryControl : UserControl
             var pledge = await _repledgeService.CreateBankPledgeAsync(dto);
             MessageBox.Show(
                 $"Bank Repledge #{pledge.PledgeNumber} created successfully!\n" +
-                $"Cash Inflow: ₹{pledge.DisbursedAmount:N2}\n" +
-                $"Collateral jewels are now marked 'In Bank Custody ({bank.Name})'.\n" +
-                $"Voucher posted: Dr Cash ₹{pledge.DisbursedAmount:N2}, Cr Bank Loan Payable ₹{pledge.DisbursedAmount:N2}",
-                "Repledge Disbursed",
+                $"Cash Inflow: {ValidationHelper.FormatCurrency(pledge.DisbursedAmount)}\n" +
+                $"Customer jewels marked 'In Bank Custody ({bank.Name})'.\n" +
+                $"Voucher posted: Dr Cash, Cr Bank Loan Payable",
+                "Repledge Created Successfully",
                 MessageBoxButton.OK,
                 MessageBoxImage.Information);
 
@@ -187,6 +227,7 @@ public partial class BankRepledgeNewEntryControl : UserControl
         }
         catch (Exception ex)
         {
+            Log.Error(ex, "Failed to create bank pledge.");
             MessageBox.Show($"Failed to save bank pledge: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
         }
     }

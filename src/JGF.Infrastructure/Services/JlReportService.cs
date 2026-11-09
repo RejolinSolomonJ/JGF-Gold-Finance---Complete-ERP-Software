@@ -58,8 +58,8 @@ public class JlReportService : IJlReportService
         {
             var st = filter.SearchText.Trim().ToLower();
             query = query.Where(l => l.LoanNumber.ToLower().Contains(st) ||
-                                     l.Customer.FullName.ToLower().Contains(st) ||
-                                     l.Customer.MobileNumber.Contains(st) ||
+                                     l.Customer.Name.ToLower().Contains(st) ||
+                                     l.Customer.Phone.Contains(st) ||
                                      (l.PacketNumber != null && l.PacketNumber.ToLower().Contains(st)));
         }
 
@@ -74,8 +74,8 @@ public class JlReportService : IJlReportService
                 l.LoanNumber,
                 l.PledgeDate,
                 l.MaturityDate,
-                CustomerName = l.Customer.FullName,
-                CustomerMobile = l.Customer.MobileNumber,
+                CustomerName = l.Customer.Name,
+                CustomerMobile = l.Customer.Phone,
                 SchemeName = l.Scheme.Name,
                 l.Scheme.InterestRatePerMonth,
                 l.Scheme.PenalInterestRatePerMonth,
@@ -266,8 +266,8 @@ public class JlReportService : IJlReportService
         {
             var st = filter.SearchText.Trim().ToLower();
             query = query.Where(l => l.LoanNumber.ToLower().Contains(st) ||
-                                     l.Customer.FullName.ToLower().Contains(st) ||
-                                     l.Customer.MobileNumber.Contains(st));
+                                     l.Customer.Name.ToLower().Contains(st) ||
+                                     l.Customer.Phone.Contains(st));
         }
 
         var loans = await query.OrderByDescending(l => l.PledgeDate).ThenByDescending(l => l.LoanNumber).ToListAsync(ct);
@@ -323,7 +323,7 @@ public class JlReportService : IJlReportService
             var st = filter.SearchText.Trim().ToLower();
             query = query.Where(r => r.ReceiptNumber.ToLower().Contains(st) ||
                                      r.Loan.LoanNumber.ToLower().Contains(st) ||
-                                     r.Loan.Customer.FullName.ToLower().Contains(st));
+                                     r.Loan.Customer.Name.ToLower().Contains(st));
         }
 
         var receipts = await query.OrderByDescending(r => r.ReceiptDate).ThenByDescending(r => r.ReceiptNumber).ToListAsync(ct);
@@ -540,7 +540,7 @@ public class JlReportService : IJlReportService
         {
             var st = filter.SearchText.Trim().ToLower();
             query = query.Where(i => i.Loan.LoanNumber.ToLower().Contains(st) ||
-                                     i.Loan.Customer.FullName.ToLower().Contains(st) ||
+                                     i.Loan.Customer.Name.ToLower().Contains(st) ||
                                      (i.Loan.PacketNumber != null && i.Loan.PacketNumber.ToLower().Contains(st)) ||
                                      i.Description.ToLower().Contains(st));
         }
@@ -762,7 +762,7 @@ public class JlReportService : IJlReportService
             var st = filter.SearchText.Trim().ToLower();
             query = query.Where(r => r.ReceiptNumber.ToLower().Contains(st) ||
                                      r.Loan.LoanNumber.ToLower().Contains(st) ||
-                                     r.Loan.Customer.FullName.ToLower().Contains(st));
+                                     r.Loan.Customer.Name.ToLower().Contains(st));
         }
 
         var receipts = await query.OrderByDescending(r => r.ReceiptDate).ThenByDescending(r => r.ReceiptNumber).ToListAsync(ct);
@@ -930,5 +930,4 @@ public class JlReportService : IJlReportService
             totalPayableNow,
             transactions
         );
-    }
-}
+   

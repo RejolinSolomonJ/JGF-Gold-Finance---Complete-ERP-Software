@@ -63,8 +63,17 @@ public partial class BankMasterControl : UserControl
             return;
         }
 
-        decimal.TryParse(TxtInterestRate.Text, out var rate);
-        decimal.TryParse(TxtSanctionedLimit.Text, out var limit);
+        if (!decimal.TryParse(TxtInterestRate.Text, out var rate) || rate < 0)
+        {
+            MessageBox.Show("Interest Rate cannot be negative.", "Validation Error", MessageBoxButton.OK, MessageBoxImage.Warning);
+            return;
+        }
+
+        if (!decimal.TryParse(TxtSanctionedLimit.Text, out var limit) || limit < 0)
+        {
+            MessageBox.Show("Sanctioned Limit cannot be negative.", "Validation Error", MessageBoxButton.OK, MessageBoxImage.Warning);
+            return;
+        }
 
         if (_selectedBank == null)
         {

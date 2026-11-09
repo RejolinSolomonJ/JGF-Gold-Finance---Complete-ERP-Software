@@ -58,7 +58,7 @@ public class LoanService : DbServiceBase, ILoanService
             .Include(l => l.Customer)
             .Include(l => l.Scheme)
             .Include(l => l.Items).ThenInclude(i => i.JewelType)
-            .FirstOrDefaultAsync(l => l.LoanNumber.ToUpper() == q || l.PacketNumber == q, ct);
+            .FirstOrDefaultAsync(l => l.LoanNumber.ToUpper() == q || (l.PacketNumber != null && l.PacketNumber.ToUpper() == q), ct);
     }
 
     public async Task<List<Loan>> SearchLoansAsync(string query, int take = 50, CancellationToken ct = default)
@@ -69,9 +69,11 @@ public class LoanService : DbServiceBase, ILoanService
             .AsNoTracking()
             .Include(l => l.Customer)
             .Include(l => l.Scheme)
+            .Include(l => l.Items).ThenInclude(i => i.JewelType)
             .Where(l => l.LoanNumber.ToLower().Contains(q) ||
-                        l.Customer.FullName.ToLower().Contains(q) ||
-                        l.Customer.MobileNumber.Contains(q) ||
+                        l.Customer.Code.ToLower().Contains(q) ||
+                        l.Customer.Name.ToLower().Contains(q) ||
+                        l.Customer.Phone.Contains(q) ||
                         (l.PacketNumber != null && l.PacketNumber.ToLower().Contains(q)))
             .OrderByDescending(l => l.PledgeDate)
             .Take(take)
@@ -159,12 +161,28 @@ public class LoanService : DbServiceBase, ILoanService
 
             // 2. Add LoanItems
             int itemIndex = 1;
+            var defaultJewelType = await context.JewelTypes.FirstOrDefaultAsync(ct);
+            if (defaultJewelType == null)
+            {
+                defaultJewelType = new JewelType { Code = "OR", Name = "Gold Ornament", Description = "Gold Ornament", IsActive = true };
+                await context.JewelTypes.AddAsync(defaultJewelType, ct);
+                await context.SaveChangesAsync(ct);
+            }
+
+            var validJewelTypeIds = await context.JewelTypes.Select(jt => jt.Id).ToListAsync(ct);
+
             foreach (var itemDto in dto.Items)
             {
+                var jewelTypeId = itemDto.JewelTypeId;
+                if (jewelTypeId == Guid.Empty || !validJewelTypeIds.Contains(jewelTypeId))
+                {
+                    jewelTypeId = defaultJewelType.Id;
+                }
+
                 var item = new LoanItem
                 {
                     LoanId = loan.Id,
-                    JewelTypeId = itemDto.JewelTypeId,
+                    JewelTypeId = jewelTypeId,
                     Description = itemDto.Description,
                     Quantity = itemDto.Quantity,
                     GrossWeight = itemDto.GrossWeight,

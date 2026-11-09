@@ -1,6 +1,7 @@
 using System.Windows;
 using System.Windows.Controls;
 using JGF.Application.Accounting;
+using JGF.Domain.Entities;
 using JGF.Domain.Enums;
 
 namespace JGF.Desktop.Views.Controls;
@@ -8,13 +9,15 @@ namespace JGF.Desktop.Views.Controls;
 public partial class DayEndCloseControl : UserControl
 {
     private readonly IDayCloseService _dayCloseService;
+    private readonly User? _currentUser;
     private DayCloseStatusDto? _currentStatus;
     private readonly DateOnly _today = DateOnly.FromDateTime(DateTime.Today);
 
-    public DayEndCloseControl(IDayCloseService dayCloseService)
+    public DayEndCloseControl(IDayCloseService dayCloseService, User? currentUser = null)
     {
         InitializeComponent();
         _dayCloseService = dayCloseService;
+        _currentUser = currentUser;
 
         Loaded += async (s, e) => await LoadDayStatusAsync();
     }
@@ -81,7 +84,11 @@ public partial class DayEndCloseControl : UserControl
 
     private async void OnExecuteCloseClick(object sender, RoutedEventArgs e)
     {
-        decimal.TryParse(TxtCountedCash.Text, out var counted);
+        if (!decimal.TryParse(TxtCountedCash.Text, out var counted) || counted < 0)
+        {
+            MessageBox.Show("Counted cash cannot be negative. Please enter a valid non-negative amount.", "Validation Error", MessageBoxButton.OK, MessageBoxImage.Warning);
+            return;
+        }
 
         var confirm = MessageBox.Show(
             $"Are you sure you want to CLOSE the day for {_today:dd-MMM-yyyy}?\nCounted Cash: ₹{counted:N2}\n\nOnce closed, transaction entries will be locked.",
@@ -93,12 +100,15 @@ public partial class DayEndCloseControl : UserControl
 
         try
         {
+            var userId = _currentUser?.Id ?? Guid.Empty;
+            var userRole = _currentUser?.Role ?? UserRole.Owner;
+
             await _dayCloseService.ExecuteDayEndCloseAsync(
                 _today,
                 counted,
                 TxtRemarks.Text.Trim(),
-                Guid.Empty,
-                UserRole.Owner
+                userId,
+                userRole
             );
 
             MessageBox.Show($"Day {_today:dd-MMM-yyyy} closed successfully!\nDaily encrypted backup triggered.", "Day Closed", MessageBoxButton.OK, MessageBoxImage.Information);

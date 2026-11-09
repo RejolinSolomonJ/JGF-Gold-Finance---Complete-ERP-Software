@@ -1,33 +1,35 @@
 <UserControl x:Class="JGF.Desktop.Views.Controls.DayBookEntryControl"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             Background="White">
-    <Grid Margin="12">
+             xmlns:common="clr-namespace:JGF.Desktop.Common"
+             Background="{StaticResource AppBackgroundBrush}"
+             common:KeyboardNavigationHelper.EnableEnterKeyNavigation="True">
+    <Grid Margin="16">
         <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/> <!-- Title & Filter Bar -->
-            <RowDefinition Height="Auto"/> <!-- Cash Position Summary Bar -->
-            <RowDefinition Height="*"/>    <!-- Day Book Transactions Table -->
-            <RowDefinition Height="Auto"/> <!-- Manual Voucher Entry Form -->
+            <RowDefinition Height="Auto"/> <!-- Title & Filter Bar Card -->
+            <RowDefinition Height="Auto"/> <!-- Cash Position Summary Bar Card -->
+            <RowDefinition Height="*"/>    <!-- Day Book Transactions Table Card -->
+            <RowDefinition Height="Auto"/> <!-- Manual Voucher Entry Form Card -->
         </Grid.RowDefinitions>
 
         <!-- Title & Date Filter -->
-        <Border Grid.Row="0" Background="#F0F0F0" Padding="8" Margin="0,0,0,10">
+        <Border Grid.Row="0" Style="{StaticResource ModernCardStyle}">
             <DockPanel LastChildFill="True">
-                <StackPanel Orientation="Horizontal" DockPanel.Dock="Left">
-                    <TextBlock Text="✦ DAY BOOK (நாளேடு) &amp; MANUAL VOUCHERS" FontWeight="Bold" FontSize="16" Foreground="#B8860B" VerticalAlignment="Center"/>
+                <StackPanel Orientation="Horizontal" DockPanel.Dock="Left" VerticalAlignment="Center">
+                    <TextBlock Text="✦ DAY BOOK (நாளேடு) &amp; MANUAL CASH VOUCHERS" Style="{StaticResource SubheadingTextStyle}" Foreground="{StaticResource PrimaryDeepBlueBrush}"/>
                 </StackPanel>
-                <StackPanel Orientation="Horizontal" DockPanel.Dock="Right">
-                    <TextBlock Text="From:" VerticalAlignment="Center" Margin="0,0,4,0"/>
-                    <DatePicker x:Name="DpFrom" Width="120" Margin="0,0,10,0"/>
-                    <TextBlock Text="To:" VerticalAlignment="Center" Margin="0,0,4,0"/>
-                    <DatePicker x:Name="DpTo" Width="120" Margin="0,0,10,0"/>
-                    <Button Content="Load Day Book" Background="#2B2B2B" FontWeight="Bold" Width="120" Click="OnRefreshDayBookClick"/>
+                <StackPanel Orientation="Horizontal" DockPanel.Dock="Right" VerticalAlignment="Center">
+                    <TextBlock Text="From:" Style="{StaticResource FieldLabelStyle}" Margin="0,0,6,0"/>
+                    <DatePicker x:Name="DpFrom" Width="130" Margin="0,0,12,0" TabIndex="0"/>
+                    <TextBlock Text="To:" Style="{StaticResource FieldLabelStyle}" Margin="0,0,6,0"/>
+                    <DatePicker x:Name="DpTo" Width="130" Margin="0,0,12,0" TabIndex="1"/>
+                    <Button Content="Load Day Book" Width="130" Height="36" Style="{StaticResource PrimaryButtonStyle}" Click="OnRefreshDayBookClick" TabIndex="2"/>
                 </StackPanel>
             </DockPanel>
         </Border>
 
         <!-- Cash Position Snapshot Bar -->
-        <Border Grid.Row="1" Background="#F9F9F9" BorderBrush="#E0E0E0" BorderThickness="1" Padding="12" Margin="0,0,0,10">
+        <Border Grid.Row="1" Style="{StaticResource ModernCardStyle}">
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*"/>
@@ -36,81 +38,85 @@
                     <ColumnDefinition Width="*"/>
                 </Grid.ColumnDefinitions>
                 <StackPanel Grid.Column="0">
-                    <TextBlock Text="Opening Cash:" Foreground="#777777"/>
-                    <TextBlock x:Name="TxtOpeningCash" Text="₹ 0.00" FontWeight="Bold" FontSize="16"/>
+                    <TextBlock Text="Opening Cash:" Foreground="{StaticResource TextSecondaryBrush}" FontSize="12"/>
+                    <TextBlock x:Name="TxtOpeningCash" Text="₹ 0.00" FontWeight="Bold" FontSize="18" Foreground="{StaticResource TextPrimaryBrush}"/>
                 </StackPanel>
                 <StackPanel Grid.Column="1">
-                    <TextBlock Text="Total Receipts (Inflow):" Foreground="#777777"/>
-                    <TextBlock x:Name="TxtTotalReceipts" Text="₹ 0.00" FontWeight="Bold" FontSize="16" Foreground="#2E7D32"/>
+                    <TextBlock Text="Total Receipts (Inflow):" Foreground="{StaticResource TextSecondaryBrush}" FontSize="12"/>
+                    <TextBlock x:Name="TxtTotalReceipts" Text="₹ 0.00" FontWeight="Bold" FontSize="18" Foreground="{StaticResource SuccessGreenBrush}"/>
                 </StackPanel>
                 <StackPanel Grid.Column="2">
-                    <TextBlock Text="Total Payments (Outflow):" Foreground="#777777"/>
-                    <TextBlock x:Name="TxtTotalPayments" Text="₹ 0.00" FontWeight="Bold" FontSize="16" Foreground="#C62828"/>
+                    <TextBlock Text="Total Payments (Outflow):" Foreground="{StaticResource TextSecondaryBrush}" FontSize="12"/>
+                    <TextBlock x:Name="TxtTotalPayments" Text="₹ 0.00" FontWeight="Bold" FontSize="18" Foreground="{StaticResource DangerRedBrush}"/>
                 </StackPanel>
                 <StackPanel Grid.Column="3">
-                    <TextBlock Text="Closing Cash Balance:" Foreground="#777777"/>
-                    <TextBlock x:Name="TxtClosingCash" Text="₹ 0.00" FontWeight="Bold" FontSize="18" Foreground="#B8860B"/>
+                    <TextBlock Text="Closing Cash Balance:" Foreground="{StaticResource TextSecondaryBrush}" FontSize="12"/>
+                    <TextBlock x:Name="TxtClosingCash" Text="₹ 0.00" FontWeight="Bold" FontSize="20" Foreground="{StaticResource BrandGoldBrush}"/>
                 </StackPanel>
             </Grid>
         </Border>
 
         <!-- Day Book Transactions Grid -->
-        <DataGrid x:Name="GridDayBook" Grid.Row="2" AutoGenerateColumns="False" IsReadOnly="True" BorderBrush="#CCCCCC">
-            <DataGrid.Columns>
-                <DataGridTextColumn Header="Date" Binding="{Binding VoucherDate, StringFormat={}{0:dd-MMM-yyyy}}" Width="100"/>
-                <DataGridTextColumn Header="Voucher No" Binding="{Binding VoucherNumber}" Width="120"/>
-                <DataGridTextColumn Header="Particulars / Head" Binding="{Binding LedgerHeadName}" Width="180"/>
-                <DataGridTextColumn Header="Receipt (₹)" Binding="{Binding ReceiptAmount, StringFormat={}{0:N2}}" Width="110"/>
-                <DataGridTextColumn Header="Payment (₹)" Binding="{Binding PaymentAmount, StringFormat={}{0:N2}}" Width="110"/>
-                <DataGridTextColumn Header="Narration / Reference" Binding="{Binding Narration}" Width="*"/>
-            </DataGrid.Columns>
-        </DataGrid>
+        <Border Grid.Row="2" Style="{StaticResource ModernCardStyle}" Padding="0">
+            <DataGrid x:Name="GridDayBook" AutoGenerateColumns="False" IsReadOnly="True" TabIndex="3">
+                <DataGrid.Columns>
+                    <DataGridTextColumn Header="Date" Binding="{Binding VoucherDate, StringFormat={}{0:dd-MMM-yyyy}}" Width="110"
+                                        HeaderStyle="{StaticResource CenterAlignedDataGridHeader}" ElementStyle="{StaticResource CenterAlignedDataGridCellText}"/>
+                    <DataGridTextColumn Header="Voucher No" Binding="{Binding VoucherNumber}" Width="130" FontWeight="SemiBold"/>
+                    <DataGridTextColumn Header="Particulars / Ledger Head" Binding="{Binding LedgerHeadName}" Width="200"/>
+                    <DataGridTextColumn Header="Receipt (₹)" Binding="{Binding ReceiptAmount, StringFormat={}{0:N2}}" Width="130" FontWeight="SemiBold"
+                                        HeaderStyle="{StaticResource RightAlignedDataGridHeader}" ElementStyle="{StaticResource RightAlignedDataGridCellText}"/>
+                    <DataGridTextColumn Header="Payment (₹)" Binding="{Binding PaymentAmount, StringFormat={}{0:N2}}" Width="130" FontWeight="SemiBold"
+                                        HeaderStyle="{StaticResource RightAlignedDataGridHeader}" ElementStyle="{StaticResource RightAlignedDataGridCellText}"/>
+                    <DataGridTextColumn Header="Narration / Reference" Binding="{Binding Narration}" Width="*"/>
+                </DataGrid.Columns>
+            </DataGrid>
+        </Border>
 
-        <!-- Manual Voucher Entry Form (Rent, Salary, Capital, Drawings, Electricity) -->
-        <Border Grid.Row="3" Background="#F9F9F9" BorderBrush="#E0E0E0" BorderThickness="1" Padding="12" Margin="0,10,0,0">
+        <!-- Manual Voucher Entry Form -->
+        <Border Grid.Row="3" Style="{StaticResource ModernCardStyle}">
             <Grid>
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
                 <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="130"/>
+                    <ColumnDefinition Width="150"/>
                     <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="120"/>
+                    <ColumnDefinition Width="150"/>
                     <ColumnDefinition Width="2*"/>
-                    <ColumnDefinition Width="130"/>
+                    <ColumnDefinition Width="140"/>
                 </Grid.ColumnDefinitions>
 
-                <TextBlock Grid.Row="0" Grid.ColumnSpan="5" Text="+ Add Manual Cash Voucher Entry (வாடகை, சம்பளம், இதர செலவுகள்)" FontWeight="Bold" Foreground="#333333" Margin="0,0,0,6"/>
+                <TextBlock Grid.Row="0" Grid.ColumnSpan="5" Text="+ Add Manual Cash Voucher Entry (வாடகை, சம்பளம், இதர செலவுகள்)" FontWeight="Bold" FontSize="13" Foreground="{StaticResource PrimaryDeepBlueBrush}" Margin="0,0,0,8"/>
 
-                <StackPanel Grid.Row="1" Grid.Column="0" Margin="0,0,6,0">
-                    <TextBlock Text="Voucher Type:"/>
-                    <ComboBox x:Name="CmbVoucherType" SelectedIndex="1">
+                <StackPanel Grid.Row="1" Grid.Column="0" Margin="0,0,8,0">
+                    <TextBlock Text="Voucher Type:" Style="{StaticResource FieldLabelStyle}"/>
+                    <ComboBox x:Name="CmbVoucherType" SelectedIndex="1" TabIndex="4">
                         <ComboBoxItem Content="Receipt"/>
                         <ComboBoxItem Content="Payment"/>
                     </ComboBox>
                 </StackPanel>
 
-                <StackPanel Grid.Row="1" Grid.Column="1" Margin="0,0,6,0">
-                    <TextBlock Text="Ledger Account:"/>
-                    <ComboBox x:Name="CmbLedgerHead"/>
+                <StackPanel Grid.Row="1" Grid.Column="1" Margin="0,0,8,0">
+                    <TextBlock Text="Ledger Account:" Style="{StaticResource FieldLabelStyle}"/>
+                    <ComboBox x:Name="CmbLedgerHead" TabIndex="5"/>
                 </StackPanel>
 
-                <StackPanel Grid.Row="1" Grid.Column="2" Margin="0,0,6,0">
-                    <TextBlock Text="Amount (₹):"/>
-                    <TextBox x:Name="TxtAmount" Text="0.00"/>
+                <StackPanel Grid.Row="1" Grid.Column="2" Margin="0,0,8,0">
+                    <TextBlock Text="Amount (₹):" Style="{StaticResource FieldLabelStyle}"/>
+                    <TextBox x:Name="TxtAmount" Text="0.00" TabIndex="6"/>
                 </StackPanel>
 
-                <StackPanel Grid.Row="1" Grid.Column="3" Margin="0,0,6,0">
-                    <TextBlock Text="Narration:"/>
-                    <TextBox x:Name="TxtNarration" Text="Monthly shop rent payment"/>
+                <StackPanel Grid.Row="1" Grid.Column="3" Margin="0,0,8,0">
+                    <TextBlock Text="Narration:" Style="{StaticResource FieldLabelStyle}"/>
+                    <TextBox x:Name="TxtNarration" Text="Monthly shop rent payment" TabIndex="7"/>
                 </StackPanel>
 
                 <StackPanel Grid.Row="1" Grid.Column="4" VerticalAlignment="Bottom">
-                    <Button Content="Post Voucher" Background="#2E7D32" FontWeight="Bold" Height="30" Click="OnPostManualVoucherClick"/>
+                    <Button Content="Post Voucher" Width="130" Height="36" Style="{StaticResource PrimaryButtonStyle}" Click="OnPostManualVoucherClick" TabIndex="8"/>
                 </StackPanel>
             </Grid>
         </Border>
     </Grid>
 </UserControl>
-

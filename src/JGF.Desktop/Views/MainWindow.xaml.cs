@@ -434,7 +434,8 @@ public partial class MainWindow : Window
             _services.GetRequiredService<ISchemeService>(),
             _services.GetRequiredService<ICustomerService>(),
             _services.GetRequiredService<IGoldRateService>(),
-            _services.GetRequiredService<IJewelTypeService>());
+            _services.GetRequiredService<IJewelTypeService>(),
+            _currentUser);
         MainContentArea.Content = view;
     });
 
@@ -443,7 +444,8 @@ public partial class MainWindow : Window
         var view = new Controls.LoanReceiptControl(
             _services.GetRequiredService<ILoanService>(),
             _services.GetRequiredService<IReceiptService>(),
-            _services.GetRequiredService<IInterestCalculator>());
+            _services.GetRequiredService<IInterestCalculator>(),
+            _currentUser);
         MainContentArea.Content = view;
     });
 
@@ -515,11 +517,18 @@ public partial class MainWindow : Window
         MainContentArea.Content = view;
     });
 
+    private void OnBankReportsClick(object sender, RoutedEventArgs e) => SafeNavigate(() =>
+    {
+        var view = new Controls.BankReportsControl(_services.GetRequiredService<IBankRepledgeService>());
+        MainContentArea.Content = view;
+    });
+
     private void OnDayBookClick(object sender, RoutedEventArgs e) => SafeNavigate(() =>
     {
         var view = new Controls.DayBookEntryControl(
             _services.GetRequiredService<IAccountingReportService>(),
-            _services.GetRequiredService<IAccountingService>());
+            _services.GetRequiredService<IAccountingService>(),
+            _currentUser);
         MainContentArea.Content = view;
     });
 
@@ -527,7 +536,7 @@ public partial class MainWindow : Window
 
     private void OnDayCloseClick(object sender, RoutedEventArgs e) => SafeNavigate(() =>
     {
-        var view = new Controls.DayEndCloseControl(_services.GetRequiredService<IDayCloseService>());
+        var view = new Controls.DayEndCloseControl(_services.GetRequiredService<IDayCloseService>(), _currentUser);
         MainContentArea.Content = view;
     });
 

@@ -3,37 +3,18 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:local="clr-namespace:JGF.Desktop">
     <Application.Resources>
-        <FontFamily x:Key="TamilFont">pack://application:,,,/Assets/Fonts/#Noto Sans Tamil, Segoe UI, Nirmala UI, Latha</FontFamily>
-        <SolidColorBrush x:Key="PrimaryGoldBrush" Color="#B8860B"/>
-        <SolidColorBrush x:Key="PrimaryDarkBrush" Color="#1E1E1E"/>
-        <SolidColorBrush x:Key="AccentGoldBrush" Color="#DAA520"/>
-        
-        <!-- Standard Button Style -->
-        <Style TargetType="Button">
-            <Setter Property="FontFamily" Value="{StaticResource TamilFont}"/>
-            <Setter Property="Padding" Value="12,6"/>
-            <Setter Property="Margin" Value="4"/>
-            <Setter Property="Background" Value="#2B2B2B"/>
-            <Setter Property="Foreground" Value="White"/>
-            <Setter Property="BorderBrush" Value="#444444"/>
-            <Setter Property="BorderThickness" Value="1"/>
-            <Setter Property="Cursor" Value="Hand"/>
-        </Style>
-
-        <!-- Standard TextBox Style -->
-        <Style TargetType="TextBox">
-            <Setter Property="FontFamily" Value="{StaticResource TamilFont}"/>
-            <Setter Property="Padding" Value="6,4"/>
-            <Setter Property="Margin" Value="2,4"/>
-            <Setter Property="BorderBrush" Value="#CCCCCC"/>
-            <Setter Property="BorderThickness" Value="1"/>
-        </Style>
-
-        <!-- Standard Label / TextBlock -->
-        <Style TargetType="TextBlock">
-            <Setter Property="FontFamily" Value="{StaticResource TamilFont}"/>
-            <Setter Property="VerticalAlignment" Value="Center"/>
-        </Style>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="Themes/Colors.xaml"/>
+                <ResourceDictionary Source="Themes/Fonts.xaml"/>
+                <ResourceDictionary Source="Themes/Controls.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+            
+            <!-- Legacy Compatibility Brushes -->
+            <SolidColorBrush x:Key="PrimaryGoldBrush" Color="#B8860B"/>
+            <SolidColorBrush x:Key="PrimaryDarkBrush" Color="#1E1E1E"/>
+            <SolidColorBrush x:Key="AccentGoldBrush" Color="#DAA520"/>
+            <FontFamily x:Key="TamilFont">pack://application:,,,/Assets/Fonts/#Noto Sans Tamil, Segoe UI, Nirmala UI, Latha</FontFamily>
+        </ResourceDictionary>
     </Application.Resources>
 </Application>
-

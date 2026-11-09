@@ -60,11 +60,35 @@ public partial class SchemeMasterControl : UserControl
             return;
         }
 
-        decimal.TryParse(TxtInterestRate.Text, out var rate);
-        decimal.TryParse(TxtPenalRate.Text, out var penal);
-        decimal.TryParse(TxtMaxLtv.Text, out var ltv);
-        int.TryParse(TxtTenureMonths.Text, out var tenure);
-        int.TryParse(TxtGraceDays.Text, out var grace);
+        if (!decimal.TryParse(TxtInterestRate.Text, out var rate) || rate <= 0)
+        {
+            MessageBox.Show("Monthly Interest Rate must be greater than zero.", "Validation Error", MessageBoxButton.OK, MessageBoxImage.Warning);
+            return;
+        }
+
+        if (!decimal.TryParse(TxtPenalRate.Text, out var penal) || penal < 0)
+        {
+            MessageBox.Show("Penal Rate cannot be negative.", "Validation Error", MessageBoxButton.OK, MessageBoxImage.Warning);
+            return;
+        }
+
+        if (!decimal.TryParse(TxtMaxLtv.Text, out var ltv) || ltv <= 0 || ltv > 100)
+        {
+            MessageBox.Show("Max LTV % must be between 1.00% and 100.00%.", "Validation Error", MessageBoxButton.OK, MessageBoxImage.Warning);
+            return;
+        }
+
+        if (!int.TryParse(TxtTenureMonths.Text, out var tenure) || tenure < 1 || tenure > 60)
+        {
+            MessageBox.Show("Tenure must be between 1 and 60 months.", "Validation Error", MessageBoxButton.OK, MessageBoxImage.Warning);
+            return;
+        }
+
+        if (!int.TryParse(TxtGraceDays.Text, out var grace) || grace < 0)
+        {
+            MessageBox.Show("Grace Days cannot be negative.", "Validation Error", MessageBoxButton.OK, MessageBoxImage.Warning);
+            return;
+        }
 
         if (_selectedScheme == null)
         {

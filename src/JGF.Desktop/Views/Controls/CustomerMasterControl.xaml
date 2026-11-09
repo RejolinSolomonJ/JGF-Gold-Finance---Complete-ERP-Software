@@ -1,15 +1,17 @@
 <UserControl x:Class="JGF.Desktop.Views.Controls.CustomerMasterControl"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             Background="White">
-    <Grid Margin="12">
+             xmlns:common="clr-namespace:JGF.Desktop.Common"
+             Background="{StaticResource AppBackgroundBrush}"
+             common:KeyboardNavigationHelper.EnableEnterKeyNavigation="True">
+    <Grid Margin="16">
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="380"/> <!-- Left: Search & List -->
-            <ColumnDefinition Width="*"/>   <!-- Right: Customer Edit Form -->
+            <ColumnDefinition Width="400"/> <!-- Left: Search & List Card -->
+            <ColumnDefinition Width="*"/>   <!-- Right: Customer KYC & Edit Form Card -->
         </Grid.ColumnDefinitions>
 
         <!-- Left List Panel -->
-        <Border Grid.Column="0" BorderBrush="#DDDDDD" BorderThickness="0,0,1,0" Padding="0,0,12,0">
+        <Border Grid.Column="0" Style="{StaticResource ModernCardStyle}" Margin="0,0,12,0" Padding="12">
             <Grid>
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>
@@ -17,119 +19,128 @@
                     <RowDefinition Height="*"/>
                 </Grid.RowDefinitions>
 
-                <TextBlock Grid.Row="0" Text="CUSTOMERS / வாடிக்கையாளர்கள்" FontWeight="Bold" FontSize="16" Foreground="#B8860B"/>
+                <TextBlock Grid.Row="0" Text="CUSTOMERS / வாடிக்கையாளர்கள்" Style="{StaticResource SubheadingTextStyle}" Foreground="{StaticResource PrimaryDeepBlueBrush}"/>
 
-                <DockPanel Grid.Row="1" Margin="0,8">
-                    <Button x:Name="BtnNewCustomer" Content="+ New Customer" DockPanel.Dock="Right" Background="#B8860B" Click="OnNewCustomerClick"/>
-                    <TextBox x:Name="TxtSearch" TextChanged="OnSearchTextChanged" ToolTip="Search by Name, Code, Mobile, Aadhaar..."/>
+                <DockPanel Grid.Row="1" Margin="0,10,0,8">
+                    <Button x:Name="BtnNewCustomer" Content="+ New Customer" DockPanel.Dock="Right" Width="130" Height="36" Style="{StaticResource PrimaryButtonStyle}" Click="OnNewCustomerClick" TabIndex="1"/>
+                    <TextBox x:Name="TxtSearch" TextChanged="OnSearchTextChanged" ToolTip="Search by Name, Code, Mobile, Aadhaar..." Height="36" Margin="0,0,8,0" TabIndex="0"/>
                 </DockPanel>
                 <ProgressBar x:Name="PrgLoading" Grid.Row="1" VerticalAlignment="Bottom" Height="3" IsIndeterminate="True" Visibility="Collapsed"/>
 
                 <DataGrid x:Name="GridCustomers" Grid.Row="2" AutoGenerateColumns="False" IsReadOnly="True" 
-                          SelectionMode="Single" SelectionChanged="OnCustomerSelected" BorderBrush="#CCCCCC">
+                          SelectionMode="Single" SelectionChanged="OnCustomerSelected" TabIndex="2">
                     <DataGrid.Columns>
-                        <DataGridTextColumn Header="Code" Binding="{Binding Code}" Width="70"/>
-                        <DataGridTextColumn Header="Name" Binding="{Binding FullName}" Width="150"/>
-                        <DataGridTextColumn Header="Mobile" Binding="{Binding MobileNumber}" Width="110"/>
+                        <DataGridTextColumn Header="Code" Binding="{Binding Code}" Width="90" FontWeight="SemiBold"/>
+                        <DataGridTextColumn Header="Name" Binding="{Binding FullName}" Width="160"/>
+                        <DataGridTextColumn Header="Mobile" Binding="{Binding MobileNumber}" Width="*"/>
                     </DataGrid.Columns>
                 </DataGrid>
             </Grid>
         </Border>
 
         <!-- Right Detail / Form Panel -->
-        <ScrollViewer Grid.Column="1" Padding="16,0,0,0">
-            <StackPanel>
-                <TextBlock Text="Customer Profile &amp; KYC" FontWeight="Bold" FontSize="16" Foreground="#333333"/>
-                <Separator Margin="0,8"/>
+        <Border Grid.Column="1" Style="{StaticResource ModernCardStyle}">
+            <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="4">
+                <StackPanel>
+                    <TextBlock Text="Customer Profile &amp; KYC (வாடிக்கையாளர் விவரங்கள்)" Style="{StaticResource SubheadingTextStyle}"/>
+                    <Separator Margin="0,10,0,14" Background="{StaticResource BorderLightBrush}"/>
 
-                <Grid>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="180"/> <!-- Photo area -->
-                    </Grid.ColumnDefinitions>
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="190"/> <!-- Photo area -->
+                        </Grid.ColumnDefinitions>
 
-                    <StackPanel Grid.Column="0">
-                        <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="*"/>
-                            </Grid.ColumnDefinitions>
-                            <StackPanel Grid.Column="0" Margin="0,0,4,0">
-                                <TextBlock Text="Customer Code:"/>
-                                <TextBox x:Name="TxtCode" IsReadOnly="True" Background="#F0F0F0"/>
-                            </StackPanel>
-                            <StackPanel Grid.Column="1" Margin="4,0,0,0">
-                                <TextBlock Text="Mobile Number (*):"/>
-                                <TextBox x:Name="TxtMobile"/>
-                            </StackPanel>
-                        </Grid>
+                        <StackPanel Grid.Column="0">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Grid.Column="0" Margin="0,0,8,6">
+                                    <TextBlock Text="Customer Code:" Style="{StaticResource FieldLabelStyle}"/>
+                                    <TextBox x:Name="TxtCode" IsReadOnly="True" Background="{StaticResource SurfaceAltBrush}" TabIndex="3"/>
+                                </StackPanel>
+                                <StackPanel Grid.Column="1" Margin="4,0,0,6">
+                                    <TextBlock Text="Mobile Number (* 10 Digits):" Style="{StaticResource FieldLabelStyle}"/>
+                                    <TextBox x:Name="TxtMobile" MaxLength="10" TextChanged="OnMobileTextChanged" TabIndex="4"/>
+                                    <TextBlock x:Name="TxtMobileError" Text="Enter a valid 10-digit mobile number." Style="{StaticResource InlineErrorTextStyle}" Visibility="Collapsed"/>
+                                </StackPanel>
+                            </Grid>
 
-                        <TextBlock Text="Full Name (English) (*):" Margin="0,8,0,0"/>
-                        <TextBox x:Name="TxtFullName"/>
+                            <TextBlock Text="Full Name (English) (*):" Style="{StaticResource FieldLabelStyle}" Margin="0,6,0,0"/>
+                            <TextBox x:Name="TxtFullName" TextChanged="OnFullNameTextChanged" TabIndex="5"/>
+                            <TextBlock x:Name="TxtNameError" Text="Full name is required." Style="{StaticResource InlineErrorTextStyle}" Visibility="Collapsed"/>
 
-                        <TextBlock Text="பெயர் (Tamil):" Margin="0,8,0,0"/>
-                        <TextBox x:Name="TxtNameTamil"/>
+                            <TextBlock Text="பெயர் (Tamil):" Style="{StaticResource FieldLabelStyle}" Margin="0,6,0,0"/>
+                            <TextBox x:Name="TxtNameTamil" TabIndex="6"/>
 
-                        <TextBlock Text="Father / Husband Name:" Margin="0,8,0,0"/>
-                        <TextBox x:Name="TxtGuardian"/>
+                            <TextBlock Text="Father / Husband Name:" Style="{StaticResource FieldLabelStyle}" Margin="0,6,0,0"/>
+                            <TextBox x:Name="TxtGuardian" TabIndex="7"/>
 
-                        <Grid Margin="0,8,0,0">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="*"/>
-                            </Grid.ColumnDefinitions>
-                            <StackPanel Grid.Column="0" Margin="0,0,4,0">
-                                <TextBlock Text="Aadhaar Number:"/>
-                                <TextBox x:Name="TxtAadhaar" MaxLength="12"/>
-                            </StackPanel>
-                            <StackPanel Grid.Column="1" Margin="4,0,0,0">
-                                <TextBlock Text="PAN Number:"/>
-                                <TextBox x:Name="TxtPan" MaxLength="10"/>
-                            </StackPanel>
-                        </Grid>
-                    </StackPanel>
-
-                    <!-- Photo & Webcam Capture Panel -->
-                    <Border Grid.Column="1" BorderBrush="#CCCCCC" BorderThickness="1" CornerRadius="4" Margin="12,0,0,0" Padding="8">
-                        <StackPanel HorizontalAlignment="Center">
-                            <Border Width="140" Height="140" Background="#EEEEEE" BorderBrush="#DDDDDD" BorderThickness="1">
-                                <Image x:Name="ImgCustomerPhoto" Stretch="UniformToFill"/>
-                            </Border>
-                            <Button Content="📷 Capture / Upload" Margin="0,8,0,0" Click="OnCapturePhotoClick" Width="140"/>
+                            <Grid Margin="0,6,0,0">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Grid.Column="0" Margin="0,0,8,0">
+                                    <TextBlock Text="Aadhaar Number (12 Digits):" Style="{StaticResource FieldLabelStyle}"/>
+                                    <TextBox x:Name="TxtAadhaar" MaxLength="12" TextChanged="OnAadhaarTextChanged" TabIndex="8"/>
+                                    <TextBlock x:Name="TxtAadhaarError" Text="Aadhaar must be 12 digits." Style="{StaticResource InlineErrorTextStyle}" Visibility="Collapsed"/>
+                                </StackPanel>
+                                <StackPanel Grid.Column="1" Margin="4,0,0,0">
+                                    <TextBlock Text="PAN Number (10 Chars):" Style="{StaticResource FieldLabelStyle}"/>
+                                    <TextBox x:Name="TxtPan" MaxLength="10" CharacterCasing="Upper" TextChanged="OnPanTextChanged" TabIndex="9"/>
+                                    <TextBlock x:Name="TxtPanError" Text="Invalid PAN (e.g. ABCDE1234F)." Style="{StaticResource InlineErrorTextStyle}" Visibility="Collapsed"/>
+                                </StackPanel>
+                            </Grid>
                         </StackPanel>
-                    </Border>
-                </Grid>
 
-                <TextBlock Text="Address:" Margin="0,8,0,0"/>
-                <TextBox x:Name="TxtAddress" Height="50" TextWrapping="Wrap" AcceptsReturn="True"/>
+                        <!-- Photo & Webcam Capture Panel -->
+                        <Border Grid.Column="1" BorderBrush="{StaticResource BorderLightBrush}" BorderThickness="1" CornerRadius="6" Margin="16,0,0,0" Padding="10" Background="{StaticResource SurfaceAltBrush}">
+                            <StackPanel HorizontalAlignment="Center">
+                                <Border Width="150" Height="150" Background="{StaticResource SurfaceCardBrush}" BorderBrush="{StaticResource BorderMediumBrush}" BorderThickness="1" CornerRadius="4">
+                                    <Image x:Name="ImgCustomerPhoto" Stretch="UniformToFill"/>
+                                </Border>
+                                <Button Content="📷 Attach Photo" Margin="0,10,0,0" Width="150" Height="36" Style="{StaticResource SecondaryButtonStyle}" Click="OnCapturePhotoClick" TabIndex="10"/>
+                            </StackPanel>
+                        </Border>
+                    </Grid>
 
-                <Grid Margin="0,8,0,0">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="*"/>
-                    </Grid.ColumnDefinitions>
-                    <StackPanel Grid.Column="0" Margin="0,0,4,0">
-                        <TextBlock Text="City / Town:"/>
-                        <TextBox x:Name="TxtCity" Text="Chennai"/>
-                    </StackPanel>
-                    <StackPanel Grid.Column="1" Margin="4,0,4,0">
-                        <TextBlock Text="District:"/>
-                        <TextBox x:Name="TxtDistrict" Text="Chennai"/>
-                    </StackPanel>
-                    <StackPanel Grid.Column="2" Margin="4,0,0,0">
-                        <TextBlock Text="Pincode:"/>
-                        <TextBox x:Name="TxtPincode"/>
-                    </StackPanel>
-                </Grid>
+                    <TextBlock Text="Address:" Style="{StaticResource FieldLabelStyle}" Margin="0,10,0,0"/>
+                    <TextBox x:Name="TxtAddress" Height="58" TextWrapping="Wrap" AcceptsReturn="True" TabIndex="11"/>
 
-                <!-- Actions -->
-                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,20,0,0">
-                    <Button Content="Soft Delete" Background="#C62828" Click="OnDeleteCustomerClick" Width="100"/>
-                    <Button Content="Save Customer (F10)" Background="#2E7D32" FontWeight="Bold" Click="OnSaveCustomerClick" Width="160"/>
+                    <Grid Margin="0,10,0,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <StackPanel Grid.Column="0" Margin="0,0,8,0">
+                            <TextBlock Text="City / Town:" Style="{StaticResource FieldLabelStyle}"/>
+                            <TextBox x:Name="TxtCity" Text="Chennai" TabIndex="12"/>
+                        </StackPanel>
+                        <StackPanel Grid.Column="1" Margin="4,0,8,0">
+                            <TextBlock Text="District:" Style="{StaticResource FieldLabelStyle}"/>
+                            <TextBox x:Name="TxtDistrict" Text="Chennai" TabIndex="13"/>
+                        </StackPanel>
+                        <StackPanel Grid.Column="2" Margin="4,0,0,0">
+                            <TextBlock Text="Pincode (6 Digits):" Style="{StaticResource FieldLabelStyle}"/>
+                            <TextBox x:Name="TxtPincode" MaxLength="6" TextChanged="OnPincodeTextChanged" TabIndex="14"/>
+                            <TextBlock x:Name="TxtPincodeError" Text="Pincode must be 6 digits." Style="{StaticResource InlineErrorTextStyle}" Visibility="Collapsed"/>
+                        </StackPanel>
+                    </Grid>
+
+                    <!-- Actions -->
+                    <DockPanel Margin="0,24,0,0">
+                        <Button x:Name="BtnDeleteCustomer" Content="Soft Delete" Width="110" Height="36" Style="{StaticResource DangerButtonStyle}" Click="OnDeleteCustomerClick" Visibility="Collapsed" TabIndex="15"/>
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                            <Button Content="Clear Form" Width="110" Height="36" Style="{StaticResource SecondaryButtonStyle}" Click="OnNewCustomerClick" Margin="0,0,10,0" TabIndex="16"/>
+                            <Button x:Name="BtnSaveCustomer" Content="Save Customer" Width="160" Height="36" Style="{StaticResource PrimaryButtonStyle}" Click="OnSaveCustomerClick" TabIndex="17"/>
+                        </StackPanel>
+                    </DockPanel>
                 </StackPanel>
-            </StackPanel>
-        </ScrollViewer>
+            </ScrollViewer>
+        </Border>
     </Grid>
 </UserControl>
-

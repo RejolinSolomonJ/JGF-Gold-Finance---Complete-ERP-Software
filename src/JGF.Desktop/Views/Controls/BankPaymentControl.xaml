@@ -1,32 +1,34 @@
 <UserControl x:Class="JGF.Desktop.Views.Controls.BankPaymentControl"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             Background="White">
-    <Grid Margin="12">
+             xmlns:common="clr-namespace:JGF.Desktop.Common"
+             Background="{StaticResource AppBackgroundBrush}"
+             common:KeyboardNavigationHelper.EnableEnterKeyNavigation="True">
+    <Grid Margin="16">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/> <!-- Title & Search Bar -->
             <RowDefinition Height="Auto"/> <!-- Bank Pledge Details Card -->
-            <RowDefinition Height="*"/>    <!-- Linked Customer Loans & Release Selection -->
-            <RowDefinition Height="Auto"/> <!-- Payment & RZ Voucher Entry -->
+            <RowDefinition Height="*"/>    <!-- Linked Customer Loans & Release Selection Card -->
+            <RowDefinition Height="Auto"/> <!-- Payment & RZ Voucher Entry Card -->
         </Grid.RowDefinitions>
 
         <!-- Search Bar -->
-        <Border Grid.Row="0" Background="#F0F0F0" Padding="8" Margin="0,0,0,10">
+        <Border Grid.Row="0" Style="{StaticResource ModernCardStyle}">
             <DockPanel LastChildFill="True">
-                <StackPanel Orientation="Horizontal" DockPanel.Dock="Left">
-                    <TextBlock Text="Find Bank Pledge (Pledge No / Bank A/C No):" FontWeight="SemiBold" VerticalAlignment="Center" Margin="0,0,8,0"/>
-                    <TextBox x:Name="TxtSearchQuery" Width="220" VerticalContentAlignment="Center" Text="BP-SBI-"/>
-                    <Button Content="🔍 Load Pledge" Background="#B8860B" FontWeight="Bold" Width="120" Margin="8,0,0,0" Click="OnLoadPledgeClick"/>
+                <StackPanel Orientation="Horizontal" DockPanel.Dock="Left" VerticalAlignment="Center">
+                    <TextBlock Text="Find Bank Pledge (Pledge No / Bank A/C No):" Style="{StaticResource FieldLabelStyle}" Margin="0,0,10,0"/>
+                    <TextBox x:Name="TxtSearchQuery" Width="240" Text="BP-" KeyDown="OnSearchKeyDown" TabIndex="0"/>
+                    <Button Content="🔍 Load Pledge" Width="130" Height="36" Style="{StaticResource PrimaryButtonStyle}" Margin="10,0,0,0" Click="OnLoadPledgeClick" TabIndex="1"/>
                 </StackPanel>
-                <StackPanel Orientation="Horizontal" DockPanel.Dock="Right">
-                    <TextBlock Text="Payment Date:" VerticalAlignment="Center" Margin="0,0,6,0"/>
-                    <DatePicker x:Name="DpPaymentDate" Width="120"/>
+                <StackPanel Orientation="Horizontal" DockPanel.Dock="Right" VerticalAlignment="Center">
+                    <TextBlock Text="Payment Date:" Style="{StaticResource FieldLabelStyle}" Margin="0,0,8,0"/>
+                    <DatePicker x:Name="DpPaymentDate" Width="130" TabIndex="2"/>
                 </StackPanel>
             </DockPanel>
         </Border>
 
         <!-- Bank Pledge Snapshot Card -->
-        <Border Grid.Row="1" Background="#F9F9F9" BorderBrush="#E0E0E0" BorderThickness="1" Padding="12" Margin="0,0,0,10">
+        <Border Grid.Row="1" Style="{StaticResource ModernCardStyle}">
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*"/>
@@ -36,104 +38,106 @@
                 </Grid.ColumnDefinitions>
 
                 <StackPanel Grid.Column="0">
-                    <TextBlock Text="Bank / NBFC:" Foreground="#777777"/>
-                    <TextBlock x:Name="TxtBankName" Text="-" FontWeight="Bold" FontSize="15"/>
-                    <TextBlock x:Name="TxtBankAccount" Text="A/C: -" Foreground="#777777"/>
+                    <TextBlock Text="Bank / NBFC:" Foreground="{StaticResource TextSecondaryBrush}" FontSize="12"/>
+                    <TextBlock x:Name="TxtBankName" Text="-" FontWeight="Bold" FontSize="16" Foreground="{StaticResource TextPrimaryBrush}"/>
+                    <TextBlock x:Name="TxtBankAccount" Text="A/C: -" Foreground="{StaticResource TextMutedBrush}" FontSize="12"/>
                 </StackPanel>
 
                 <StackPanel Grid.Column="1">
-                    <TextBlock Text="Pledge No &amp; Terms:" Foreground="#777777"/>
-                    <TextBlock x:Name="TxtPledgeNo" Text="-" FontWeight="Bold" FontSize="15" Foreground="#B8860B"/>
-                    <TextBlock x:Name="TxtRateAndMaturity" Text="Rate: - | Due: -" Foreground="#777777"/>
+                    <TextBlock Text="Pledge No &amp; Terms:" Foreground="{StaticResource TextSecondaryBrush}" FontSize="12"/>
+                    <TextBlock x:Name="TxtPledgeNo" Text="-" FontWeight="Bold" FontSize="16" Foreground="{StaticResource BrandGoldBrush}"/>
+                    <TextBlock x:Name="TxtRateAndMaturity" Text="Rate: - | Due: -" Foreground="{StaticResource TextMutedBrush}" FontSize="12"/>
                 </StackPanel>
 
                 <StackPanel Grid.Column="2">
-                    <TextBlock Text="Monthly Interest (Est):" Foreground="#777777"/>
-                    <TextBlock x:Name="TxtEstMonthlyInterest" Text="₹ 0.00" FontWeight="Bold" FontSize="16" Foreground="#C62828"/>
-                    <TextBlock Text="* Calculated on balance" Foreground="#777777"/>
+                    <TextBlock Text="Monthly Interest (Est):" Foreground="{StaticResource TextSecondaryBrush}" FontSize="12"/>
+                    <TextBlock x:Name="TxtEstMonthlyInterest" Text="₹ 0.00" FontWeight="Bold" FontSize="18" Foreground="{StaticResource PrimaryDeepBlueBrush}"/>
+                    <TextBlock Text="* Calculated on balance" Foreground="{StaticResource TextMutedBrush}" FontSize="11"/>
                 </StackPanel>
 
                 <StackPanel Grid.Column="3">
-                    <TextBlock Text="Active Bank Balance:" Foreground="#777777"/>
-                    <TextBlock x:Name="TxtActiveBankBalance" Text="₹ 0.00" FontWeight="Bold" FontSize="18" Foreground="#C62828"/>
-                    <TextBlock x:Name="TxtStatus" Text="Status: -" FontWeight="SemiBold"/>
+                    <TextBlock Text="Active Bank Balance:" Foreground="{StaticResource TextSecondaryBrush}" FontSize="12"/>
+                    <TextBlock x:Name="TxtActiveBankBalance" Text="₹ 0.00" FontWeight="Bold" FontSize="20" Foreground="{StaticResource DangerRedBrush}"/>
+                    <TextBlock x:Name="TxtStatus" Text="Status: -" FontWeight="SemiBold" FontSize="12"/>
                 </StackPanel>
             </Grid>
         </Border>
 
         <!-- Linked Customer Loans Grid with Partial Release Selector -->
-        <Border Grid.Row="2" BorderBrush="#E0E0E0" BorderThickness="1">
+        <Border Grid.Row="2" Style="{StaticResource ModernCardStyle}" Padding="0">
             <Grid>
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="*"/>
                 </Grid.RowDefinitions>
-                <Border Grid.Row="0" Background="#F0F0F0" Padding="8,4">
-                    <DockPanel>
-                        <TextBlock Text="Linked Customer Loans &amp; Ornaments in Bank Custody" FontWeight="Bold" VerticalAlignment="Center"/>
-                        <TextBlock Text="Check box to mark customer jewels as RELEASED back to shop locker:" Foreground="#666666" DockPanel.Dock="Right"/>
+                <Border Grid.Row="0" Background="{StaticResource SurfaceAltBrush}" Padding="12,8" BorderBrush="{StaticResource BorderLightBrush}" BorderThickness="0,0,0,1">
+                    <DockPanel LastChildFill="True">
+                        <TextBlock Text="Linked Customer Loans &amp; Ornaments in Bank Custody" FontWeight="Bold" FontSize="14" VerticalAlignment="Center"/>
+                        <TextBlock Text="Select checkbox to mark jewels RELEASED back to shop locker:" Foreground="{StaticResource TextSecondaryBrush}" DockPanel.Dock="Right" VerticalAlignment="Center" FontSize="12"/>
                     </DockPanel>
                 </Border>
-                <DataGrid x:Name="GridLinkedLoans" Grid.Row="1" AutoGenerateColumns="False" CanUserAddRows="False" BorderBrush="#E0E0E0">
+                <DataGrid x:Name="GridLinkedLoans" Grid.Row="1" AutoGenerateColumns="False" CanUserAddRows="False" TabIndex="3">
                     <DataGrid.Columns>
-                        <DataGridCheckBoxColumn Header="Release Jewels" Binding="{Binding IsSelectedForRelease}" Width="100"/>
-                        <DataGridTextColumn Header="Customer Loan No" Binding="{Binding LoanNumber}" Width="140" IsReadOnly="True"/>
-                        <DataGridTextColumn Header="Customer Name" Binding="{Binding CustomerName}" Width="160" IsReadOnly="True"/>
-                        <DataGridTextColumn Header="Pledged Net Wt (g)" Binding="{Binding NetWeight, StringFormat={}{0:F3}}" Width="120" IsReadOnly="True"/>
-                        <DataGridTextColumn Header="Customer Principal (₹)" Binding="{Binding LoanAmount, StringFormat={}{0:N2}}" Width="140" IsReadOnly="True"/>
-                        <DataGridTextColumn Header="Status" Binding="{Binding CustodyStatus}" Width="*" IsReadOnly="True"/>
+                        <DataGridCheckBoxColumn Header="Release Jewels" Binding="{Binding IsSelectedForRelease, UpdateSourceTrigger=PropertyChanged}" Width="110"/>
+                        <DataGridTextColumn Header="Customer Loan No" Binding="{Binding LoanNumber}" Width="150" IsReadOnly="True" FontWeight="SemiBold"/>
+                        <DataGridTextColumn Header="Customer Name" Binding="{Binding CustomerName}" Width="180" IsReadOnly="True"/>
+                        <DataGridTextColumn Header="Pledged Net Wt (g)" Binding="{Binding NetWeight, StringFormat={}{0:F3}}" Width="130" IsReadOnly="True"
+                                            HeaderStyle="{StaticResource RightAlignedDataGridHeader}" ElementStyle="{StaticResource RightAlignedDataGridCellText}"/>
+                        <DataGridTextColumn Header="Customer Principal (₹)" Binding="{Binding LoanAmount, StringFormat={}{0:N2}}" Width="150" IsReadOnly="True" FontWeight="SemiBold"
+                                            HeaderStyle="{StaticResource RightAlignedDataGridHeader}" ElementStyle="{StaticResource RightAlignedDataGridCellText}"/>
+                        <DataGridTextColumn Header="Custody Status" Binding="{Binding CustodyStatus}" Width="*" IsReadOnly="True"/>
                     </DataGrid.Columns>
                 </DataGrid>
             </Grid>
         </Border>
 
         <!-- Payment & Voucher Posting Form -->
-        <Border Grid.Row="3" Background="#F9F9F9" BorderBrush="#E0E0E0" BorderThickness="1" Padding="12" Margin="0,10,0,0">
+        <Border Grid.Row="3" Style="{StaticResource ModernCardStyle}">
             <Grid>
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
                 <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="160"/>
+                    <ColumnDefinition Width="180"/>
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
 
-                <StackPanel Grid.Row="0" Grid.Column="0" Margin="0,0,8,6">
-                    <TextBlock Text="Payment Action:"/>
-                    <ComboBox x:Name="CmbPaymentType" SelectedIndex="0" SelectionChanged="OnPaymentTypeChanged">
+                <StackPanel Grid.Row="0" Grid.Column="0" Margin="0,0,10,6">
+                    <TextBlock Text="Payment Action:" Style="{StaticResource FieldLabelStyle}"/>
+                    <ComboBox x:Name="CmbPaymentType" SelectedIndex="0" SelectionChanged="OnPaymentTypeChanged" TabIndex="4">
                         <ComboBoxItem Content="Monthly Interest Only"/>
                         <ComboBoxItem Content="Part Principal + Release"/>
                         <ComboBoxItem Content="Full Closure &amp; Release"/>
                     </ComboBox>
                 </StackPanel>
 
-                <StackPanel Grid.Row="0" Grid.Column="1" Margin="4,0,8,6">
-                    <TextBlock Text="Interest Paid to Bank (₹):"/>
-                    <TextBox x:Name="TxtInterestPaid" Text="0.00" TextChanged="OnPaymentAmountChanged"/>
+                <StackPanel Grid.Row="0" Grid.Column="1" Margin="4,0,10,6">
+                    <TextBlock Text="Interest Paid to Bank (₹):" Style="{StaticResource FieldLabelStyle}"/>
+                    <TextBox x:Name="TxtInterestPaid" Text="0.00" TextChanged="OnPaymentAmountChanged" TabIndex="5"/>
                 </StackPanel>
 
-                <StackPanel Grid.Row="0" Grid.Column="2" Margin="4,0,8,6">
-                    <TextBlock Text="Principal Repaid to Bank (₹):"/>
-                    <TextBox x:Name="TxtPrincipalPaid" Text="0.00" TextChanged="OnPaymentAmountChanged"/>
+                <StackPanel Grid.Row="0" Grid.Column="2" Margin="4,0,10,6">
+                    <TextBlock Text="Principal Repaid to Bank (₹):" Style="{StaticResource FieldLabelStyle}"/>
+                    <TextBox x:Name="TxtPrincipalPaid" Text="0.00" TextChanged="OnPaymentAmountChanged" TabIndex="6"/>
                 </StackPanel>
 
                 <StackPanel Grid.Row="0" Grid.Column="3" Margin="4,0,0,6">
-                    <TextBlock Text="Bank Charges / Notice Fee (₹):"/>
-                    <TextBox x:Name="TxtPostalCharges" Text="0.00" TextChanged="OnPaymentAmountChanged"/>
+                    <TextBlock Text="Bank Charges / Notice Fee (₹):" Style="{StaticResource FieldLabelStyle}"/>
+                    <TextBox x:Name="TxtPostalCharges" Text="0.00" TextChanged="OnPaymentAmountChanged" TabIndex="7"/>
                 </StackPanel>
 
                 <!-- Total Amount & Save -->
-                <StackPanel Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2" Margin="0,4,0,0" VerticalAlignment="Center">
-                    <TextBlock Text="TOTAL BANK PAYMENT (CASH OUTFLOW):" Foreground="#666666" FontWeight="Bold"/>
-                    <TextBlock x:Name="TxtTotalOutflow" Text="₹ 0.00" FontWeight="Bold" FontSize="20" Foreground="#C62828"/>
+                <StackPanel Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2" Margin="0,8,0,0" VerticalAlignment="Center">
+                    <TextBlock Text="TOTAL BANK PAYMENT (CASH OUTFLOW):" Foreground="{StaticResource TextSecondaryBrush}" FontWeight="Bold" FontSize="12"/>
+                    <TextBlock x:Name="TxtTotalOutflow" Text="₹ 0.00" FontWeight="Bold" FontSize="22" Foreground="{StaticResource DangerRedBrush}"/>
                 </StackPanel>
 
-                <StackPanel Grid.Row="1" Grid.Column="2" Grid.ColumnSpan="3" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,4,0,0">
-                    <Button Content="💾 Post Bank Payment (Issue RZ Receipt)" Height="38" Background="#2E7D32" FontWeight="Bold" Padding="16,0" Click="OnSaveBankPaymentClick"/>
+                <StackPanel Grid.Row="1" Grid.Column="2" Grid.ColumnSpan="3" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,8,0,0">
+                    <Button x:Name="BtnSavePayment" Content="Post Bank Payment (Issue RZ Receipt)" Height="36" Style="{StaticResource PrimaryButtonStyle}" Padding="16,0" Click="OnSaveBankPaymentClick" TabIndex="8"/>
                 </StackPanel>
             </Grid>
         </Border>

@@ -1,0 +1,67 @@
+<Window x:Class="JGF.Desktop.Views.CustomerLookupDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Customer Lookup / வாடிக்கையாளர் தேர்வு"
+        Height="550" Width="800"
+        WindowStartupLocation="CenterOwner"
+        Icon="pack://application:,,,/Assets/app.ico"
+        Background="{StaticResource AppBackgroundBrush}">
+    <Grid Margin="16">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/> <!-- Title & Search Bar -->
+            <RowDefinition Height="*"/>    <!-- Results DataGrid -->
+            <RowDefinition Height="Auto"/> <!-- Buttons Footer -->
+        </Grid.RowDefinitions>
+
+        <!-- Search Bar -->
+        <Border Grid.Row="0" Style="{StaticResource ModernCardStyle}">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <StackPanel Grid.Column="0">
+                    <TextBlock Text="Search Customer by Name, Mobile, Code or Aadhaar:" Style="{StaticResource FieldLabelStyle}"/>
+                    <TextBox x:Name="TxtSearch" TextChanged="OnSearchTextChanged" KeyDown="OnSearchKeyDown"/>
+                </StackPanel>
+                <StackPanel Grid.Column="1" VerticalAlignment="Bottom" Margin="12,0,0,0">
+                    <Button Content="Search" Width="100" Height="36" Style="{StaticResource PrimaryButtonStyle}" Click="OnSearchClick"/>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- Results Grid -->
+        <Border Grid.Row="1" Style="{StaticResource ModernCardStyle}" Padding="0">
+            <Grid>
+                <DataGrid x:Name="GridCustomers" 
+                          AutoGenerateColumns="False" 
+                          IsReadOnly="True" 
+                          SelectionMode="Single"
+                          MouseDoubleClick="OnCustomerDoubleClicked"
+                          KeyDown="OnGridKeyDown">
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Header="Customer Code" Binding="{Binding Code}" Width="120" FontWeight="SemiBold"/>
+                        <DataGridTextColumn Header="Full Name (English)" Binding="{Binding FullName}" Width="200"/>
+                        <DataGridTextColumn Header="பெயர் (Tamil)" Binding="{Binding NameTamil}" Width="160"/>
+                        <DataGridTextColumn Header="Mobile Number" Binding="{Binding MobileNumber}" Width="130"/>
+                        <DataGridTextColumn Header="City / Town" Binding="{Binding City}" Width="*"/>
+                    </DataGrid.Columns>
+                </DataGrid>
+                <ProgressBar x:Name="PrgLoading" Height="4" VerticalAlignment="Top" IsIndeterminate="True" Visibility="Collapsed"/>
+                <TextBlock x:Name="TxtEmptyState" Text="No customers found. Enter a keyword to search." 
+                           Foreground="{StaticResource TextMutedBrush}" HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="Collapsed"/>
+            </Grid>
+        </Border>
+
+        <!-- Footer Actions -->
+        <DockPanel Grid.Row="2" Margin="0,12,0,0">
+            <TextBlock Text="Tip: Press Enter or double-click to select customer. Press Esc to cancel." 
+                       Foreground="{StaticResource TextSecondaryBrush}" VerticalAlignment="Center" FontSize="12"/>
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                <Button Content="Cancel" Width="100" Style="{StaticResource SecondaryButtonStyle}" Margin="0,0,8,0" Click="OnCancelClick" IsCancel="True"/>
+                <Button Content="Select Customer" Width="150" Style="{StaticResource PrimaryButtonStyle}" Click="OnSelectClick" IsDefault="True"/>
+            </StackPanel>
+        </DockPanel>
+    </Grid>
+</Window>
+

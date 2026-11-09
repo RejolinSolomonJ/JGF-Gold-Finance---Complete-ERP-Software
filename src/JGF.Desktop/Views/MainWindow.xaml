@@ -3,102 +3,135 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:common="clr-namespace:JGF.Desktop.Common"
         mc:Ignorable="d"
         Title="JGF — Jeba Gold Finance (தமிழ்நாடு)" 
         Icon="pack://application:,,,/Assets/app.ico"
-        Height="768" Width="1280"
+        Height="800" Width="1366"
+        MinHeight="720" MinWidth="1100"
         WindowStartupLocation="CenterScreen"
-        WindowState="Maximized">
-    <Grid>
+        WindowState="Maximized"
+        common:KeyboardNavigationHelper.EnableEnterKeyNavigation="True">
+    <Grid Background="{StaticResource AppBackgroundBrush}">
         <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/> <!-- Top Brand Bar -->
-            <RowDefinition Height="Auto"/> <!-- Main Menu Bar -->
-            <RowDefinition Height="*"/>    <!-- Main Dynamic Content Workspace -->
-            <RowDefinition Height="28"/>   <!-- Status Bar -->
+            <RowDefinition Height="Auto"/> <!-- Top Brand Header -->
+            <RowDefinition Height="Auto"/> <!-- Main Grouped Menu Bar -->
+            <RowDefinition Height="*"/>    <!-- Center Dynamic Content Workspace -->
+            <RowDefinition Height="28"/>   <!-- Bottom Operational Status Bar -->
         </Grid.RowDefinitions>
 
         <!-- 1. Top Brand Header -->
-        <Border Grid.Row="0" Background="#161A1D" Padding="14,8" BorderBrush="#2D3748" BorderThickness="0,0,0,1">
+        <Border Grid.Row="0" Background="{StaticResource PrimaryDarkBlueBrush}" Padding="16,10" BorderBrush="#1E293B" BorderThickness="0,0,0,1">
             <DockPanel LastChildFill="True">
                 <StackPanel Orientation="Horizontal" DockPanel.Dock="Left" VerticalAlignment="Center">
-                    <Image Source="pack://application:,,,/Assets/logo.png" Height="42" Width="42" Margin="0,0,12,0" RenderOptions.BitmapScalingMode="HighQuality"/>
+                    <Image Source="pack://application:,,,/Assets/logo.png" Height="44" Width="44" Margin="0,0,14,0" RenderOptions.BitmapScalingMode="HighQuality"/>
                     <StackPanel VerticalAlignment="Center">
                         <StackPanel Orientation="Horizontal">
-                            <TextBlock Text="JEBA GOLD FINANCE" Foreground="#DAA520" FontWeight="Bold" FontSize="18" VerticalAlignment="Center"/>
-                            <TextBlock Text=" | நகை கடன் நிதி மென்பொருள்" Foreground="#A0AEC0" FontSize="13" Margin="8,2,0,0" VerticalAlignment="Center"/>
+                            <TextBlock Text="JEBA GOLD FINANCE" Foreground="{StaticResource BrandGoldLightBrush}" FontWeight="Bold" FontSize="18" VerticalAlignment="Center"/>
+                            <TextBlock Text=" | நகை கடன் நிதி மென்பொருள்" Foreground="#94A3B8" FontSize="13" Margin="8,2,0,0" VerticalAlignment="Center"/>
                         </StackPanel>
-                        <TextBlock Text="TRUST • TRANSPARENCY • PROSPERITY — YOUR TRUST OUR STRENGTH" Foreground="#718096" FontSize="10" FontWeight="SemiBold" Margin="0,1,0,0"/>
+                        <TextBlock Text="TRUST • TRANSPARENCY • PROSPERITY — YOUR TRUST OUR STRENGTH" Foreground="#64748B" FontSize="11" FontWeight="SemiBold" Margin="0,2,0,0"/>
                     </StackPanel>
                 </StackPanel>
-                <StackPanel Orientation="Horizontal" DockPanel.Dock="Right">
-                    <TextBlock Text="User: " Foreground="#888888"/>
-                    <TextBlock x:Name="TxtCurrentUser" Text="Admin (Owner)" Foreground="White" FontWeight="SemiBold" Margin="0,0,16,0"/>
-                    <TextBlock Text="Role: " Foreground="#888888"/>
-                    <TextBlock x:Name="TxtCurrentRole" Text="Owner" Foreground="#4CAF50" FontWeight="SemiBold" Margin="0,0,16,0"/>
-                    <TextBlock Text="Date: " Foreground="#888888"/>
-                    <TextBlock x:Name="TxtCurrentDate" Text="06-Nov-2026" Foreground="White"/>
+                
+                <StackPanel Orientation="Horizontal" DockPanel.Dock="Right" VerticalAlignment="Center">
+                    <Border Background="#1E293B" CornerRadius="4" Padding="10,4" Margin="0,0,12,0">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="User: " Foreground="#94A3B8" FontSize="12"/>
+                            <TextBlock x:Name="TxtCurrentUser" Text="Admin (Owner)" Foreground="White" FontWeight="SemiBold" FontSize="12" Margin="0,0,12,0"/>
+                            <TextBlock Text="Role: " Foreground="#94A3B8" FontSize="12"/>
+                            <TextBlock x:Name="TxtCurrentRole" Text="Owner" Foreground="{StaticResource SuccessGreenBrush}" FontWeight="SemiBold" FontSize="12"/>
+                        </StackPanel>
+                    </Border>
+                    <Border Background="#1E293B" CornerRadius="4" Padding="10,4">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="Date: " Foreground="#94A3B8" FontSize="12"/>
+                            <TextBlock x:Name="TxtCurrentDate" Text="09-Nov-2026" Foreground="White" FontWeight="SemiBold" FontSize="12"/>
+                        </StackPanel>
+                    </Border>
                 </StackPanel>
             </DockPanel>
         </Border>
 
-        <!-- 2. Main Menu Navigation Bar (Role-Based Visibility) -->
-        <Menu Grid.Row="1" Background="#2D2D30" Foreground="White" FontSize="14" Padding="4">
-            <MenuItem Header="⌂ _Dashboard (Home)" Click="OnDashboardClick"/>
-            <MenuItem Header="_Member Detail (F1)" Click="OnCustomerMasterClick"/>
-            <MenuItem Header="_New Loan Entry (F2)" Click="OnNewLoanClick"/>
-            <MenuItem Header="_Customer Detail (F3)" Click="OnCustomerDetailClick"/>
-            <MenuItem Header="_Receipt (F4)" Click="OnReceiptClick"/>
-            <MenuItem Header="Re _Pledge (F5)" x:Name="MenuRepledge" Click="OnRepledgeClick"/>
-            <MenuItem Header="_Notices &amp; Auction (F6)" x:Name="MenuNoticesAuction" Click="OnNoticesAuctionClick"/>
-            <MenuItem Header="_Reports (F7)" Click="OnReportsClick"/>
-            <MenuItem Header="_Stock (F8)" Click="OnStockClick"/>
-            <MenuItem Header="_Accounts (F9)" x:Name="MenuAccounts">
-                <MenuItem Header="Day Book" Click="OnDayBookClick"/>
-                <MenuItem Header="Financial Reports (Trial Balance, P&amp;L, Balance Sheet)" Click="OnFinancialReportsClick"/>
+        <!-- 2. Main Grouped Menu Navigation Bar (All function keys removed) -->
+        <Menu Grid.Row="1" Background="{StaticResource SurfaceCardBrush}" Foreground="{StaticResource TextPrimaryBrush}" FontSize="13" FontWeight="SemiBold" Padding="6,4" BorderBrush="{StaticResource BorderLightBrush}" BorderThickness="0,0,0,1">
+            <MenuItem Header="⌂ Dashboard" Click="OnDashboardClick" Padding="10,6"/>
+            
+            <MenuItem Header="Loans" Padding="10,6">
+                <MenuItem Header="New Loan Entry" Click="OnNewLoanClick"/>
+                <MenuItem Header="Loan Timeline &amp; Sub-Ledger" Click="OnStockClick"/>
+            </MenuItem>
+            
+            <MenuItem Header="Customers" Padding="10,6">
+                <MenuItem Header="Customer Profile &amp; KYC" Click="OnCustomerMasterClick"/>
+            </MenuItem>
+            
+            <MenuItem Header="Receipts" Padding="10,6">
+                <MenuItem Header="Loan Receipts &amp; Redemption" Click="OnReceiptClick"/>
+            </MenuItem>
+            
+            <MenuItem Header="Re-Pledge" x:Name="MenuRepledge" Padding="10,6">
+                <MenuItem Header="Bank Re-Pledge Dashboard &amp; Payments" Click="OnRepledgeClick"/>
+            </MenuItem>
+            
+            <MenuItem Header="Notices &amp; Auction" x:Name="MenuNoticesAuction" Padding="10,6">
+                <MenuItem Header="Overdue Loans, Notices &amp; Auctions" Click="OnNoticesAuctionClick"/>
+            </MenuItem>
+            
+            <MenuItem Header="Accounts" x:Name="MenuAccounts" Padding="10,6">
+                <MenuItem Header="Day Book &amp; Cash Vouchers" Click="OnDayBookClick"/>
+                <MenuItem Header="Financial Reports (P&amp;L, Balance Sheet, Trial Balance)" Click="OnFinancialReportsClick"/>
                 <MenuItem Header="Accounts Integrity Audit" Click="OnIntegrityCheckClick"/>
-                <Separator/>
-                <MenuItem Header="Ledger Heads Master" Click="OnLedgerHeadsClick"/>
-                <MenuItem Header="Voucher Entry" Click="OnVouchersClick"/>
                 <Separator/>
                 <MenuItem Header="Day-End Close" Click="OnDayCloseClick"/>
             </MenuItem>
-            <MenuItem Header="_Settings (F9)" x:Name="MenuSettings">
-                <MenuItem Header="Schemes Master" Click="OnSchemesMasterClick"/>
+            
+            <MenuItem Header="Reports" Padding="10,6">
+                <MenuItem Header="Gold Loan Operational Reports" Click="OnReportsClick"/>
+                <MenuItem Header="Bank Re-Pledge Custody &amp; Alerts" Click="OnBankReportsClick"/>
+            </MenuItem>
+            
+            <MenuItem Header="Masters" Padding="10,6">
+                <MenuItem Header="Loan Schemes" Click="OnSchemesMasterClick"/>
                 <MenuItem Header="Jewel Types &amp; Purity" Click="OnJewelTypesClick"/>
                 <MenuItem Header="Daily Gold Rate" Click="OnGoldRateClick"/>
                 <MenuItem Header="Banks &amp; NBFCs" Click="OnBanksMasterClick"/>
-                <MenuItem Header="Number Series" Click="OnNumberSeriesClick"/>
+                <MenuItem Header="Chart of Accounts (Ledger Heads)" Click="OnLedgerHeadsClick"/>
+                <MenuItem Header="Number Series Sequences" Click="OnNumberSeriesClick"/>
+            </MenuItem>
+            
+            <MenuItem Header="Settings" x:Name="MenuSettings" Padding="10,6">
+                <MenuItem Header="Database Connection Settings (PC2 / LAN)" Click="OnDbSettingsClick"/>
+                <MenuItem Header="Database Backup &amp; Test Restore" Click="OnBackupSettingsClick"/>
                 <Separator/>
                 <MenuItem Header="Audit Trail (Owner Only)" x:Name="MenuAuditLog" Click="OnAuditLogClick"/>
                 <MenuItem Header="Data Migration &amp; Legacy Import (Owner Only)" x:Name="MenuDataMigration" Click="OnDataMigrationClick"/>
-                <MenuItem Header="Database Backup &amp; Test Restore" Click="OnBackupSettingsClick"/>
-                <MenuItem Header="Database Connection Settings (PC2 / LAN)" Click="OnDbSettingsClick"/>
-                <Separator/>
                 <MenuItem Header="Safe Update Wizard (Owner / Manager)" x:Name="MenuSafeUpdate" Click="OnSafeUpdateWizardClick"/>
+                <Separator/>
                 <MenuItem Header="About JGF &amp; System Version" Click="OnAboutClick"/>
             </MenuItem>
-            <MenuItem Header="E_xit (Alt+F4)" Click="OnExitClick"/>
+            
+            <MenuItem Header="Exit" Click="OnExitClick" Padding="10,6"/>
         </Menu>
 
         <!-- 3. Dynamic Center Workspace Container -->
-        <Border Grid.Row="2" Background="#F4F4F4" Padding="12">
+        <Border Grid.Row="2" Background="{StaticResource AppBackgroundBrush}" Padding="12">
             <ContentControl x:Name="MainContentArea"/>
         </Border>
 
         <!-- 4. Bottom Operational Status Bar -->
-        <StatusBar Grid.Row="3" Background="#1E1E1E" Foreground="#CCCCCC">
+        <StatusBar Grid.Row="3" Background="{StaticResource PrimaryDarkBlueBrush}" Foreground="#94A3B8">
             <StatusBarItem>
-                <TextBlock x:Name="TxtDbStatus" Text="● DB: Connected (LAN PC1)" Foreground="#4CAF50"/>
+                <TextBlock x:Name="TxtDbStatus" Text="● DB: Connected (LAN PC1)" Foreground="{StaticResource SuccessGreenBrush}" FontWeight="SemiBold"/>
             </StatusBarItem>
-            <Separator Background="#444444"/>
+            <Separator Background="#334155"/>
             <StatusBarItem>
-                <TextBlock x:Name="TxtBackupWarning" Text="Backup: Up to date" Foreground="#888888"/>
+                <TextBlock x:Name="TxtBackupWarning" Text="Backup: Up to date" Foreground="#CBD5E1"/>
             </StatusBarItem>
-            <Separator Background="#444444"/>
+            <Separator Background="#334155"/>
             <StatusBarItem HorizontalAlignment="Right">
-                <TextBlock Text="Shortcuts: Tab=Next, Enter=Move, Esc=Close"/>
+                <TextBlock Text="Navigation: Tab=Next Field • Shift+Tab=Previous • Enter=Next • Esc=Cancel" Foreground="#64748B"/>
             </StatusBarItem>
         </StatusBar>
     </Grid>
 </Window>
-

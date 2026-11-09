@@ -1,69 +1,74 @@
 <UserControl x:Class="JGF.Desktop.Views.Controls.BankRepledgeControl"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             Background="White">
-    <Grid Margin="12">
-        <TabControl x:Name="RepledgeTabControl" Background="White" BorderBrush="#CCCCCC">
+             Background="{StaticResource AppBackgroundBrush}">
+    <Grid Margin="16">
+        <TabControl x:Name="RepledgeTabControl" Background="{StaticResource SurfaceCardBrush}" BorderBrush="{StaticResource BorderLightBrush}">
             <!-- Tab 1: Bank Pledges Dashboard & Overview -->
-            <TabItem Header="📋 Pledges Dashboard" FontWeight="SemiBold">
-                <Grid Margin="8">
+            <TabItem Header="📋 Pledges Dashboard" FontWeight="SemiBold" FontSize="13">
+                <Grid Margin="12">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/> <!-- Title & Toolbar -->
                         <RowDefinition Height="*"/>    <!-- Master Grid -->
                         <RowDefinition Height="Auto"/> <!-- Status Note -->
                     </Grid.RowDefinitions>
 
-                    <Border Grid.Row="0" Background="#F0F0F0" Padding="8" Margin="0,0,0,8">
+                    <Border Grid.Row="0" Style="{StaticResource ModernCardStyle}" Padding="10">
                         <DockPanel LastChildFill="True">
-                            <StackPanel Orientation="Horizontal" DockPanel.Dock="Left">
-                                <TextBlock Text="BANK RE-PLEDGES (மறு அடமானம் பட்டியல்)" FontWeight="Bold" FontSize="15" Foreground="#B8860B" VerticalAlignment="Center"/>
+                            <StackPanel Orientation="Horizontal" DockPanel.Dock="Left" VerticalAlignment="Center">
+                                <TextBlock Text="BANK RE-PLEDGES (மறு அடமானம் பட்டியல்)" Style="{StaticResource SubheadingTextStyle}" Foreground="{StaticResource PrimaryDeepBlueBrush}"/>
                             </StackPanel>
                             <StackPanel Orientation="Horizontal" DockPanel.Dock="Right">
-                                <Button Content="🔄 Refresh List" Width="110" Margin="0,0,8,0" Click="OnRefreshClick"/>
-                                <Button Content="+ Go To New Pledge" Background="#B8860B" FontWeight="Bold" Width="160" Click="OnGoToNewPledgeTabClick"/>
+                                <Button Content="🔄 Refresh List" Width="120" Height="36" Style="{StaticResource SecondaryButtonStyle}" Margin="0,0,10,0" Click="OnRefreshClick"/>
+                                <Button Content="+ New Bank Pledge" Width="170" Height="36" Style="{StaticResource PrimaryButtonStyle}" Click="OnGoToNewPledgeTabClick"/>
                             </StackPanel>
                         </DockPanel>
                     </Border>
 
-                    <DataGrid x:Name="GridPledges" Grid.Row="1" AutoGenerateColumns="False" IsReadOnly="True" SelectionMode="Single" SelectionChanged="OnPledgeSelected" BorderBrush="#CCCCCC">
+                    <DataGrid x:Name="GridPledges" Grid.Row="1" AutoGenerateColumns="False" IsReadOnly="True" SelectionMode="Single" SelectionChanged="OnPledgeSelected">
                         <DataGrid.Columns>
-                            <DataGridTextColumn Header="Bank" Binding="{Binding BankName}" Width="160"/>
-                            <DataGridTextColumn Header="Pledge Number" Binding="{Binding PledgeNumber}" Width="130"/>
-                            <DataGridTextColumn Header="Bank A/C No" Binding="{Binding BankAccountOrLoanNumber}" Width="130"/>
-                            <DataGridTextColumn Header="Pledge Date" Binding="{Binding PledgeDate, StringFormat={}{0:dd-MMM-yyyy}}" Width="110"/>
-                            <DataGridTextColumn Header="Maturity Date" Binding="{Binding MaturityDate, StringFormat={}{0:dd-MMM-yyyy}}" Width="110"/>
-                            <DataGridTextColumn Header="Rate (%/mo)" Binding="{Binding InterestRate, StringFormat={}{0:F2}}" Width="90"/>
-                            <DataGridTextColumn Header="Bank Borrowing (₹)" Binding="{Binding DisbursedAmount, StringFormat={}{0:N2}}" Width="140"/>
-                            <DataGridTextColumn Header="Customer Loans" Binding="{Binding ActivePledgedLoansCount}" Width="110"/>
+                            <DataGridTextColumn Header="Bank" Binding="{Binding BankName}" Width="160" FontWeight="SemiBold"/>
+                            <DataGridTextColumn Header="Pledge Number" Binding="{Binding PledgeNumber}" Width="140"/>
+                            <DataGridTextColumn Header="Bank A/C No" Binding="{Binding BankAccountOrLoanNumber}" Width="140"/>
+                            <DataGridTextColumn Header="Pledge Date" Binding="{Binding PledgeDate, StringFormat={}{0:dd-MMM-yyyy}}" Width="110"
+                                                HeaderStyle="{StaticResource CenterAlignedDataGridHeader}" ElementStyle="{StaticResource CenterAlignedDataGridCellText}"/>
+                            <DataGridTextColumn Header="Maturity Date" Binding="{Binding MaturityDate, StringFormat={}{0:dd-MMM-yyyy}}" Width="110"
+                                                HeaderStyle="{StaticResource CenterAlignedDataGridHeader}" ElementStyle="{StaticResource CenterAlignedDataGridCellText}"/>
+                            <DataGridTextColumn Header="Rate (%/mo)" Binding="{Binding InterestRate, StringFormat={}{0:F2}}" Width="95"
+                                                HeaderStyle="{StaticResource RightAlignedDataGridHeader}" ElementStyle="{StaticResource RightAlignedDataGridCellText}"/>
+                            <DataGridTextColumn Header="Bank Borrowing (₹)" Binding="{Binding DisbursedAmount, StringFormat={}{0:N2}}" Width="160" FontWeight="Bold"
+                                                HeaderStyle="{StaticResource RightAlignedDataGridHeader}" ElementStyle="{StaticResource RightAlignedDataGridCellText}"/>
+                            <DataGridTextColumn Header="Customer Loans" Binding="{Binding ActivePledgedLoansCount}" Width="120"
+                                                HeaderStyle="{StaticResource RightAlignedDataGridHeader}" ElementStyle="{StaticResource RightAlignedDataGridCellText}"/>
                             <DataGridTextColumn Header="Status" Binding="{Binding Status}" Width="120"/>
                             <DataGridTemplateColumn Header="Action" Width="*">
                                 <DataGridTemplateColumn.CellTemplate>
                                     <DataTemplate>
-                                        <Button Content="Make Payment / Release" Padding="8,2" Background="#1565C0" Click="OnMakePaymentForPledgeClick"/>
+                                        <Button Content="Make Payment / Release" Height="28" Padding="10,0" Style="{StaticResource PrimaryButtonStyle}" Click="OnMakePaymentForPledgeClick"/>
                                     </DataTemplate>
                                 </DataGridTemplateColumn.CellTemplate>
                             </DataGridTemplateColumn>
                         </DataGrid.Columns>
                     </DataGrid>
 
-                    <Border Grid.Row="2" Background="#FFF9C4" Padding="8,4" Margin="0,8,0,0">
-                        <TextBlock x:Name="TxtDashboardNotice" Text="💡 Tip: Click 'Make Payment / Release' on any row or switch to the Payment tab to service interest, principal or release customer jewels." Foreground="#795548"/>
+                    <Border Grid.Row="2" Background="{StaticResource WarningAmberBgBrush}" BorderBrush="{StaticResource WarningAmberBrush}" BorderThickness="1" CornerRadius="4" Padding="10,6" Margin="0,10,0,0">
+                        <TextBlock x:Name="TxtDashboardNotice" Text="💡 Tip: Click 'Make Payment / Release' on any row or switch to the Payment tab to service interest, principal or release customer jewels." Foreground="{StaticResource TextPrimaryBrush}" FontSize="12"/>
                     </Border>
                 </Grid>
             </TabItem>
 
             <!-- Tab 2: New Bank Entry -->
-            <TabItem Header="+ New Bank Entry" FontWeight="SemiBold">
+            <TabItem Header="+ New Bank Entry" FontWeight="SemiBold" FontSize="13">
                 <ContentControl x:Name="NewEntryContentHost"/>
             </TabItem>
 
             <!-- Tab 3: Bank Account Payment & RZ Voucher -->
-            <TabItem Header="💳 Bank Payment (RZ Series)" FontWeight="SemiBold">
+            <TabItem Header="💳 Bank Payment (RZ Series)" FontWeight="SemiBold" FontSize="13">
                 <ContentControl x:Name="PaymentContentHost"/>
             </TabItem>
 
             <!-- Tab 4: Custody & Analytical Reports -->
-            <TabItem Header="📊 Reports &amp; Stock Custody" FontWeight="SemiBold">
+            <TabItem Header="📊 Reports &amp; Stock Custody" FontWeight="SemiBold" FontSize="13">
                 <ContentControl x:Name="ReportsContentHost"/>
             </TabItem>
         </TabControl>

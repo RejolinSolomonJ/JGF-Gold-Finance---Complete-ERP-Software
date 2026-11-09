@@ -88,7 +88,7 @@ public partial class NoticeAuctionControl : UserControl
 
         DpNoticeDate.SelectedDate = DateTime.Today;
         DpNoticeDueDate.SelectedDate = DateTime.Today.AddDays(15);
-        DpAuctionDate.SelectedDate = DateTime.Today.AddDays(7);
+        DpAuctionDate.SelectedDate = DateTime.Today.AddDays(15);
 
         Loaded += async (s, e) => await InitializeDataAsync();
     }
@@ -451,7 +451,13 @@ public partial class NoticeAuctionControl : UserControl
             return;
         }
 
-        var auctionDate = DateOnly.FromDateTime(DpAuctionDate.SelectedDate ?? DateTime.Today.AddDays(7));
+        var auctionDate = DateOnly.FromDateTime(DpAuctionDate.SelectedDate ?? DateTime.Today.AddDays(15));
+        var minStatutoryDate = DateOnly.FromDateTime(DateTime.Today.AddDays(14));
+        if (auctionDate < minStatutoryDate)
+        {
+            MessageBox.Show("Statutory regulations require a minimum 15-day notice period before holding a public auction.", "Statutory Notice Requirement", MessageBoxButton.OK, MessageBoxImage.Warning);
+            return;
+        }
 
         var confirm = MessageBox.Show(
             $"Approve public auction for Loan {loan.LoanNumber} ({loan.CustomerName})?\nAuction Date: {auctionDate:dd-MMM-yyyy}\nReserve Price: ₹{reservePrice:N2}\nVenue: {TxtAuctionVenue.Text}",

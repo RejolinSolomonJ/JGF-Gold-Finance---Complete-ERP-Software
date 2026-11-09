@@ -5,8 +5,8 @@ using System.Windows.Media.Imaging;
 using JGF.Application.Services;
 using JGF.Desktop.Common;
 using JGF.Domain.Entities;
-using JGF.Domain.Enums;
 using Microsoft.Win32;
+using Serilog;
 
 namespace JGF.Desktop.Views.Controls;
 
@@ -43,6 +43,7 @@ public partial class CustomerMasterControl : UserControl
         }
         catch (Exception ex)
         {
+            Log.Error(ex, "Failed to load customer list.");
             MessageBox.Show($"Failed to load customers: {ex.Message}", "Customer Search", MessageBoxButton.OK, MessageBoxImage.Warning);
         }
         finally
@@ -86,12 +87,22 @@ public partial class CustomerMasterControl : UserControl
             _currentPhotoPath = c.PhotoPath;
             if (!string.IsNullOrEmpty(c.PhotoPath) && File.Exists(c.PhotoPath))
             {
-                ImgCustomerPhoto.Source = new BitmapImage(new Uri(c.PhotoPath));
+                try
+                {
+                    ImgCustomerPhoto.Source = new BitmapImage(new Uri(c.PhotoPath));
+                }
+                catch
+                {
+                    ImgCustomerPhoto.Source = null;
+                }
             }
             else
             {
                 ImgCustomerPhoto.Source = null;
             }
+
+            BtnDeleteCustomer.Visibility = Visibility.Visible;
+            ValidateAll();
         }
     }
 
@@ -99,7 +110,7 @@ public partial class CustomerMasterControl : UserControl
     {
         _selectedCustomer = null;
         GridCustomers.SelectedItem = null;
-        TxtCode.Text = "(Auto)";
+        TxtCode.Text = "(Auto-Generated)";
         TxtFullName.Text = "";
         TxtNameTamil.Text = "";
         TxtGuardian.Text = "";
@@ -110,6 +121,8 @@ public partial class CustomerMasterControl : UserControl
         TxtPincode.Text = "";
         _currentPhotoPath = null;
         ImgCustomerPhoto.Source = null;
+        BtnDeleteCustomer.Visibility = Visibility.Collapsed;
+        ClearValidationErrors();
         TxtFullName.Focus();
     }
 
@@ -123,7 +136,8 @@ public partial class CustomerMasterControl : UserControl
 
         if (ofd.ShowDialog() == true)
         {
-            var photosDir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "CustomerPhotos");
+            var programData = Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData);
+            var photosDir = Path.Combine(programData, "JGF", "CustomerPhotos");
             Directory.CreateDirectory(photosDir);
 
             var dest = Path.Combine(photosDir, $"{Guid.NewGuid():N}{Path.GetExtension(ofd.FileName)}");
@@ -133,11 +147,71 @@ public partial class CustomerMasterControl : UserControl
         }
     }
 
+    private void OnFullNameTextChanged(object sender, TextChangedEventArgs e) => ValidateFullName();
+    private void OnMobileTextChanged(object sender, TextChangedEventArgs e) => ValidateMobile();
+    private void OnAadhaarTextChanged(object sender, TextChangedEventArgs e) => ValidateAadhaar();
+    private void OnPanTextChanged(object sender, TextChangedEventArgs e) => ValidatePan();
+    private void OnPincodeTextChanged(object sender, TextChangedEventArgs e) => ValidatePincode();
+
+    private bool ValidateFullName()
+    {
+        var valid = !string.IsNullOrWhiteSpace(TxtFullName.Text) && TxtFullName.Text.Trim().Length >= 2;
+        TxtNameError.Visibility = valid ? Visibility.Collapsed : Visibility.Visible;
+        return valid;
+    }
+
+    private bool ValidateMobile()
+    {
+        var valid = ValidationHelper.IsValidMobile(TxtMobile.Text);
+        TxtMobileError.Visibility = valid ? Visibility.Collapsed : Visibility.Visible;
+        return valid;
+    }
+
+    private bool ValidateAadhaar()
+    {
+        var valid = ValidationHelper.IsValidAadhaar(TxtAadhaar.Text);
+        TxtAadhaarError.Visibility = valid ? Visibility.Collapsed : Visibility.Visible;
+        return valid;
+    }
+
+    private bool ValidatePan()
+    {
+        var valid = ValidationHelper.IsValidPan(TxtPan.Text);
+        TxtPanError.Visibility = valid ? Visibility.Collapsed : Visibility.Visible;
+        return valid;
+    }
+
+    private bool ValidatePincode()
+    {
+        var valid = ValidationHelper.IsValidPincode(TxtPincode.Text);
+        TxtPincodeError.Visibility = valid ? Visibility.Collapsed : Visibility.Visible;
+        return valid;
+    }
+
+    private bool ValidateAll()
+    {
+        bool a = ValidateFullName();
+        bool b = ValidateMobile();
+        bool c = ValidateAadhaar();
+        bool d = ValidatePan();
+        bool e = ValidatePincode();
+        return a && b && c && d && e;
+    }
+
+    private void ClearValidationErrors()
+    {
+        TxtNameError.Visibility = Visibility.Collapsed;
+        TxtMobileError.Visibility = Visibility.Collapsed;
+        TxtAadhaarError.Visibility = Visibility.Collapsed;
+        TxtPanError.Visibility = Visibility.Collapsed;
+        TxtPincodeError.Visibility = Visibility.Collapsed;
+    }
+
     private async void OnSaveCustomerClick(object sender, RoutedEventArgs e)
     {
-        if (string.IsNullOrWhiteSpace(TxtFullName.Text) || string.IsNullOrWhiteSpace(TxtMobile.Text))
+        if (!ValidateAll())
         {
-            MessageBox.Show("Please enter mandatory fields: Full Name and Mobile Number.", "Validation", MessageBoxButton.OK, MessageBoxImage.Warning);
+            MessageBox.Show("Please fix the validation errors marked in red before saving.", "Validation", MessageBoxButton.OK, MessageBoxImage.Warning);
             return;
         }
 
@@ -155,7 +229,7 @@ public partial class CustomerMasterControl : UserControl
                     GuardianName = TxtGuardian.Text.Trim(),
                     MobileNumber = TxtMobile.Text.Trim(),
                     AadhaarNumber = TxtAadhaar.Text.Trim(),
-                    PanNumber = TxtPan.Text.Trim(),
+                    PanNumber = TxtPan.Text.Trim().ToUpperInvariant(),
                     Address = TxtAddress.Text.Trim(),
                     City = TxtCity.Text.Trim(),
                     District = TxtDistrict.Text.Trim(),
@@ -164,7 +238,7 @@ public partial class CustomerMasterControl : UserControl
                 };
 
                 await _customerService.CreateCustomerAsync(newCustomer);
-                MessageBox.Show($"Customer {newCustomer.FullName} created successfully!", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
+                MessageBox.Show($"Customer '{newCustomer.FullName}' created successfully with Code: {newCustomer.Code}", "Customer Created", MessageBoxButton.OK, MessageBoxImage.Information);
             }
             else
             {
@@ -174,7 +248,7 @@ public partial class CustomerMasterControl : UserControl
                 _selectedCustomer.GuardianName = TxtGuardian.Text.Trim();
                 _selectedCustomer.MobileNumber = TxtMobile.Text.Trim();
                 _selectedCustomer.AadhaarNumber = TxtAadhaar.Text.Trim();
-                _selectedCustomer.PanNumber = TxtPan.Text.Trim();
+                _selectedCustomer.PanNumber = TxtPan.Text.Trim().ToUpperInvariant();
                 _selectedCustomer.Address = TxtAddress.Text.Trim();
                 _selectedCustomer.City = TxtCity.Text.Trim();
                 _selectedCustomer.District = TxtDistrict.Text.Trim();
@@ -182,14 +256,16 @@ public partial class CustomerMasterControl : UserControl
                 _selectedCustomer.PhotoPath = _currentPhotoPath;
 
                 await _customerService.UpdateCustomerAsync(_selectedCustomer);
-                MessageBox.Show($"Customer {_selectedCustomer.FullName} updated successfully!", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
+                MessageBox.Show($"Customer '{_selectedCustomer.FullName}' updated successfully!", "Customer Updated", MessageBoxButton.OK, MessageBoxImage.Information);
             }
 
             await LoadCustomersAsync();
+            OnNewCustomerClick(sender, e);
         }
         catch (Exception ex)
         {
-            MessageBox.Show($"Failed to save customer: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            Log.Error(ex, "Failed to save customer.");
+            MessageBox.Show($"Failed to save customer: {ex.Message}", "Save Error", MessageBoxButton.OK, MessageBoxImage.Error);
         }
         finally
         {
@@ -201,18 +277,20 @@ public partial class CustomerMasterControl : UserControl
     {
         if (_selectedCustomer == null) return;
 
-        var confirm = MessageBox.Show($"Are you sure you want to delete customer '{_selectedCustomer.FullName}'?", "Confirm Delete", MessageBoxButton.YesNo, MessageBoxImage.Question);
+        var confirm = MessageBox.Show($"Are you sure you want to soft delete customer '{_selectedCustomer.FullName}'?", "Confirm Delete", MessageBoxButton.YesNo, MessageBoxImage.Question);
         if (confirm == MessageBoxResult.Yes)
         {
             try
             {
                 SetLoading(true);
                 await _customerService.SoftDeleteCustomerAsync(_selectedCustomer.Id);
+                MessageBox.Show("Customer soft-deleted successfully.", "Deleted", MessageBoxButton.OK, MessageBoxImage.Information);
                 OnNewCustomerClick(sender, e);
                 await LoadCustomersAsync();
             }
             catch (Exception ex)
             {
+                Log.Error(ex, "Failed to delete customer.");
                 MessageBox.Show($"Failed to delete customer: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
             finally

@@ -78,23 +78,32 @@
 
                     <!-- Data Grid of Overdue Loans -->
                     <DataGrid x:Name="GridOverdueLoans" Grid.Row="1" AutoGenerateColumns="False" CanUserAddRows="False"
-                              IsReadOnly="False" SelectionMode="Single" SelectionChanged="OnOverdueLoanSelected" BorderBrush="#DDDDDD">
+                              IsReadOnly="False" SelectionMode="Single" SelectionChanged="OnOverdueLoanSelected">
                         <DataGrid.Columns>
                             <DataGridCheckBoxColumn Header="Select" Binding="{Binding IsSelected, UpdateSourceTrigger=PropertyChanged}" Width="55"/>
-                            <DataGridTextColumn Header="GL No" Binding="{Binding LoanNumber}" IsReadOnly="True" FontWeight="Bold" Width="100"/>
+                            <DataGridTextColumn Header="GL No" Binding="{Binding LoanNumber}" IsReadOnly="True" FontWeight="Bold" Width="110"/>
                             <DataGridTextColumn Header="Customer" Binding="{Binding CustomerName}" IsReadOnly="True" Width="150"/>
-                            <DataGridTextColumn Header="Mobile" Binding="{Binding CustomerMobile}" IsReadOnly="True" Width="100"/>
-                            <DataGridTextColumn Header="Pledge Date" Binding="{Binding PledgeDate, StringFormat={}{0:dd-MMM-yyyy}}" IsReadOnly="True" Width="95"/>
-                            <DataGridTextColumn Header="Months" Binding="{Binding ElapsedMonths}" IsReadOnly="True" Width="65"/>
-                            <DataGridTextColumn Header="Principal (₹)" Binding="{Binding PrincipalBalance, StringFormat={}{0:N2}}" IsReadOnly="True" Width="105"/>
-                            <DataGridTextColumn Header="Interest Due (₹)" Binding="{Binding AccruedInterest, StringFormat={}{0:N2}}" IsReadOnly="True" Width="105"/>
-                            <DataGridTextColumn Header="Total Dues (₹)" Binding="{Binding TotalOutstanding, StringFormat={}{0:N2}}" IsReadOnly="True" FontWeight="Bold" Width="110"/>
-                            <DataGridTextColumn Header="Gold Value (₹)" Binding="{Binding CurrentGoldValue, StringFormat={}{0:N2}}" IsReadOnly="True" Width="105"/>
-                            <DataGridTextColumn Header="LTV %" Binding="{Binding CurrentLtvRatio, StringFormat={}{0:F1}%}" IsReadOnly="True" Width="70"/>
+                            <DataGridTextColumn Header="Mobile" Binding="{Binding CustomerMobile}" IsReadOnly="True" Width="105"/>
+                            <DataGridTextColumn Header="Pledge Date" Binding="{Binding PledgeDate, StringFormat={}{0:dd-MMM-yyyy}}" IsReadOnly="True" Width="105"
+                                                HeaderStyle="{StaticResource CenterAlignedDataGridHeader}" ElementStyle="{StaticResource CenterAlignedDataGridCellText}"/>
+                            <DataGridTextColumn Header="Months" Binding="{Binding ElapsedMonths}" IsReadOnly="True" Width="65"
+                                                HeaderStyle="{StaticResource RightAlignedDataGridHeader}" ElementStyle="{StaticResource RightAlignedDataGridCellText}"/>
+                            <DataGridTextColumn Header="Principal (₹)" Binding="{Binding PrincipalBalance, StringFormat={}{0:N2}}" IsReadOnly="True" Width="110"
+                                                HeaderStyle="{StaticResource RightAlignedDataGridHeader}" ElementStyle="{StaticResource RightAlignedDataGridCellText}"/>
+                            <DataGridTextColumn Header="Interest Due (₹)" Binding="{Binding AccruedInterest, StringFormat={}{0:N2}}" IsReadOnly="True" Width="110"
+                                                HeaderStyle="{StaticResource RightAlignedDataGridHeader}" ElementStyle="{StaticResource RightAlignedDataGridCellText}"/>
+                            <DataGridTextColumn Header="Total Dues (₹)" Binding="{Binding TotalOutstanding, StringFormat={}{0:N2}}" IsReadOnly="True" FontWeight="Bold" Width="120"
+                                                HeaderStyle="{StaticResource RightAlignedDataGridHeader}" ElementStyle="{StaticResource RightAlignedDataGridCellText}"/>
+                            <DataGridTextColumn Header="Gold Value (₹)" Binding="{Binding CurrentGoldValue, StringFormat={}{0:N2}}" IsReadOnly="True" Width="110"
+                                                HeaderStyle="{StaticResource RightAlignedDataGridHeader}" ElementStyle="{StaticResource RightAlignedDataGridCellText}"/>
+                            <DataGridTextColumn Header="LTV %" Binding="{Binding CurrentLtvRatio, StringFormat={}{0:F1}%}" IsReadOnly="True" Width="75"
+                                                HeaderStyle="{StaticResource RightAlignedDataGridHeader}" ElementStyle="{StaticResource RightAlignedDataGridCellText}"/>
                             <DataGridTextColumn Header="Bucket Category" Binding="{Binding Bucket}" IsReadOnly="True" Width="130"/>
-                            <DataGridTextColumn Header="Notices" Binding="{Binding NoticesSentCount}" IsReadOnly="True" Width="60"/>
-                            <DataGridTextColumn Header="Last Notice" Binding="{Binding LastNoticeDate, StringFormat={}{0:dd-MMM-yyyy}}" IsReadOnly="True" Width="95"/>
-                            <DataGridCheckBoxColumn Header="Auction Ready" Binding="{Binding IsAuctionEligible}" IsReadOnly="True" Width="90"/>
+                            <DataGridTextColumn Header="Notices" Binding="{Binding NoticesSentCount}" IsReadOnly="True" Width="65"
+                                                HeaderStyle="{StaticResource RightAlignedDataGridHeader}" ElementStyle="{StaticResource RightAlignedDataGridCellText}"/>
+                            <DataGridTextColumn Header="Last Notice" Binding="{Binding LastNoticeDate, StringFormat={}{0:dd-MMM-yyyy}}" IsReadOnly="True" Width="105"
+                                                HeaderStyle="{StaticResource CenterAlignedDataGridHeader}" ElementStyle="{StaticResource CenterAlignedDataGridCellText}"/>
+                            <DataGridCheckBoxColumn Header="Auction Ready" Binding="{Binding IsAuctionEligible}" IsReadOnly="True" Width="95"/>
                         </DataGrid.Columns>
                     </DataGrid>
 
