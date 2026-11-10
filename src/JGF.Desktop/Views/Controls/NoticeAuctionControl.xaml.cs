@@ -199,9 +199,9 @@ public partial class NoticeAuctionControl : UserControl
             _displayLoans.Add(vm);
         }
 
-        TxtTotalOverdueCount.Text = $"Total Loans: {filtered.Count}";
-        TxtTotalOverdueAmount.Text = $"Total Dues: ₹{filtered.Sum(l => l.TotalOutstanding):N2}";
-        TxtAuctionEligibleCount.Text = $"Auction Eligible: {filtered.Count(l => l.IsAuctionEligible)}";
+        TxtTotalOverdueCount.Text = $"{filtered.Count} Loans";
+        TxtTotalOverdueAmount.Text = $"₹{filtered.Sum(l => l.TotalOutstanding):N2}";
+        TxtAuctionEligibleCount.Text = $"{filtered.Count(l => l.IsAuctionEligible)} Loans";
 
         UpdateSelectionSummary();
     }
