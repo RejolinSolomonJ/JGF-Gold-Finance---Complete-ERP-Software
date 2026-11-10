@@ -39,7 +39,9 @@
     <SolidColorBrush x:Key="BrandGoldLightBrush" Color="{StaticResource BrandGoldLightColor}"/>
 
     <SolidColorBrush x:Key="AppBackgroundBrush" Color="{StaticResource AppBackgroundColor}"/>
+    <SolidColorBrush x:Key="BackgroundLightBrush" Color="{StaticResource AppBackgroundColor}"/>
     <SolidColorBrush x:Key="SurfaceCardBrush" Color="{StaticResource SurfaceCardColor}"/>
+    <SolidColorBrush x:Key="SurfaceBrush" Color="{StaticResource SurfaceCardColor}"/>
     <SolidColorBrush x:Key="SurfaceAltBrush" Color="{StaticResource SurfaceAltColor}"/>
     <SolidColorBrush x:Key="BorderLightBrush" Color="{StaticResource BorderLightColor}"/>
     <SolidColorBrush x:Key="BorderMediumBrush" Color="{StaticResource BorderMediumColor}"/>

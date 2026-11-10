@@ -930,4 +930,5 @@ public class JlReportService : IJlReportService
             totalPayableNow,
             transactions
         );
-   
+    }
+}

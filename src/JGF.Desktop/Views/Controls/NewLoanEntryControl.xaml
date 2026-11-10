@@ -72,45 +72,128 @@
                 <StackPanel Grid.Row="1" Grid.Column="2" Margin="4,6,0,0" Grid.ColumnSpan="2">
                     <TextBlock Text="Jewel Scale Photo:" Style="{StaticResource FieldLabelStyle}"/>
                     <DockPanel>
-                        <Button Content="📷 Attach" DockPanel.Dock="Right" Width="90" Height="36" Style="{StaticResource SecondaryButtonStyle}" Click="OnAttachJewelPhotoClick" TabIndex="8"/>
+                        <Button Content="📷 Webcam" DockPanel.Dock="Right" Width="95" Height="36" Style="{StaticResource PrimaryButtonStyle}" Click="OnCaptureJewelWebcamClick" TabIndex="8" Margin="4,0,0,0" ToolTip="Take jewel scale photo using webcam directly"/>
+                        <Button Content="📁 Browse" DockPanel.Dock="Right" Width="85" Height="36" Style="{StaticResource SecondaryButtonStyle}" Click="OnAttachJewelPhotoClick" TabIndex="8"/>
                         <TextBox x:Name="TxtPhotoPath" IsReadOnly="True" Background="{StaticResource SurfaceAltBrush}" TabIndex="7"/>
                     </DockPanel>
                 </StackPanel>
             </Grid>
         </Border>
 
-        <!-- Jewel Items Collateral Grid -->
+        <!-- Jewel Items Collateral Grid & Manual Entry Form -->
         <Border Grid.Row="2" Style="{StaticResource ModernCardStyle}" Padding="0">
             <Grid>
                 <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="Auto"/> <!-- Section Title Header -->
+                    <RowDefinition Height="Auto"/> <!-- Manual Ornament Input Row -->
+                    <RowDefinition Height="*"/>    <!-- DataGrid of Added Ornaments -->
                 </Grid.RowDefinitions>
                 
                 <Border Grid.Row="0" Background="{StaticResource SurfaceAltBrush}" Padding="12,8" BorderBrush="{StaticResource BorderLightBrush}" BorderThickness="0,0,0,1">
                     <DockPanel LastChildFill="True">
                         <TextBlock Text="Collateral Jewels Breakdown (நகைகள் விவரம்)" FontWeight="Bold" FontSize="14" VerticalAlignment="Center"/>
-                        <Button Content="+ Add Jewel Line" DockPanel.Dock="Right" Width="140" Height="32" Style="{StaticResource PrimaryButtonStyle}" Click="OnAddJewelItemClick" TabIndex="9"/>
+                        <TextBlock Text="— Select ornament and enter weight manually to add items one by one" FontSize="12" Foreground="{StaticResource TextSecondaryBrush}" VerticalAlignment="Center" Margin="10,0,0,0"/>
                     </DockPanel>
                 </Border>
                 
-                <DataGrid x:Name="GridItems" Grid.Row="1" AutoGenerateColumns="False" CanUserAddRows="False" TabIndex="10">
+                <!-- Manual Ornament Entry Row -->
+                <Border Grid.Row="1" Background="#F8FAFC" Padding="12,10" BorderBrush="{StaticResource BorderLightBrush}" BorderThickness="0,0,0,1">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="2.2*"/> <!-- Ornament Type / Name -->
+                            <ColumnDefinition Width="65"/>   <!-- Qty -->
+                            <ColumnDefinition Width="100"/>  <!-- Gross (g) -->
+                            <ColumnDefinition Width="95"/>   <!-- Deduct (g) -->
+                            <ColumnDefinition Width="95"/>   <!-- Net (g) -->
+                            <ColumnDefinition Width="85"/>   <!-- Purity % -->
+                            <ColumnDefinition Width="110"/>  <!-- Rate/g (₹) -->
+                            <ColumnDefinition Width="Auto"/> <!-- Add Button -->
+                        </Grid.ColumnDefinitions>
+
+                        <!-- 1. Ornament Dropdown -->
+                        <StackPanel Grid.Column="0" Margin="0,0,8,0">
+                            <TextBlock Text="Ornament (நகை வகை) (*):" Style="{StaticResource FieldLabelStyle}"/>
+                            <ComboBox x:Name="CmbOrnamentType" Height="36" IsEditable="True" TabIndex="9"
+                                      ToolTip="Select from list of ornaments or type custom name"/>
+                        </StackPanel>
+
+                        <!-- 2. Qty -->
+                        <StackPanel Grid.Column="1" Margin="0,0,8,0">
+                            <TextBlock Text="Qty (*):" Style="{StaticResource FieldLabelStyle}"/>
+                            <TextBox x:Name="TxtItemQty" Text="1" Height="36" HorizontalContentAlignment="Right" TabIndex="10"
+                                     PreviewKeyDown="OnEntryFieldKeyDown"/>
+                        </StackPanel>
+
+                        <!-- 3. Gross Wt -->
+                        <StackPanel Grid.Column="2" Margin="0,0,8,0">
+                            <TextBlock Text="Gross (g) (*):" Style="{StaticResource FieldLabelStyle}"/>
+                            <TextBox x:Name="TxtItemGross" Text="" Height="36" HorizontalContentAlignment="Right" TabIndex="11"
+                                     TextChanged="OnManualWeightChanged" PreviewKeyDown="OnEntryFieldKeyDown"/>
+                        </StackPanel>
+
+                        <!-- 4. Deduct Wt -->
+                        <StackPanel Grid.Column="3" Margin="0,0,8,0">
+                            <TextBlock Text="Deduct (g):" Style="{StaticResource FieldLabelStyle}"/>
+                            <TextBox x:Name="TxtItemDeduct" Text="0.000" Height="36" HorizontalContentAlignment="Right" TabIndex="12"
+                                     TextChanged="OnManualWeightChanged" PreviewKeyDown="OnEntryFieldKeyDown"/>
+                        </StackPanel>
+
+                        <!-- 5. Net Wt -->
+                        <StackPanel Grid.Column="4" Margin="0,0,8,0">
+                            <TextBlock Text="Net (g):" Style="{StaticResource FieldLabelStyle}"/>
+                            <Border Background="{StaticResource SurfaceAltBrush}" BorderBrush="{StaticResource BorderLightBrush}" BorderThickness="1" CornerRadius="4" Height="36">
+                                <TextBlock x:Name="TxtItemNet" Text="0.000 g" FontWeight="Bold" FontSize="13" Foreground="{StaticResource PrimaryDeepBlueBrush}" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="0,0,8,0"/>
+                            </Border>
+                        </StackPanel>
+
+                        <!-- 6. Purity % -->
+                        <StackPanel Grid.Column="5" Margin="0,0,8,0">
+                            <TextBlock Text="Purity %:" Style="{StaticResource FieldLabelStyle}"/>
+                            <TextBox x:Name="TxtItemPurity" Text="91.60" Height="36" HorizontalContentAlignment="Right" TabIndex="13"
+                                     PreviewKeyDown="OnEntryFieldKeyDown"/>
+                        </StackPanel>
+
+                        <!-- 7. Rate/g -->
+                        <StackPanel Grid.Column="6" Margin="0,0,8,0">
+                            <TextBlock Text="Rate/g (₹):" Style="{StaticResource FieldLabelStyle}"/>
+                            <TextBox x:Name="TxtItemRate" Text="5,500.00" Height="36" HorizontalContentAlignment="Right" TabIndex="14"
+                                     PreviewKeyDown="OnEntryFieldKeyDown"/>
+                        </StackPanel>
+
+                        <!-- 8. Add Button -->
+                        <StackPanel Grid.Column="7" VerticalAlignment="Bottom">
+                            <Button x:Name="BtnAddOrnament" Content="+ Add to List" Height="36" Width="110"
+                                    Style="{StaticResource PrimaryButtonStyle}" Click="OnAddOrnamentClick" TabIndex="15"
+                                    ToolTip="Add this ornament and weight to jewel lines"/>
+                        </StackPanel>
+                    </Grid>
+                </Border>
+                
+                <DataGrid x:Name="GridItems" Grid.Row="2" AutoGenerateColumns="False" CanUserAddRows="False" TabIndex="16" MinHeight="120">
                     <DataGrid.Columns>
-                        <DataGridTextColumn Header="Jewel Description" Binding="{Binding Description, UpdateSourceTrigger=PropertyChanged}" Width="180"/>
-                        <DataGridTextColumn Header="Qty" Binding="{Binding Quantity, UpdateSourceTrigger=PropertyChanged}" Width="65" 
+                        <DataGridTextColumn Header="Jewel Description" Binding="{Binding Description, UpdateSourceTrigger=PropertyChanged}" Width="200"/>
+                        <DataGridTextColumn Header="Qty" Binding="{Binding Quantity, UpdateSourceTrigger=PropertyChanged}" Width="60" 
                                             HeaderStyle="{StaticResource RightAlignedDataGridHeader}" ElementStyle="{StaticResource RightAlignedDataGridCellText}"/>
-                        <DataGridTextColumn Header="Gross (g)" Binding="{Binding GrossWeight, UpdateSourceTrigger=PropertyChanged, StringFormat={}{0:F3}}" Width="100" 
+                        <DataGridTextColumn Header="Gross (g)" Binding="{Binding GrossWeight, UpdateSourceTrigger=PropertyChanged, StringFormat={}{0:F3}}" Width="95" 
                                             HeaderStyle="{StaticResource RightAlignedDataGridHeader}" ElementStyle="{StaticResource RightAlignedDataGridCellText}"/>
-                        <DataGridTextColumn Header="Deduct (g)" Binding="{Binding DeductionWeight, UpdateSourceTrigger=PropertyChanged, StringFormat={}{0:F3}}" Width="100" 
+                        <DataGridTextColumn Header="Deduct (g)" Binding="{Binding DeductionWeight, UpdateSourceTrigger=PropertyChanged, StringFormat={}{0:F3}}" Width="95" 
                                             HeaderStyle="{StaticResource RightAlignedDataGridHeader}" ElementStyle="{StaticResource RightAlignedDataGridCellText}"/>
-                        <DataGridTextColumn Header="Net (g)" Binding="{Binding NetWeight, StringFormat={}{0:F3}}" Width="100" IsReadOnly="True" FontWeight="SemiBold"
+                        <DataGridTextColumn Header="Net (g)" Binding="{Binding NetWeight, StringFormat={}{0:F3}}" Width="95" IsReadOnly="True" FontWeight="SemiBold"
                                             HeaderStyle="{StaticResource RightAlignedDataGridHeader}" ElementStyle="{StaticResource RightAlignedDataGridCellText}"/>
-                        <DataGridTextColumn Header="Purity %" Binding="{Binding PurityPercent, UpdateSourceTrigger=PropertyChanged, StringFormat={}{0:F2}}" Width="85" 
+                        <DataGridTextColumn Header="Purity %" Binding="{Binding PurityPercent, UpdateSourceTrigger=PropertyChanged, StringFormat={}{0:F2}}" Width="80" 
                                             HeaderStyle="{StaticResource RightAlignedDataGridHeader}" ElementStyle="{StaticResource RightAlignedDataGridCellText}"/>
-                        <DataGridTextColumn Header="Rate/g (₹)" Binding="{Binding RatePerGram, UpdateSourceTrigger=PropertyChanged, StringFormat={}{0:N2}}" Width="110" 
+                        <DataGridTextColumn Header="Rate/g (₹)" Binding="{Binding RatePerGram, UpdateSourceTrigger=PropertyChanged, StringFormat={}{0:N2}}" Width="105" 
                                             HeaderStyle="{StaticResource RightAlignedDataGridHeader}" ElementStyle="{StaticResource RightAlignedDataGridCellText}"/>
-                        <DataGridTextColumn Header="Appraised Value (₹)" Binding="{Binding AppraisedValue, StringFormat={}{0:N2}}" Width="150" IsReadOnly="True" FontWeight="Bold"
+                        <DataGridTextColumn Header="Appraised Value (₹)" Binding="{Binding AppraisedValue, StringFormat={}{0:N2}}" Width="140" IsReadOnly="True" FontWeight="Bold"
                                             HeaderStyle="{StaticResource RightAlignedDataGridHeader}" ElementStyle="{StaticResource RightAlignedDataGridCellText}"/>
+                        <DataGridTemplateColumn Header="Action" Width="70">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <Button Content="🗑️" Width="30" Height="26" Style="{StaticResource DangerButtonStyle}"
+                                            Click="OnRemoveJewelItemClick" ToolTip="Remove this jewel line"/>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
                     </DataGrid.Columns>
                 </DataGrid>
             </Grid>

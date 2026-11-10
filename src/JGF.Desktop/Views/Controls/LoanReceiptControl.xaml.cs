@@ -22,6 +22,8 @@ public partial class LoanReceiptControl : UserControl
     private decimal _currentPrincipalBalance = 0m;
     private InterestCalculationResult? _calcResult;
     private bool _isUpdatingReceiptType = false;
+    private Receipt? _lastReceipt;
+    private List<Receipt> _pastReceipts = new();
 
     public LoanReceiptControl(
         ILoanService loanService,
@@ -88,6 +90,12 @@ public partial class LoanReceiptControl : UserControl
             var history = await _loanService.GetLoanHistoryAsync(loan.Id);
             _currentPrincipalBalance = history.OrderByDescending(h => h.EntryDate).ThenByDescending(h => h.CreatedAtUtc).FirstOrDefault()?.Balance ?? loan.LoanAmount;
             if (_currentPrincipalBalance <= 0) _currentPrincipalBalance = loan.LoanAmount;
+
+            _pastReceipts = await _receiptService.GetReceiptsForLoanAsync(loan.Id);
+            _lastReceipt = _pastReceipts.FirstOrDefault();
+            BtnPastReceipts.IsEnabled = _pastReceipts.Count > 0;
+            BtnDirectPrint.IsEnabled = _lastReceipt != null;
+            BtnDownloadPdf.IsEnabled = _lastReceipt != null;
 
             DisplayLoanInfo(loan);
             RecalculateInterest();
@@ -343,22 +351,19 @@ public partial class LoanReceiptControl : UserControl
             BtnProcessReceipt.IsEnabled = false;
             var receipt = await _receiptService.ProcessReceiptAsync(dto);
 
-            if (rType == ReceiptType.Closure)
+            _lastReceipt = receipt;
+            _pastReceipts.Insert(0, receipt);
+            BtnPastReceipts.IsEnabled = true;
+            BtnDirectPrint.IsEnabled = true;
+            BtnDownloadPdf.IsEnabled = true;
+
+            // Open Receipt Viewer Dialog with live preview, direct print, and download PDF
+            var parentWin = Window.GetWindow(this);
+            var dlg = new ReceiptActionsDialog(receipt, _loadedLoan, _loadedLoan.Customer, _receiptService)
             {
-                MessageBox.Show($"Loan {_loadedLoan.LoanNumber} is now FULLY CLOSED & REDEEMED!\n" +
-                                $"Receipt #{receipt.ReceiptNumber} created.\n" +
-                                $"Total Collected: {ValidationHelper.FormatCurrency(receipt.TotalAmount)}\n" +
-                                $"Ready to inspect ornaments and print Release Slip (மீட்பு சீட்டு).",
-                    "Loan Closed & Released", MessageBoxButton.OK, MessageBoxImage.Information);
-            }
-            else
-            {
-                MessageBox.Show($"Receipt #{receipt.ReceiptNumber} posted successfully!\n" +
-                                $"Total Collected: {ValidationHelper.FormatCurrency(receipt.TotalAmount)}\n" +
-                                $"Principal Paid: {ValidationHelper.FormatCurrency(receipt.PrincipalAmount)}\n" +
-                                $"Interest Paid: {ValidationHelper.FormatCurrency(receipt.InterestAmount)}",
-                    "Receipt Processed", MessageBoxButton.OK, MessageBoxImage.Information);
-            }
+                Owner = parentWin
+            };
+            dlg.ShowDialog();
 
             // Reload loan status
             _loadedLoan = await _loanService.GetLoanByIdAsync(_loadedLoan.Id);
@@ -375,3 +380,47 @@ public partial class LoanReceiptControl : UserControl
             BtnProcessReceipt.IsEnabled = true;
         }
     }
+
+    private void OnDirectPrintClick(object sender, RoutedEventArgs e)
+    {
+        if (_lastReceipt == null || _loadedLoan == null)
+        {
+            MessageBox.Show("No receipt available to print.", "Notice", MessageBoxButton.OK, MessageBoxImage.Warning);
+            return;
+        }
+
+        ReceiptPrintHelper.PrintReceipt(_lastReceipt, _loadedLoan, _loadedLoan.Customer, Window.GetWindow(this));
+    }
+
+    private async void OnDownloadPdfClick(object sender, RoutedEventArgs e)
+    {
+        if (_lastReceipt == null)
+        {
+            MessageBox.Show("No receipt available to download.", "Notice", MessageBoxButton.OK, MessageBoxImage.Warning);
+            return;
+        }
+
+        await ReceiptPrintHelper.DownloadReceiptPdfAsync(_receiptService, _lastReceipt.Id, _lastReceipt.ReceiptNumber, Window.GetWindow(this));
+    }
+
+    private void OnPastReceiptsClick(object sender, RoutedEventArgs e)
+    {
+        if (_loadedLoan == null)
+        {
+            MessageBox.Show("Please load a loan first.", "Notice", MessageBoxButton.OK, MessageBoxImage.Warning);
+            return;
+        }
+
+        if (_pastReceipts.Count == 0)
+        {
+            MessageBox.Show("No previous receipts found for this loan.", "Notice", MessageBoxButton.OK, MessageBoxImage.Information);
+            return;
+        }
+
+        var dlg = new PastReceiptsDialog(_loadedLoan, _loadedLoan.Customer, _pastReceipts, _receiptService)
+        {
+            Owner = Window.GetWindow(this)
+        };
+        dlg.ShowDialog();
+    }
+}

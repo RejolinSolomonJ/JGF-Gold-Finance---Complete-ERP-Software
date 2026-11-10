@@ -102,7 +102,7 @@
                                 <Border Width="150" Height="150" Background="{StaticResource SurfaceCardBrush}" BorderBrush="{StaticResource BorderMediumBrush}" BorderThickness="1" CornerRadius="4">
                                     <Image x:Name="ImgCustomerPhoto" Stretch="UniformToFill"/>
                                 </Border>
-                                <Button Content="📷 Attach Photo" Margin="0,10,0,0" Width="150" Height="36" Style="{StaticResource SecondaryButtonStyle}" Click="OnCapturePhotoClick" TabIndex="10"/>
+                                <Button Content="📷 Webcam / Photo" Margin="0,10,0,0" Width="150" Height="36" Style="{StaticResource SecondaryButtonStyle}" Click="OnCapturePhotoClick" TabIndex="10" ToolTip="Take photo using webcam or choose image file"/>
                             </StackPanel>
                         </Border>
                     </Grid>

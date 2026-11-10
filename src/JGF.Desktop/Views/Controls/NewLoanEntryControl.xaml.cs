@@ -111,6 +111,7 @@ public partial class NewLoanEntryControl : UserControl
     private decimal _today22KRate = 5500.00m;
     private bool _isProgrammaticAmountChange = false;
     private Guid _defaultJewelTypeId = Guid.Empty;
+    private List<JewelType> _availableJewelTypes = new();
 
     public ObservableCollection<LoanItemRowViewModel> Items { get; } = new();
 
@@ -174,6 +175,7 @@ public partial class NewLoanEntryControl : UserControl
             // Load Today's Gold Rate
             var rate = await _goldRateService.GetTodayRateAsync();
             if (rate != null) _today22KRate = rate.Rate22K;
+            TxtItemRate.Text = _today22KRate.ToString("N2");
 
             // Load Schemes
             var schemes = await _schemeService.GetAllSchemesAsync(activeOnly: true);
@@ -181,12 +183,44 @@ public partial class NewLoanEntryControl : UserControl
             CmbScheme.DisplayMemberPath = "Name";
             if (schemes.Count > 0) CmbScheme.SelectedIndex = 0;
 
-            var jewelTypes = await _jewelTypeService.GetAllJewelTypesAsync();
-            var defType = jewelTypes.FirstOrDefault();
+            _availableJewelTypes = await _jewelTypeService.GetAllJewelTypesAsync();
+            var defType = _availableJewelTypes.FirstOrDefault();
             if (defType != null)
             {
                 _defaultJewelTypeId = defType.Id;
             }
+
+            // Standard list of ornaments (bilingual: English + Tamil)
+            var standardOrnaments = new List<string>
+            {
+                "Gold Chain (தங்க சங்கிலி)",
+                "Gold Ring (தங்க மோதிரம்)",
+                "Gold Bangle (தங்க வளையல்)",
+                "Necklace (நெக்லஸ் / அட்டிகை)",
+                "Ear Studs / Jimikki (கம்மல் / ஜிமிக்கி)",
+                "Gold Coin (தங்க காசு)",
+                "Bracelet / Kaapu (காப்பு)",
+                "Haram / Long Chain (ஆரம்)",
+                "Anklet / Kolusu (கொலுசு)",
+                "Pendant / Locket (பதக்கம் / டாலர்)",
+                "Waist Belt / Oddiyanam (ஒட்டியாணம்)",
+                "Gold Ornament (பொது நகை)"
+            };
+
+            foreach (var jt in _availableJewelTypes)
+            {
+                var label = !string.IsNullOrWhiteSpace(jt.NameTamil)
+                    ? $"{jt.Name} ({jt.NameTamil})"
+                    : jt.Name;
+
+                if (!standardOrnaments.Any(o => o.StartsWith(jt.Name, StringComparison.OrdinalIgnoreCase)))
+                {
+                    standardOrnaments.Add(label);
+                }
+            }
+
+            CmbOrnamentType.ItemsSource = standardOrnaments;
+            CmbOrnamentType.SelectedIndex = 0;
 
             // Default item line if empty
             if (Items.Count == 0)
@@ -212,6 +246,107 @@ public partial class NewLoanEntryControl : UserControl
         }
     }
 
+    private void OnManualWeightChanged(object sender, TextChangedEventArgs e)
+    {
+        if (TxtItemGross == null || TxtItemDeduct == null || TxtItemNet == null) return;
+
+        decimal.TryParse(TxtItemGross.Text.Trim(), out var gross);
+        decimal.TryParse(TxtItemDeduct.Text.Trim(), out var deduct);
+        var net = Math.Max(0m, gross - deduct);
+        TxtItemNet.Text = $"{net:F3} g";
+    }
+
+    private void OnEntryFieldKeyDown(object sender, System.Windows.Input.KeyEventArgs e)
+    {
+        if (e.Key == System.Windows.Input.Key.Enter)
+        {
+            OnAddOrnamentClick(sender, e);
+            e.Handled = true;
+        }
+    }
+
+    private void OnAddOrnamentClick(object sender, RoutedEventArgs e)
+    {
+        var ornamentDesc = CmbOrnamentType.Text.Trim();
+        if (string.IsNullOrWhiteSpace(ornamentDesc))
+        {
+            ornamentDesc = CmbOrnamentType.SelectedItem?.ToString() ?? "Gold Ornament";
+        }
+
+        if (!int.TryParse(TxtItemQty.Text.Trim(), out var qty) || qty <= 0)
+        {
+            qty = 1;
+            TxtItemQty.Text = "1";
+        }
+
+        if (!decimal.TryParse(TxtItemGross.Text.Trim(), out var gross) || gross <= 0)
+        {
+            MessageBox.Show("Please enter a valid Gross Weight (grams).", "Weight Required", MessageBoxButton.OK, MessageBoxImage.Warning);
+            TxtItemGross.Focus();
+            return;
+        }
+
+        decimal.TryParse(TxtItemDeduct.Text.Trim(), out var deduct);
+        if (deduct < 0) deduct = 0;
+        if (deduct > gross)
+        {
+            MessageBox.Show("Deduction weight cannot be greater than gross weight.", "Invalid Deduction", MessageBoxButton.OK, MessageBoxImage.Warning);
+            TxtItemDeduct.Focus();
+            return;
+        }
+
+        if (!decimal.TryParse(TxtItemPurity.Text.Trim(), out var purity) || purity <= 0 || purity > 100)
+        {
+            purity = 91.60m;
+            TxtItemPurity.Text = "91.60";
+        }
+
+        if (!decimal.TryParse(TxtItemRate.Text.Trim(), out var rate) || rate <= 0)
+        {
+            rate = _today22KRate;
+            TxtItemRate.Text = rate.ToString("N2");
+        }
+
+        // Match JewelTypeId from available types
+        var matchedType = _availableJewelTypes.FirstOrDefault(jt => 
+            ornamentDesc.StartsWith(jt.Name, StringComparison.OrdinalIgnoreCase) ||
+            (!string.IsNullOrWhiteSpace(jt.NameTamil) && ornamentDesc.Contains(jt.NameTamil)));
+        var jewelTypeId = matchedType?.Id ?? _defaultJewelTypeId;
+
+        var row = new LoanItemRowViewModel
+        {
+            JewelTypeId = jewelTypeId,
+            Description = ornamentDesc,
+            Quantity = qty,
+            GrossWeight = gross,
+            DeductionWeight = deduct,
+            PurityPercent = purity,
+            RatePerGram = rate
+        };
+        row.PropertyChanged += OnItemPropertyChanged;
+        Items.Add(row);
+
+        // Reset manual inputs for next ornament
+        TxtItemGross.Text = "";
+        TxtItemDeduct.Text = "0.000";
+        TxtItemNet.Text = "0.000 g";
+        TxtItemQty.Text = "1";
+        TxtItemGross.Focus();
+
+        RecalculateTotals();
+        ValidateInputs();
+    }
+
+    private void OnRemoveJewelItemClick(object sender, RoutedEventArgs e)
+    {
+        if (sender is Button btn && btn.DataContext is LoanItemRowViewModel row)
+        {
+            Items.Remove(row);
+            RecalculateTotals();
+            ValidateInputs();
+        }
+    }
+
     private void OnSchemeChanged(object sender, SelectionChangedEventArgs e)
     {
         _selectedScheme = CmbScheme.SelectedItem as Scheme;
@@ -220,16 +355,7 @@ public partial class NewLoanEntryControl : UserControl
 
     private void OnAddJewelItemClick(object sender, RoutedEventArgs e)
     {
-        Items.Add(new LoanItemRowViewModel
-        {
-            JewelTypeId = _defaultJewelTypeId,
-            Description = "Gold Ornament",
-            Quantity = 1,
-            GrossWeight = 8.000m,
-            DeductionWeight = 0.500m,
-            PurityPercent = 91.60m,
-            RatePerGram = _today22KRate
-        });
+        OnAddOrnamentClick(sender, e);
     }
 
     private void RecalculateTotals()
@@ -298,11 +424,50 @@ public partial class NewLoanEntryControl : UserControl
         var ofd = new OpenFileDialog
         {
             Title = "Attach Scale / Jewel Photo",
-            Filter = "Images (*.jpg;*.jpeg;*.png)|*.jpg;*.jpeg;*.png"
+            Filter = "Image Files (*.jpg;*.jpeg;*.png;*.bmp)|*.jpg;*.jpeg;*.png;*.bmp"
         };
         if (ofd.ShowDialog() == true)
         {
-            TxtPhotoPath.Text = ofd.FileName;
+            try
+            {
+                var programData = Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData);
+                var photosDir = Path.Combine(programData, "JGF", "JewelPhotos");
+                Directory.CreateDirectory(photosDir);
+
+                var dest = Path.Combine(photosDir, $"JEWEL_{DateTime.Now:yyyyMMdd_HHmmss}_{Guid.NewGuid():N}{Path.GetExtension(ofd.FileName)}");
+                File.Copy(ofd.FileName, dest, overwrite: true);
+                TxtPhotoPath.Text = dest;
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Failed to copy jewel photo.");
+                TxtPhotoPath.Text = ofd.FileName;
+            }
+        }
+    }
+
+    private void OnCaptureJewelWebcamClick(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            var programData = Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData);
+            var photosDir = Path.Combine(programData, "JGF", "JewelPhotos");
+            Directory.CreateDirectory(photosDir);
+
+            var dialog = new WebcamCaptureDialog(photosDir, "JEWEL")
+            {
+                Owner = Window.GetWindow(this)
+            };
+
+            if (dialog.ShowDialog() == true && !string.IsNullOrWhiteSpace(dialog.CapturedFilePath))
+            {
+                TxtPhotoPath.Text = dialog.CapturedFilePath;
+            }
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "Webcam capture failed.");
+            MessageBox.Show($"Camera error: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
         }
     }
 
@@ -411,6 +576,7 @@ public partial class NewLoanEntryControl : UserControl
         var userId = _currentUser?.Id ?? Guid.Empty;
         var userRole = _currentUser?.Role ?? UserRole.Owner;
 
+        var photoPath = string.IsNullOrWhiteSpace(TxtPhotoPath.Text) ? null : TxtPhotoPath.Text.Trim();
         var dto = new CreateLoanDto(
             _selectedCustomer.Id,
             _selectedScheme.Id,
@@ -420,7 +586,7 @@ public partial class NewLoanEntryControl : UserControl
             TxtNominee.Text.Trim(),
             TxtNomineeRel.Text.Trim(),
             TxtPacket.Text.Trim(),
-            TxtPhotoPath.Text.Trim(),
+            photoPath,
             TxtOverrideReason.Text.Trim(),
             userId,
             userRole

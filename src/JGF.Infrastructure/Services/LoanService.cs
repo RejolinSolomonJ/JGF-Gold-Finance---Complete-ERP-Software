@@ -152,7 +152,7 @@ public class LoanService : DbServiceBase, ILoanService
                 NomineeName = dto.NomineeName,
                 NomineeRelationship = dto.NomineeRelationship,
                 PacketNumber = packet,
-                JewelPhotoPath = dto.JewelPhotoPath,
+                JewelPhotoPath = string.IsNullOrWhiteSpace(dto.JewelPhotoPath) ? null : dto.JewelPhotoPath.Trim(),
                 OwnerLtvOverrideReason = dto.OwnerOverrideReason,
                 LastInterestPaidDate = dto.PledgeDate
             };

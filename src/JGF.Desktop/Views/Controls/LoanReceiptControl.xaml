@@ -167,10 +167,19 @@
                     <TextBlock x:Name="TxtTotalReceivable" Text="₹ 0.00" FontWeight="Bold" FontSize="22" Foreground="{StaticResource SuccessGreenBrush}"/>
                 </StackPanel>
 
-                <!-- Process Button -->
-                <StackPanel Grid.Row="1" Grid.Column="3" Margin="4,6,0,0" VerticalAlignment="Bottom">
-                    <Button x:Name="BtnProcessReceipt" Content="Process Receipt &amp; Print" Height="36" Style="{StaticResource SuccessButtonStyle}" Click="OnProcessReceiptClick" TabIndex="9"/>
-                </StackPanel>
+                <!-- Process Button & Actions -->
+                <Grid Grid.Row="1" Grid.Column="3" Margin="4,6,0,0" VerticalAlignment="Bottom">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+                    <Button Grid.Row="0" x:Name="BtnProcessReceipt" Content="Process Receipt &amp; Print" Height="36" Style="{StaticResource SuccessButtonStyle}" Click="OnProcessReceiptClick" TabIndex="9"/>
+                    <DockPanel Grid.Row="1" Margin="0,6,0,0">
+                        <Button x:Name="BtnDirectPrint" Content="🖨️ Direct Print" Width="98" Height="30" FontSize="11" Style="{StaticResource SecondaryButtonStyle}" Click="OnDirectPrintClick" IsEnabled="False" ToolTip="Send latest receipt directly to printer"/>
+                        <Button x:Name="BtnDownloadPdf" Content="💾 Download PDF" Width="105" Height="30" Margin="4,0,0,0" FontSize="11" Style="{StaticResource SecondaryButtonStyle}" Click="OnDownloadPdfClick" IsEnabled="False" ToolTip="Download receipt as PDF"/>
+                        <Button x:Name="BtnPastReceipts" Content="📜 Past Receipts" Height="30" Margin="4,0,0,0" FontSize="11" Style="{StaticResource SecondaryButtonStyle}" Click="OnPastReceiptsClick" IsEnabled="False" ToolTip="View previous receipts for this loan"/>
+                    </DockPanel>
+                </Grid>
             </Grid>
         </Border>
     </Grid>

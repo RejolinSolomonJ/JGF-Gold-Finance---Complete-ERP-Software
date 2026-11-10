@@ -89,7 +89,13 @@ public partial class CustomerMasterControl : UserControl
             {
                 try
                 {
-                    ImgCustomerPhoto.Source = new BitmapImage(new Uri(c.PhotoPath));
+                    var bmp = new BitmapImage();
+                    bmp.BeginInit();
+                    bmp.CacheOption = BitmapCacheOption.OnLoad;
+                    bmp.UriSource = new Uri(c.PhotoPath);
+                    bmp.EndInit();
+                    bmp.Freeze();
+                    ImgCustomerPhoto.Source = bmp;
                 }
                 catch
                 {
@@ -128,22 +134,33 @@ public partial class CustomerMasterControl : UserControl
 
     private void OnCapturePhotoClick(object sender, RoutedEventArgs e)
     {
-        var ofd = new OpenFileDialog
-        {
-            Title = "Select Customer Photo",
-            Filter = "Image Files (*.jpg;*.jpeg;*.png)|*.jpg;*.jpeg;*.png"
-        };
-
-        if (ofd.ShowDialog() == true)
+        try
         {
             var programData = Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData);
             var photosDir = Path.Combine(programData, "JGF", "CustomerPhotos");
             Directory.CreateDirectory(photosDir);
 
-            var dest = Path.Combine(photosDir, $"{Guid.NewGuid():N}{Path.GetExtension(ofd.FileName)}");
-            File.Copy(ofd.FileName, dest, overwrite: true);
-            _currentPhotoPath = dest;
-            ImgCustomerPhoto.Source = new BitmapImage(new Uri(dest));
+            var dialog = new WebcamCaptureDialog(photosDir, "CUST")
+            {
+                Owner = Window.GetWindow(this)
+            };
+
+            if (dialog.ShowDialog() == true && !string.IsNullOrWhiteSpace(dialog.CapturedFilePath))
+            {
+                _currentPhotoPath = dialog.CapturedFilePath;
+                var bmp = new BitmapImage();
+                bmp.BeginInit();
+                bmp.CacheOption = BitmapCacheOption.OnLoad;
+                bmp.UriSource = new Uri(dialog.CapturedFilePath);
+                bmp.EndInit();
+                bmp.Freeze();
+                ImgCustomerPhoto.Source = bmp;
+            }
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "Failed to capture customer photo.");
+            MessageBox.Show($"Camera error: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
         }
     }
 
