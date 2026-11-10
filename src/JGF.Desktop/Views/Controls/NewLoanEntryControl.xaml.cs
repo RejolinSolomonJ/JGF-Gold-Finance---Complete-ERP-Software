@@ -518,7 +518,8 @@ public partial class NewLoanEntryControl : UserControl
             TxtOverrideError.Visibility = Visibility.Collapsed;
         }
 
-        BtnIssueLoan.IsEnabled = isValid;
+        // Keep button enabled so user can click it to see validation feedback if anything is missing
+        BtnIssueLoan.IsEnabled = true;
         return isValid;
     }
 
@@ -527,7 +528,8 @@ public partial class NewLoanEntryControl : UserControl
         if (_selectedCustomer == null)
         {
             TxtCustomerError.Visibility = Visibility.Visible;
-            MessageBox.Show("Please select a customer first.", "Customer Required", MessageBoxButton.OK, MessageBoxImage.Warning);
+            MessageBox.Show("Please select a customer first. The customer picker will now open.", "Customer Required", MessageBoxButton.OK, MessageBoxImage.Warning);
+            OnPickCustomerClick(sender, e);
             return;
         }
 

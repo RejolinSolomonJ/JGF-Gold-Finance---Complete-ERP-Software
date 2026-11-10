@@ -16,5 +16,7 @@ public interface IExcelExportService
         List<List<object?>> rows,
         List<object?>? totalsRow = null
     );
+
+    Task<byte[]> ExportFullDatabaseToExcelAsync(CancellationToken ct = default);
 }
 

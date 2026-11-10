@@ -612,6 +612,40 @@ public partial class JlReportsControl : UserControl
         }
     }
 
+    private async void OnExportFullDbClick(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            var sfd = new SaveFileDialog
+            {
+                Filter = "Excel Workbook (*.xlsx)|*.xlsx",
+                FileName = $"JGF_Full_Database_Export_{DateTime.Today:yyyyMMdd}.xlsx",
+                Title = "Export Complete JGF Database to Excel"
+            };
+
+            if (sfd.ShowDialog() == true)
+            {
+                var bytes = await _excelExportService.ExportFullDatabaseToExcelAsync();
+                await File.WriteAllBytesAsync(sfd.FileName, bytes);
+
+                var res = MessageBox.Show(
+                    $"Complete database exported successfully to Excel!\n\nFile: {sfd.FileName}\n\nWould you like to open it now?",
+                    "Export Complete",
+                    MessageBoxButton.YesNo,
+                    MessageBoxImage.Information);
+
+                if (res == MessageBoxResult.Yes)
+                {
+                    System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(sfd.FileName) { UseShellExecute = true });
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show($"Full database Excel export failed: {ex.Message}", "Export Error", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
+    }
+
     private void OnPrintPdfClick(object sender, RoutedEventArgs e)
     {
         try

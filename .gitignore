@@ -2,6 +2,7 @@
 bin/
 obj/
 out/
+dist/
 [Bb]uild/
 
 ## Visual Studio & Rider
@@ -29,4 +30,6 @@ appsettings.Development.json
 *.local.json
 Backups/
 CustomerPhotos/
+*.sql
+*.xlsx
 

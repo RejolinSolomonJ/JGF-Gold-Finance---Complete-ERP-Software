@@ -29,7 +29,8 @@
                 </StackPanel>
                 <StackPanel Orientation="Horizontal" DockPanel.Dock="Right">
                     <Button x:Name="BtnNewPostalCharge" Content="✉ Record Postal Charge" Background="#7C3AED" Foreground="White" FontWeight="Bold" Padding="10,6" Margin="0,0,8,0" Visibility="Collapsed" Click="OnNewPostalChargeClick"/>
-                    <Button x:Name="BtnExportExcel" Content=" Export Excel (.xlsx)" Background="#059669" Foreground="White" FontWeight="Bold" Padding="12,6" Margin="0,0,8,0" Click="OnExportExcelClick"/>
+                    <Button x:Name="BtnExportFullDb" Content="💾 Export Full DB to Excel" Background="#0D9488" Foreground="White" FontWeight="Bold" Padding="12,6" Margin="0,0,8,0" Click="OnExportFullDbClick" ToolTip="Export all customers, loans, jewels, receipts and schemes to a multi-tab Excel spreadsheet"/>
+                    <Button x:Name="BtnExportExcel" Content="📊 Export Report (.xlsx)" Background="#059669" Foreground="White" FontWeight="Bold" Padding="12,6" Margin="0,0,8,0" Click="OnExportExcelClick"/>
                     <Button x:Name="BtnPrintPdf" Content="🖨 Print / PDF" Background="#2563EB" Foreground="White" FontWeight="Bold" Padding="12,6" Click="OnPrintPdfClick"/>
                 </StackPanel>
             </DockPanel>

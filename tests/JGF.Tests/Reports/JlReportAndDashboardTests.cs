@@ -294,6 +294,52 @@ public class JlReportAndDashboardTests
     }
 
     [Fact]
+    public async Task ExcelExportService_ShouldExportFullDatabaseToMultiSheetExcel()
+    {
+        var options = new DbContextOptionsBuilder<JgfDbContext>()
+            .UseInMemoryDatabase(databaseName: $"JgfFullDbExcelTest_{Guid.NewGuid():N}")
+            .Options;
+
+        using (var ctx = new JgfDbContext(options))
+        {
+            ctx.Customers.Add(new Customer { Code = "C001", Name = "Selvam R", Phone = "9876543210" });
+            ctx.Schemes.Add(new Scheme { Code = "S1", Name = "Standard Gold Loan", InterestRatePerMonth = 1.5m, MaxLtvPercent = 75m, IsActive = true });
+            await ctx.SaveChangesAsync();
+        }
+
+        var factory = new TestExportContextFactory(options);
+        var exportService = new ExcelExportService(factory);
+
+        var excelBytes = await exportService.ExportFullDatabaseToExcelAsync();
+
+        excelBytes.Should().NotBeNull();
+        excelBytes.Length.Should().BeGreaterThan(2000);
+    }
+
+    [Fact]
+    public async Task ExportLiveDatabaseToFile()
+    {
+        var connStr = "Host=localhost;Port=5432;Database=jgf_db;Username=jgf_app;Password=JgfSecure_AppPassword2026!;";
+        var options = new DbContextOptionsBuilder<JgfDbContext>()
+            .UseNpgsql(connStr)
+            .Options;
+        var factory = new TestExportContextFactory(options);
+        var exportService = new ExcelExportService(factory);
+        var bytes = await exportService.ExportFullDatabaseToExcelAsync();
+        var outputPath = @"c:\Users\Rejolin Solomon J\Downloads\JGF Finance Software\JGF_Database_Export.xlsx";
+        await File.WriteAllBytesAsync(outputPath, bytes);
+        bytes.Length.Should().BeGreaterThan(2000);
+    }
+
+    private class TestExportContextFactory : IDbContextFactory<JgfDbContext>
+    {
+        private readonly DbContextOptions<JgfDbContext> _options;
+        public TestExportContextFactory(DbContextOptions<JgfDbContext> options) => _options = options;
+        public JgfDbContext CreateDbContext() => new(_options);
+        public Task<JgfDbContext> CreateDbContextAsync(CancellationToken cancellationToken = default) => Task.FromResult(new JgfDbContext(_options));
+    }
+
+    [Fact]
     public async Task DashboardService_ShouldReturnCompleteKpisAndReflectCustodySplit()
     {
         using var context = CreateInMemoryContext();

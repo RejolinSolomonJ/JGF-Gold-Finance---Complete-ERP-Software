@@ -182,7 +182,8 @@ public partial class App : System.Windows.Application
                         sp.GetRequiredService<IDbContextFactory<JgfDbContext>>(),
                         sp.GetRequiredService<INumberSeriesService>(),
                         sp.GetRequiredService<IPermissionService>()));
-                    services.AddTransient<IExcelExportService, ExcelExportService>();
+                    services.AddTransient<IExcelExportService>(sp => new ExcelExportService(
+                        sp.GetRequiredService<IDbContextFactory<JgfDbContext>>()));
                     services.AddTransient<IJlReportService, JlReportService>();
                     services.AddTransient<IDashboardService>(sp => new DashboardService(
                         sp.GetRequiredService<IDbContextFactory<JgfDbContext>>(),
