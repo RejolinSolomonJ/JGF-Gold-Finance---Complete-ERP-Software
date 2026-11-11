@@ -354,18 +354,21 @@
                             </Border>
                             <DataGrid x:Name="GridCustomerLoans" Grid.Row="1" AutoGenerateColumns="False" CanUserAddRows="False"
                                       IsReadOnly="True" RowHeight="36" AlternatingRowBackground="#F8FAFC"
+                                      ScrollViewer.HorizontalScrollBarVisibility="Auto" ScrollViewer.VerticalScrollBarVisibility="Auto"
+                                      ScrollViewer.CanContentScroll="True" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto"
+                                      CanUserResizeColumns="True" SelectionUnit="CellOrRowHeader" ClipboardCopyMode="ExcludeHeader"
                                       GridLinesVisibility="Horizontal" HorizontalGridLinesBrush="#E2E8F0" BorderThickness="0" Background="White">
                                 <DataGrid.Columns>
-                                    <DataGridTextColumn Header="GL Number" Binding="{Binding LoanNumber}" FontWeight="Bold" Width="140"/>
-                                    <DataGridTextColumn Header="Pledge Date" Binding="{Binding PledgeDate, StringFormat={}{0:dd-MMM-yyyy}}" Width="110"
+                                    <DataGridTextColumn Header="GL Number" Binding="{Binding LoanNumber}" FontWeight="Bold" Width="175" MinWidth="165"/>
+                                    <DataGridTextColumn Header="Pledge Date" Binding="{Binding PledgeDate, StringFormat={}{0:dd-MMM-yyyy}}" Width="120" MinWidth="110"
                                                         HeaderStyle="{StaticResource CenterAlignedDataGridHeader}" ElementStyle="{StaticResource CenterAlignedDataGridCellText}"/>
-                                    <DataGridTextColumn Header="Scheme &amp; Rate" Binding="{Binding SchemeInfo}" Width="150"/>
-                                    <DataGridTextColumn Header="Pledged Jewels" Binding="{Binding JewelDetails}" Width="*" MinWidth="160"/>
-                                    <DataGridTextColumn Header="Original Loan (₹)" Binding="{Binding OriginalPrincipal, StringFormat={}{0:N2}}" Width="120"
+                                    <DataGridTextColumn Header="Scheme &amp; Rate" Binding="{Binding SchemeInfo}" Width="160" MinWidth="140"/>
+                                    <DataGridTextColumn Header="Pledged Jewels" Binding="{Binding JewelDetails}" Width="240" MinWidth="160"/>
+                                    <DataGridTextColumn Header="Original Loan (₹)" Binding="{Binding OriginalPrincipal, StringFormat={}{0:N2}}" Width="130" MinWidth="120"
                                                         HeaderStyle="{StaticResource RightAlignedDataGridHeader}" ElementStyle="{StaticResource RightAlignedDataGridCellText}"/>
-                                    <DataGridTextColumn Header="Principal Paid (₹)" Binding="{Binding PrincipalPaid, StringFormat={}{0:N2}}" Width="115"
+                                    <DataGridTextColumn Header="Principal Paid (₹)" Binding="{Binding PrincipalPaid, StringFormat={}{0:N2}}" Width="130" MinWidth="120"
                                                         HeaderStyle="{StaticResource RightAlignedDataGridHeader}" ElementStyle="{StaticResource RightAlignedDataGridCellText}"/>
-                                    <DataGridTextColumn Header="Remaining Bal (₹)" Binding="{Binding RemainingBalance, StringFormat={}{0:N2}}" Width="125" FontWeight="Bold"
+                                    <DataGridTextColumn Header="Remaining Bal (₹)" Binding="{Binding RemainingBalance, StringFormat={}{0:N2}}" Width="135" MinWidth="125" FontWeight="Bold"
                                                         HeaderStyle="{StaticResource RightAlignedDataGridHeader}">
                                         <DataGridTextColumn.ElementStyle>
                                             <Style TargetType="TextBlock" BasedOn="{StaticResource RightAlignedDataGridCellText}">
@@ -373,7 +376,7 @@
                                             </Style>
                                         </DataGridTextColumn.ElementStyle>
                                     </DataGridTextColumn>
-                                    <DataGridTextColumn Header="Monthly Due (₹)" Binding="{Binding MonthlyInterest, StringFormat={}{0:N2}}" Width="115" FontWeight="SemiBold"
+                                    <DataGridTextColumn Header="Monthly Due (₹)" Binding="{Binding MonthlyInterest, StringFormat={}{0:N2}}" Width="130" MinWidth="120" FontWeight="SemiBold"
                                                         HeaderStyle="{StaticResource RightAlignedDataGridHeader}">
                                         <DataGridTextColumn.ElementStyle>
                                             <Style TargetType="TextBlock" BasedOn="{StaticResource RightAlignedDataGridCellText}">
@@ -381,9 +384,9 @@
                                             </Style>
                                         </DataGridTextColumn.ElementStyle>
                                     </DataGridTextColumn>
-                                    <DataGridTextColumn Header="Accrued Interest (₹)" Binding="{Binding AccruedInterest, StringFormat={}{0:N2}}" Width="125"
+                                    <DataGridTextColumn Header="Accrued Interest (₹)" Binding="{Binding AccruedInterest, StringFormat={}{0:N2}}" Width="130" MinWidth="120"
                                                         HeaderStyle="{StaticResource RightAlignedDataGridHeader}" ElementStyle="{StaticResource RightAlignedDataGridCellText}"/>
-                                    <DataGridTextColumn Header="Pay to Close Now (₹)" Binding="{Binding PayToCloseNow, StringFormat={}{0:N2}}" Width="135" FontWeight="Bold"
+                                    <DataGridTextColumn Header="Pay to Close Now (₹)" Binding="{Binding PayToCloseNow, StringFormat={}{0:N2}}" Width="140" MinWidth="130" FontWeight="Bold"
                                                         HeaderStyle="{StaticResource RightAlignedDataGridHeader}">
                                         <DataGridTextColumn.ElementStyle>
                                             <Style TargetType="TextBlock" BasedOn="{StaticResource RightAlignedDataGridCellText}">
@@ -391,7 +394,7 @@
                                             </Style>
                                         </DataGridTextColumn.ElementStyle>
                                     </DataGridTextColumn>
-                                    <DataGridTextColumn Header="Status" Binding="{Binding Status}" Width="85"
+                                    <DataGridTextColumn Header="Status" Binding="{Binding Status}" Width="105" MinWidth="90"
                                                         HeaderStyle="{StaticResource CenterAlignedDataGridHeader}" ElementStyle="{StaticResource CenterAlignedDataGridCellText}"/>
                                     <DataGridTemplateColumn Header="Action" Width="130">
                                         <DataGridTemplateColumn.CellTemplate>

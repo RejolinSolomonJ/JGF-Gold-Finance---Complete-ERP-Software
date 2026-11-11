@@ -84,9 +84,12 @@
                         <RowDefinition Height="*"/>
                         <RowDefinition Height="36"/>
                     </Grid.RowDefinitions>
-                    <DataGrid x:Name="GridOutstanding" Grid.Row="0" AutoGenerateColumns="False" IsReadOnly="True" BorderThickness="0" RowHeight="24">
+                    <DataGrid x:Name="GridOutstanding" Grid.Row="0" AutoGenerateColumns="False" IsReadOnly="True" BorderThickness="0" RowHeight="28"
+                              ScrollViewer.HorizontalScrollBarVisibility="Auto" ScrollViewer.VerticalScrollBarVisibility="Auto"
+                              ScrollViewer.CanContentScroll="True" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto"
+                              CanUserResizeColumns="True" SelectionUnit="CellOrRowHeader" ClipboardCopyMode="ExcludeHeader">
                         <DataGrid.Columns>
-                            <DataGridTextColumn Header="GL #" Binding="{Binding GlNumber}" FontWeight="SemiBold" Width="95"/>
+                            <DataGridTextColumn Header="GL #" Binding="{Binding GlNumber}" FontWeight="Bold" Width="175" MinWidth="165"/>
                             <DataGridTextColumn Header="Pledge Date" Binding="{Binding PledgeDate, StringFormat={}{0:dd-MMM-yyyy}}" Width="95"/>
                             <DataGridTextColumn Header="Customer Name" Binding="{Binding CustomerName}" Width="140"/>
                             <DataGridTextColumn Header="Phone" Binding="{Binding CustomerPhone}" Width="100"/>
@@ -158,9 +161,12 @@
                         <RowDefinition Height="*"/>
                         <RowDefinition Height="36"/>
                     </Grid.RowDefinitions>
-                    <DataGrid x:Name="GridPledge" Grid.Row="0" AutoGenerateColumns="False" IsReadOnly="True" BorderThickness="0" RowHeight="24">
+                    <DataGrid x:Name="GridPledge" Grid.Row="0" AutoGenerateColumns="False" IsReadOnly="True" BorderThickness="0" RowHeight="28"
+                              ScrollViewer.HorizontalScrollBarVisibility="Auto" ScrollViewer.VerticalScrollBarVisibility="Auto"
+                              ScrollViewer.CanContentScroll="True" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto"
+                              CanUserResizeColumns="True" SelectionUnit="CellOrRowHeader" ClipboardCopyMode="ExcludeHeader">
                         <DataGrid.Columns>
-                            <DataGridTextColumn Header="GL #" Binding="{Binding GlNumber}" FontWeight="SemiBold" Width="100"/>
+                            <DataGridTextColumn Header="GL #" Binding="{Binding GlNumber}" FontWeight="Bold" Width="175" MinWidth="165"/>
                             <DataGridTextColumn Header="Pledge Date" Binding="{Binding PledgeDate, StringFormat={}{0:dd-MMM-yyyy}}" Width="100"/>
                             <DataGridTextColumn Header="Maturity Date" Binding="{Binding MaturityDate, StringFormat={}{0:dd-MMM-yyyy}}" Width="100"/>
                             <DataGridTextColumn Header="Customer Name" Binding="{Binding CustomerName}" Width="160"/>
@@ -195,11 +201,14 @@
                         <RowDefinition Height="*"/>
                         <RowDefinition Height="36"/>
                     </Grid.RowDefinitions>
-                    <DataGrid x:Name="GridRelease" Grid.Row="0" AutoGenerateColumns="False" IsReadOnly="True" BorderThickness="0" RowHeight="24">
+                    <DataGrid x:Name="GridRelease" Grid.Row="0" AutoGenerateColumns="False" IsReadOnly="True" BorderThickness="0" RowHeight="28"
+                              ScrollViewer.HorizontalScrollBarVisibility="Auto" ScrollViewer.VerticalScrollBarVisibility="Auto"
+                              ScrollViewer.CanContentScroll="True" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto"
+                              CanUserResizeColumns="True" SelectionUnit="CellOrRowHeader" ClipboardCopyMode="ExcludeHeader">
                         <DataGrid.Columns>
-                            <DataGridTextColumn Header="Receipt #" Binding="{Binding ReceiptNumber}" FontWeight="SemiBold" Width="110"/>
-                            <DataGridTextColumn Header="Release Date" Binding="{Binding ReleaseDate, StringFormat={}{0:dd-MMM-yyyy}}" Width="100"/>
-                            <DataGridTextColumn Header="GL #" Binding="{Binding GlNumber}" FontWeight="SemiBold" Width="100"/>
+                            <DataGridTextColumn Header="Receipt #" Binding="{Binding ReceiptNumber}" FontWeight="SemiBold" Width="130"/>
+                            <DataGridTextColumn Header="Release Date" Binding="{Binding ReleaseDate, StringFormat={}{0:dd-MMM-yyyy}}" Width="110"/>
+                            <DataGridTextColumn Header="GL #" Binding="{Binding GlNumber}" FontWeight="Bold" Width="175" MinWidth="165"/>
                             <DataGridTextColumn Header="Pledged On" Binding="{Binding OriginalPledgeDate, StringFormat={}{0:dd-MMM-yyyy}}" Width="95"/>
                             <DataGridTextColumn Header="Customer Name" Binding="{Binding CustomerName}" Width="150"/>
                             <DataGridTextColumn Header="Scheme" Binding="{Binding SchemeName}" Width="110"/>
@@ -304,9 +313,12 @@
                         <RowDefinition Height="*"/>
                         <RowDefinition Height="36"/>
                     </Grid.RowDefinitions>
-                    <DataGrid x:Name="GridJlStock" Grid.Row="0" AutoGenerateColumns="False" IsReadOnly="True" BorderThickness="0" RowHeight="24">
+                    <DataGrid x:Name="GridJlStock" Grid.Row="0" AutoGenerateColumns="False" IsReadOnly="True" BorderThickness="0" RowHeight="28"
+                              ScrollViewer.HorizontalScrollBarVisibility="Auto" ScrollViewer.VerticalScrollBarVisibility="Auto"
+                              ScrollViewer.CanContentScroll="True" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto"
+                              CanUserResizeColumns="True" SelectionUnit="CellOrRowHeader" ClipboardCopyMode="ExcludeHeader">
                         <DataGrid.Columns>
-                            <DataGridTextColumn Header="GL #" Binding="{Binding GlNumber}" FontWeight="SemiBold" Width="95"/>
+                            <DataGridTextColumn Header="GL #" Binding="{Binding GlNumber}" FontWeight="Bold" Width="175" MinWidth="165"/>
                             <DataGridTextColumn Header="Packet #" Binding="{Binding PacketNumber}" Width="80"/>
                             <DataGridTextColumn Header="Pledge Date" Binding="{Binding PledgeDate, StringFormat={}{0:dd-MMM-yyyy}}" Width="95"/>
                             <DataGridTextColumn Header="Customer" Binding="{Binding CustomerName}" Width="130"/>
@@ -342,11 +354,14 @@
                         <RowDefinition Height="*"/>
                         <RowDefinition Height="36"/>
                     </Grid.RowDefinitions>
-                    <DataGrid x:Name="GridPostal" Grid.Row="0" AutoGenerateColumns="False" IsReadOnly="True" BorderThickness="0" RowHeight="24">
+                    <DataGrid x:Name="GridPostal" Grid.Row="0" AutoGenerateColumns="False" IsReadOnly="True" BorderThickness="0" RowHeight="28"
+                              ScrollViewer.HorizontalScrollBarVisibility="Auto" ScrollViewer.VerticalScrollBarVisibility="Auto"
+                              ScrollViewer.CanContentScroll="True" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto"
+                              CanUserResizeColumns="True" SelectionUnit="CellOrRowHeader" ClipboardCopyMode="ExcludeHeader">
                         <DataGrid.Columns>
-                            <DataGridTextColumn Header="Date" Binding="{Binding Date, StringFormat={}{0:dd-MMM-yyyy}}" Width="100"/>
-                            <DataGridTextColumn Header="Voucher #" Binding="{Binding VoucherNumber}" FontWeight="SemiBold" Width="110"/>
-                            <DataGridTextColumn Header="GL #" Binding="{Binding GlNumber}" FontWeight="SemiBold" Width="100"/>
+                            <DataGridTextColumn Header="Date" Binding="{Binding Date, StringFormat={}{0:dd-MMM-yyyy}}" Width="110"/>
+                            <DataGridTextColumn Header="Voucher #" Binding="{Binding VoucherNumber}" FontWeight="SemiBold" Width="120"/>
+                            <DataGridTextColumn Header="GL #" Binding="{Binding GlNumber}" FontWeight="Bold" Width="175" MinWidth="165"/>
                             <DataGridTextColumn Header="Customer Name" Binding="{Binding CustomerName}" Width="160"/>
                             <DataGridTextColumn Header="Phone" Binding="{Binding CustomerPhone}" Width="110"/>
                             <DataGridTextColumn Header="Postal Charge (₹)" Binding="{Binding Amount, StringFormat={}{0:N2}}" FontWeight="Bold" Foreground="#7C3AED" Width="120"/>
@@ -371,11 +386,14 @@
                         <RowDefinition Height="*"/>
                         <RowDefinition Height="36"/>
                     </Grid.RowDefinitions>
-                    <DataGrid x:Name="GridInterest" Grid.Row="0" AutoGenerateColumns="False" IsReadOnly="True" BorderThickness="0" RowHeight="24">
+                    <DataGrid x:Name="GridInterest" Grid.Row="0" AutoGenerateColumns="False" IsReadOnly="True" BorderThickness="0" RowHeight="28"
+                              ScrollViewer.HorizontalScrollBarVisibility="Auto" ScrollViewer.VerticalScrollBarVisibility="Auto"
+                              ScrollViewer.CanContentScroll="True" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto"
+                              CanUserResizeColumns="True" SelectionUnit="CellOrRowHeader" ClipboardCopyMode="ExcludeHeader">
                         <DataGrid.Columns>
-                            <DataGridTextColumn Header="Receipt #" Binding="{Binding ReceiptNumber}" FontWeight="SemiBold" Width="110"/>
-                            <DataGridTextColumn Header="Receipt Date" Binding="{Binding ReceiptDate, StringFormat={}{0:dd-MMM-yyyy}}" Width="100"/>
-                            <DataGridTextColumn Header="GL #" Binding="{Binding GlNumber}" FontWeight="SemiBold" Width="100"/>
+                            <DataGridTextColumn Header="Receipt #" Binding="{Binding ReceiptNumber}" FontWeight="SemiBold" Width="120"/>
+                            <DataGridTextColumn Header="Receipt Date" Binding="{Binding ReceiptDate, StringFormat={}{0:dd-MMM-yyyy}}" Width="110"/>
+                            <DataGridTextColumn Header="GL #" Binding="{Binding GlNumber}" FontWeight="Bold" Width="175" MinWidth="165"/>
                             <DataGridTextColumn Header="Customer Name" Binding="{Binding CustomerName}" Width="150"/>
                             <DataGridTextColumn Header="Scheme" Binding="{Binding SchemeName}" Width="100"/>
                             <DataGridTextColumn Header="Period From" Binding="{Binding PeriodFrom, StringFormat={}{0:dd-MMM-yyyy}}" Width="95"/>

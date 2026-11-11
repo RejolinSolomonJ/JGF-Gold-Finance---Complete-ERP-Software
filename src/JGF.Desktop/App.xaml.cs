@@ -1,5 +1,9 @@
 using System.IO;
 using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Data;
+using System.Windows.Input;
+using System.Windows.Media;
 using JGF.Application.Accounting;
 using JGF.Application.Dashboard;
 using JGF.Application.Loans;
@@ -24,6 +28,9 @@ namespace JGF.Desktop;
 public partial class App : System.Windows.Application
 {
     private IHost? _host;
+
+    public static readonly RoutedUICommand CopyEntireRowCommand = new RoutedUICommand(
+        "Copy Entire Row", "CopyEntireRow", typeof(App));
 
     public static string ProgramDataDirectory =>
         Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), "JGF");
@@ -65,6 +72,9 @@ public partial class App : System.Windows.Application
             .CreateLogger();
 
         Log.Information("=== JGF Jewel Gold Finance Desktop Application Starting ===");
+
+        // Register Global DataGrid Behaviors (Universal Cell/Row Copyability via Ctrl+C & Right Click)
+        RegisterGlobalDataGridBehaviors();
 
         // 2. Register Global Exception Handlers to Prevent "Not Responding" and Sudden Crashes
         DispatcherUnhandledException += (sender, args) =>
@@ -244,4 +254,205 @@ public partial class App : System.Windows.Application
         Log.CloseAndFlush();
         base.OnExit(e);
     }
+
+    #region Universal DataGrid Copyability & Accessibility
+    private static void RegisterGlobalDataGridBehaviors()
+    {
+        // 1. Right-click on any DataGridCell focuses and selects it immediately
+        EventManager.RegisterClassHandler(
+            typeof(DataGridCell),
+            UIElement.PreviewMouseRightButtonDownEvent,
+            new MouseButtonEventHandler((sender, _) =>
+            {
+                if (sender is DataGridCell cell)
+                {
+                    cell.Focus();
+                    cell.IsSelected = true;
+                }
+            }));
+
+        // 2. Class CommandBinding for ApplicationCommands.Copy on DataGridCell (Cell Copy / Ctrl+C)
+        CommandManager.RegisterClassCommandBinding(
+            typeof(DataGridCell),
+            new CommandBinding(ApplicationCommands.Copy, (sender, e) =>
+            {
+                if (sender is not DataGridCell cell) return;
+                var grid = FindVisualParent<DataGrid>(cell);
+
+                // If user selected multiple cells across rows, let default WPF DataGrid multi-cell copy run
+                if (grid != null && grid.SelectedCells.Count > 1)
+                {
+                    return; // Bubbles up to DataGrid built-in copy
+                }
+
+                var text = ExtractCellText(cell);
+                if (!string.IsNullOrEmpty(text))
+                {
+                    try
+                    {
+                        Clipboard.SetDataObject(text, true);
+                        e.Handled = true;
+                    }
+                    catch
+                    {
+                        // Fallback to standard command routing
+                    }
+                }
+            },
+            (sender, e) =>
+            {
+                e.CanExecute = true;
+                e.Handled = true;
+            }));
+
+        // 3. Class CommandBinding for CopyEntireRowCommand on DataGridCell
+        CommandManager.RegisterClassCommandBinding(
+            typeof(DataGridCell),
+            new CommandBinding(CopyEntireRowCommand, (sender, e) =>
+            {
+                if (sender is not DataGridCell cell) return;
+                var grid = FindVisualParent<DataGrid>(cell);
+                if (grid == null) return;
+
+                var rowItem = cell.DataContext;
+                if (rowItem == null) return;
+
+                var values = new List<string>();
+                foreach (var col in grid.Columns.OrderBy(c => c.DisplayIndex))
+                {
+                    if (col.Visibility != Visibility.Visible) continue;
+                    var val = ExtractColumnValue(col, rowItem);
+                    if (!string.IsNullOrEmpty(val))
+                    {
+                        values.Add(val.Replace("\r", "").Replace("\n", " ").Trim());
+                    }
+                }
+
+                if (values.Count > 0)
+                {
+                    var rowLine = string.Join("\t", values);
+                    try
+                    {
+                        Clipboard.SetDataObject(rowLine, true);
+                        e.Handled = true;
+                    }
+                    catch { }
+                }
+            },
+            (sender, e) =>
+            {
+                e.CanExecute = true;
+                e.Handled = true;
+            }));
+    }
+
+    private static string ExtractCellText(DataGridCell cell)
+    {
+        // 1. Direct TextBlock
+        if (cell.Content is TextBlock tb && !string.IsNullOrWhiteSpace(tb.Text))
+        {
+            return tb.Text.Trim();
+        }
+
+        // 2. FrameworkElement containing TextBlocks (e.g. TemplateColumns with badges or formatted text)
+        if (cell.Content is FrameworkElement fe)
+        {
+            var textBlocks = FindVisualChildren<TextBlock>(fe).ToList();
+            if (textBlocks.Count > 0)
+            {
+                var combined = string.Join(" ", textBlocks.Select(t => t.Text).Where(t => !string.IsNullOrWhiteSpace(t)));
+                if (!string.IsNullOrEmpty(combined)) return combined.Trim();
+            }
+        }
+
+        // 3. DataGridBoundColumn binding
+        if (cell.Column is DataGridBoundColumn boundCol && boundCol.Binding is Binding b && cell.DataContext != null)
+        {
+            var propPath = b.Path?.Path;
+            if (!string.IsNullOrEmpty(propPath))
+            {
+                var prop = cell.DataContext.GetType().GetProperty(propPath);
+                var val = prop?.GetValue(cell.DataContext);
+                if (val != null)
+                {
+                    return !string.IsNullOrEmpty(b.StringFormat)
+                        ? string.Format(b.StringFormat, val).Trim()
+                        : val.ToString()?.Trim() ?? "";
+                }
+            }
+        }
+
+        // 4. Column ClipboardContentBinding
+        if (cell.Column.ClipboardContentBinding is Binding ccb && cell.DataContext != null)
+        {
+            var propPath = ccb.Path?.Path;
+            if (!string.IsNullOrEmpty(propPath))
+            {
+                var prop = cell.DataContext.GetType().GetProperty(propPath);
+                var val = prop?.GetValue(cell.DataContext);
+                if (val != null) return val.ToString()?.Trim() ?? "";
+            }
+        }
+
+        return cell.Content?.ToString()?.Trim() ?? "";
+    }
+
+    private static string ExtractColumnValue(DataGridColumn col, object rowItem)
+    {
+        if (col is DataGridBoundColumn boundCol && boundCol.Binding is Binding b)
+        {
+            var propPath = b.Path?.Path;
+            if (!string.IsNullOrEmpty(propPath))
+            {
+                var prop = rowItem.GetType().GetProperty(propPath);
+                var val = prop?.GetValue(rowItem);
+                if (val != null)
+                {
+                    return !string.IsNullOrEmpty(b.StringFormat)
+                        ? string.Format(b.StringFormat, val)
+                        : val.ToString() ?? "";
+                }
+            }
+        }
+
+        if (col.ClipboardContentBinding is Binding ccb)
+        {
+            var propPath = ccb.Path?.Path;
+            if (!string.IsNullOrEmpty(propPath))
+            {
+                var prop = rowItem.GetType().GetProperty(propPath);
+                var val = prop?.GetValue(rowItem);
+                if (val != null) return val.ToString() ?? "";
+            }
+        }
+
+        return "";
+    }
+
+    private static T? FindVisualParent<T>(DependencyObject child) where T : DependencyObject
+    {
+        var parentObj = VisualTreeHelper.GetParent(child);
+        while (parentObj != null)
+        {
+            if (parentObj is T parent) return parent;
+            parentObj = VisualTreeHelper.GetParent(parentObj);
+        }
+        return null;
+    }
+
+    private static IEnumerable<T> FindVisualChildren<T>(DependencyObject depObj) where T : DependencyObject
+    {
+        if (depObj == null) yield break;
+        int count = VisualTreeHelper.GetChildrenCount(depObj);
+        for (int i = 0; i < count; i++)
+        {
+            var child = VisualTreeHelper.GetChild(depObj, i);
+            if (child is T t) yield return t;
+            foreach (var childOfChild in FindVisualChildren<T>(child))
+            {
+                yield return childOfChild;
+            }
+        }
+    }
+    #endregion
 }

@@ -76,16 +76,19 @@
                         <TextBlock Text="Select checkbox to mark jewels RELEASED back to shop locker:" Foreground="{StaticResource TextSecondaryBrush}" DockPanel.Dock="Right" VerticalAlignment="Center" FontSize="12"/>
                     </DockPanel>
                 </Border>
-                <DataGrid x:Name="GridLinkedLoans" Grid.Row="1" AutoGenerateColumns="False" CanUserAddRows="False" TabIndex="3">
+                <DataGrid x:Name="GridLinkedLoans" Grid.Row="1" AutoGenerateColumns="False" CanUserAddRows="False" TabIndex="3"
+                          ScrollViewer.HorizontalScrollBarVisibility="Auto" ScrollViewer.VerticalScrollBarVisibility="Auto"
+                          ScrollViewer.CanContentScroll="True" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto"
+                          CanUserResizeColumns="True" SelectionUnit="CellOrRowHeader" ClipboardCopyMode="ExcludeHeader">
                     <DataGrid.Columns>
                         <DataGridCheckBoxColumn Header="Release Jewels" Binding="{Binding IsSelectedForRelease, UpdateSourceTrigger=PropertyChanged}" Width="110"/>
-                        <DataGridTextColumn Header="Customer Loan No" Binding="{Binding LoanNumber}" Width="150" IsReadOnly="True" FontWeight="SemiBold"/>
-                        <DataGridTextColumn Header="Customer Name" Binding="{Binding CustomerName}" Width="180" IsReadOnly="True"/>
-                        <DataGridTextColumn Header="Pledged Net Wt (g)" Binding="{Binding NetWeight, StringFormat={}{0:F3}}" Width="130" IsReadOnly="True"
+                        <DataGridTextColumn Header="Customer Loan No" Binding="{Binding LoanNumber}" Width="175" MinWidth="165" IsReadOnly="True" FontWeight="Bold"/>
+                        <DataGridTextColumn Header="Customer Name" Binding="{Binding CustomerName}" Width="185" MinWidth="160" IsReadOnly="True"/>
+                        <DataGridTextColumn Header="Pledged Net Wt (g)" Binding="{Binding NetWeight, StringFormat={}{0:F3}}" Width="135" MinWidth="120" IsReadOnly="True"
                                             HeaderStyle="{StaticResource RightAlignedDataGridHeader}" ElementStyle="{StaticResource RightAlignedDataGridCellText}"/>
-                        <DataGridTextColumn Header="Customer Principal (₹)" Binding="{Binding LoanAmount, StringFormat={}{0:N2}}" Width="150" IsReadOnly="True" FontWeight="SemiBold"
+                        <DataGridTextColumn Header="Customer Principal (₹)" Binding="{Binding LoanAmount, StringFormat={}{0:N2}}" Width="160" MinWidth="140" IsReadOnly="True" FontWeight="SemiBold"
                                             HeaderStyle="{StaticResource RightAlignedDataGridHeader}" ElementStyle="{StaticResource RightAlignedDataGridCellText}"/>
-                        <DataGridTextColumn Header="Custody Status" Binding="{Binding CustodyStatus}" Width="*" IsReadOnly="True"/>
+                        <DataGridTextColumn Header="Custody Status" Binding="{Binding CustodyStatus}" Width="180" MinWidth="140" IsReadOnly="True"/>
                     </DataGrid.Columns>
                 </DataGrid>
             </Grid>

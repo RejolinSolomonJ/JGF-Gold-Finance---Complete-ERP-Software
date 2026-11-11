@@ -121,14 +121,17 @@
                     <Border Grid.Row="2" Style="{StaticResource ModernCardStyle}" Padding="0" ClipToBounds="True">
                         <DataGrid x:Name="GridOverdueLoans" AutoGenerateColumns="False" CanUserAddRows="False"
                                   IsReadOnly="False" SelectionMode="Single" SelectionChanged="OnOverdueLoanSelected"
+                                  ScrollViewer.HorizontalScrollBarVisibility="Auto" ScrollViewer.VerticalScrollBarVisibility="Auto"
+                                  ScrollViewer.CanContentScroll="True" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto"
+                                  CanUserResizeColumns="True" SelectionUnit="CellOrRowHeader" ClipboardCopyMode="ExcludeHeader"
                                   RowHeight="36" AlternatingRowBackground="#F8FAFC" GridLinesVisibility="Horizontal"
                                   HorizontalGridLinesBrush="#E2E8F0" BorderThickness="0" Background="White">
                             <DataGrid.Columns>
                                 <DataGridCheckBoxColumn Header="Select" Binding="{Binding IsSelected, UpdateSourceTrigger=PropertyChanged}" Width="55"/>
-                                <DataGridTextColumn Header="GL Number" Binding="{Binding LoanNumber}" IsReadOnly="True" FontWeight="Bold" Width="145"/>
-                                <DataGridTextColumn Header="Customer Name" Binding="{Binding CustomerName}" IsReadOnly="True" Width="*" MinWidth="160"/>
-                                <DataGridTextColumn Header="Mobile No" Binding="{Binding CustomerMobile}" IsReadOnly="True" Width="115"/>
-                                <DataGridTextColumn Header="Pledge Date" Binding="{Binding PledgeDate, StringFormat={}{0:dd-MMM-yyyy}}" IsReadOnly="True" Width="110"
+                                <DataGridTextColumn Header="GL Number" Binding="{Binding LoanNumber}" IsReadOnly="True" FontWeight="Bold" Width="175" MinWidth="165"/>
+                                <DataGridTextColumn Header="Customer Name" Binding="{Binding CustomerName}" IsReadOnly="True" Width="185" MinWidth="160"/>
+                                <DataGridTextColumn Header="Mobile No" Binding="{Binding CustomerMobile}" IsReadOnly="True" Width="130" MinWidth="115"/>
+                                <DataGridTextColumn Header="Pledge Date" Binding="{Binding PledgeDate, StringFormat={}{0:dd-MMM-yyyy}}" IsReadOnly="True" Width="120" MinWidth="110"
                                                     HeaderStyle="{StaticResource CenterAlignedDataGridHeader}" ElementStyle="{StaticResource CenterAlignedDataGridCellText}"/>
                                 <DataGridTextColumn Header="Months" Binding="{Binding ElapsedMonths}" IsReadOnly="True" Width="70"
                                                     HeaderStyle="{StaticResource RightAlignedDataGridHeader}" ElementStyle="{StaticResource RightAlignedDataGridCellText}"/>

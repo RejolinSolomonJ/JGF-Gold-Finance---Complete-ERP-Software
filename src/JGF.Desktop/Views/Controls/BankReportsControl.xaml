@@ -27,44 +27,53 @@
         </Border>
 
         <!-- 1. Jewel Stock Custody Grid -->
-        <DataGrid x:Name="GridStockCustody" Grid.Row="1" AutoGenerateColumns="False" IsReadOnly="True" BorderBrush="#CCCCCC" Visibility="Visible">
+        <DataGrid x:Name="GridStockCustody" Grid.Row="1" AutoGenerateColumns="False" IsReadOnly="True" BorderBrush="#CCCCCC" Visibility="Visible"
+                  ScrollViewer.HorizontalScrollBarVisibility="Auto" ScrollViewer.VerticalScrollBarVisibility="Auto"
+                  ScrollViewer.CanContentScroll="True" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto"
+                  CanUserResizeColumns="True" SelectionUnit="CellOrRowHeader" ClipboardCopyMode="ExcludeHeader">
             <DataGrid.Columns>
-                <DataGridTextColumn Header="Custody Location" Binding="{Binding CustodyLocation}" Width="260"/>
-                <DataGridTextColumn Header="GL Loan No" Binding="{Binding LoanNumber}" Width="130"/>
-                <DataGridTextColumn Header="Customer" Binding="{Binding CustomerName}" Width="160"/>
-                <DataGridTextColumn Header="Jewel Description" Binding="{Binding JewelDescription}" Width="200"/>
-                <DataGridTextColumn Header="Qty" Binding="{Binding Quantity}" Width="50"/>
-                <DataGridTextColumn Header="Gross (g)" Binding="{Binding GrossWeight, StringFormat={}{0:F3}}" Width="90"/>
-                <DataGridTextColumn Header="Net (g)" Binding="{Binding NetWeight, StringFormat={}{0:F3}}" Width="90"/>
-                <DataGridTextColumn Header="Appraised Value (₹)" Binding="{Binding AppraisedValue, StringFormat={}{0:N2}}" Width="140"/>
-                <DataGridTextColumn Header="Packet No" Binding="{Binding PacketNumber}" Width="*"/>
+                <DataGridTextColumn Header="Custody Location" Binding="{Binding CustodyLocation}" Width="200" MinWidth="180"/>
+                <DataGridTextColumn Header="GL Loan No" Binding="{Binding LoanNumber}" Width="175" MinWidth="165" FontWeight="Bold"/>
+                <DataGridTextColumn Header="Customer" Binding="{Binding CustomerName}" Width="180" MinWidth="160"/>
+                <DataGridTextColumn Header="Jewel Description" Binding="{Binding JewelDescription}" Width="200" MinWidth="160"/>
+                <DataGridTextColumn Header="Qty" Binding="{Binding Quantity}" Width="60"/>
+                <DataGridTextColumn Header="Gross (g)" Binding="{Binding GrossWeight, StringFormat={}{0:F3}}" Width="100"/>
+                <DataGridTextColumn Header="Net (g)" Binding="{Binding NetWeight, StringFormat={}{0:F3}}" Width="100"/>
+                <DataGridTextColumn Header="Appraised Value (₹)" Binding="{Binding AppraisedValue, StringFormat={}{0:N2}}" Width="150"/>
+                <DataGridTextColumn Header="Packet No" Binding="{Binding PacketNumber}" Width="120"/>
             </DataGrid.Columns>
         </DataGrid>
 
         <!-- 2. Pawn vs Bank Difference Grid -->
-        <DataGrid x:Name="GridPawnVsBank" Grid.Row="1" AutoGenerateColumns="False" IsReadOnly="True" BorderBrush="#CCCCCC" Visibility="Collapsed">
+        <DataGrid x:Name="GridPawnVsBank" Grid.Row="1" AutoGenerateColumns="False" IsReadOnly="True" BorderBrush="#CCCCCC" Visibility="Collapsed"
+                  ScrollViewer.HorizontalScrollBarVisibility="Auto" ScrollViewer.VerticalScrollBarVisibility="Auto"
+                  ScrollViewer.CanContentScroll="True" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto"
+                  CanUserResizeColumns="True" SelectionUnit="CellOrRowHeader" ClipboardCopyMode="ExcludeHeader">
             <DataGrid.Columns>
                 <DataGridTextColumn Header="Bank Name" Binding="{Binding BankName}" Width="180"/>
-                <DataGridTextColumn Header="Bank Pledge No" Binding="{Binding BankPledgeNumber}" Width="140"/>
-                <DataGridTextColumn Header="Customer Loan No" Binding="{Binding CustomerLoanNumber}" Width="140"/>
+                <DataGridTextColumn Header="Bank Pledge No" Binding="{Binding BankPledgeNumber}" Width="160"/>
+                <DataGridTextColumn Header="Customer Loan No" Binding="{Binding CustomerLoanNumber}" Width="175" MinWidth="165" FontWeight="Bold"/>
                 <DataGridTextColumn Header="Customer" Binding="{Binding CustomerName}" Width="180"/>
                 <DataGridTextColumn Header="Net Wt (g)" Binding="{Binding CustomerNetWeight, StringFormat={}{0:F3}}" Width="100"/>
-                <DataGridTextColumn Header="Customer Loan (₹)" Binding="{Binding CustomerLoanAmount, StringFormat={}{0:N2}}" Width="140"/>
-                <DataGridTextColumn Header="Bank Apportioned (₹)" Binding="{Binding BankApportionedAmount, StringFormat={}{0:N2}}" Width="150"/>
-                <DataGridTextColumn Header="Difference (₹)" Binding="{Binding Difference, StringFormat={}{0:N2}}" Width="*"/>
+                <DataGridTextColumn Header="Customer Loan (₹)" Binding="{Binding CustomerLoanAmount, StringFormat={}{0:N2}}" Width="150"/>
+                <DataGridTextColumn Header="Bank Apportioned (₹)" Binding="{Binding BankApportionedAmount, StringFormat={}{0:N2}}" Width="160"/>
+                <DataGridTextColumn Header="Difference (₹)" Binding="{Binding Difference, StringFormat={}{0:N2}}" Width="140"/>
             </DataGrid.Columns>
         </DataGrid>
 
         <!-- 3. Overdue Alert Grid -->
-        <DataGrid x:Name="GridOverdue" Grid.Row="1" AutoGenerateColumns="False" IsReadOnly="True" BorderBrush="#CCCCCC" Visibility="Collapsed">
+        <DataGrid x:Name="GridOverdue" Grid.Row="1" AutoGenerateColumns="False" IsReadOnly="True" BorderBrush="#CCCCCC" Visibility="Collapsed"
+                  ScrollViewer.HorizontalScrollBarVisibility="Auto" ScrollViewer.VerticalScrollBarVisibility="Auto"
+                  ScrollViewer.CanContentScroll="True" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto"
+                  CanUserResizeColumns="True" SelectionUnit="CellOrRowHeader" ClipboardCopyMode="ExcludeHeader">
             <DataGrid.Columns>
                 <DataGridTextColumn Header="Bank" Binding="{Binding BankName}" Width="180"/>
-                <DataGridTextColumn Header="Pledge Number" Binding="{Binding PledgeNumber}" Width="140"/>
-                <DataGridTextColumn Header="Bank A/C No" Binding="{Binding BankAccountOrLoanNumber}" Width="140"/>
-                <DataGridTextColumn Header="Pledge Date" Binding="{Binding PledgeDate, StringFormat={}{0:dd-MMM-yyyy}}" Width="110"/>
-                <DataGridTextColumn Header="Maturity Date" Binding="{Binding MaturityDate, StringFormat={}{0:dd-MMM-yyyy}}" Width="110"/>
-                <DataGridTextColumn Header="Bank Balance (₹)" Binding="{Binding DisbursedAmount, StringFormat={}{0:N2}}" Width="140"/>
-                <DataGridTextColumn Header="Urgency" Binding="{Binding Status}" Width="*"/>
+                <DataGridTextColumn Header="Pledge Number" Binding="{Binding PledgeNumber}" Width="150"/>
+                <DataGridTextColumn Header="Bank A/C No" Binding="{Binding BankAccountOrLoanNumber}" Width="150"/>
+                <DataGridTextColumn Header="Pledge Date" Binding="{Binding PledgeDate, StringFormat={}{0:dd-MMM-yyyy}}" Width="120"/>
+                <DataGridTextColumn Header="Maturity Date" Binding="{Binding MaturityDate, StringFormat={}{0:dd-MMM-yyyy}}" Width="120"/>
+                <DataGridTextColumn Header="Bank Balance (₹)" Binding="{Binding DisbursedAmount, StringFormat={}{0:N2}}" Width="150"/>
+                <DataGridTextColumn Header="Urgency" Binding="{Binding Status}" Width="140"/>
             </DataGrid.Columns>
         </DataGrid>
 
