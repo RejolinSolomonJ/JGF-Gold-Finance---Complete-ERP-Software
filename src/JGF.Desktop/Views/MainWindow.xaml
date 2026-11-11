@@ -143,10 +143,6 @@
             <StatusBarItem>
                 <TextBlock x:Name="TxtBackupWarning" Text="Backup: Up to date" Foreground="#CBD5E1"/>
             </StatusBarItem>
-            <Separator Background="#334155"/>
-            <StatusBarItem HorizontalAlignment="Right">
-                <TextBlock Text="Navigation: Tab=Next Field • Shift+Tab=Previous • Enter=Next • Esc=Cancel" Foreground="#64748B"/>
-            </StatusBarItem>
         </StatusBar>
     </Grid>
 </Window>
