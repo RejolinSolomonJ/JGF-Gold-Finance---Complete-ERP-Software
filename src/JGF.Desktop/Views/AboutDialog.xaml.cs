@@ -1,4 +1,6 @@
+using System.Diagnostics;
 using System.Windows;
+using System.Windows.Input;
 using JGF.Application.Updates;
 using JGF.Domain.Common;
 
@@ -72,6 +74,15 @@ public partial class AboutDialog : Window
     private void OnCloseClick(object sender, RoutedEventArgs e)
     {
         Close();
+    }
+
+    private void OnLinInfotechLinkClick(object sender, MouseButtonEventArgs e)
+    {
+        try
+        {
+            Process.Start(new ProcessStartInfo("https://www.linsinfotech.in") { UseShellExecute = true });
+        }
+        catch { }
     }
 }
 

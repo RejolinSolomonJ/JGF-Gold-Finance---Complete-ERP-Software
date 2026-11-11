@@ -82,10 +82,14 @@
         </GroupBox>
 
         <!-- Footer -->
-        <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Right">
-            <Button Content="Close" Width="100" Height="32" Click="OnCloseClick" 
+        <DockPanel Grid.Row="3" LastChildFill="False">
+            <TextBlock Cursor="Hand" ToolTip="Click to visit https://www.linsinfotech.in" MouseLeftButtonDown="OnLinInfotechLinkClick" VerticalAlignment="Center">
+                <Run Text="Developed by " Foreground="#64748B" FontSize="12"/>
+                <Run Text="Lin's Infotech Company Ltd." Foreground="#0284C7" FontWeight="Bold" TextDecorations="Underline" FontSize="12"/>
+            </TextBlock>
+            <Button DockPanel.Dock="Right" Content="Close" Width="100" Height="32" Click="OnCloseClick" 
                     Background="#E5E7EB" Foreground="#374151" FontWeight="SemiBold"/>
-        </StackPanel>
+        </DockPanel>
     </Grid>
 </Window>
 

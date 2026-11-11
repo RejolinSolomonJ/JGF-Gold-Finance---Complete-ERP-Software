@@ -1,4 +1,6 @@
+using System.Diagnostics;
 using System.Windows;
+using System.Windows.Input;
 using JGF.Application.Accounting;
 using JGF.Application.Dashboard;
 using JGF.Application.Loans;
@@ -590,4 +592,16 @@ public partial class MainWindow : Window
     });
 
     private void OnExitClick(object sender, RoutedEventArgs e) => Close();
+
+    private void OnLinInfotechLinkClick(object sender, MouseButtonEventArgs e)
+    {
+        try
+        {
+            Process.Start(new ProcessStartInfo("https://www.linsinfotech.in") { UseShellExecute = true });
+        }
+        catch (Exception ex)
+        {
+            Log.Warning(ex, "Failed to launch website.");
+        }
+    }
 }

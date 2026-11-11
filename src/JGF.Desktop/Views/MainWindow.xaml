@@ -135,13 +135,19 @@
         </Border>
 
         <!-- 4. Bottom Operational Status Bar -->
-        <StatusBar Grid.Row="3" Background="{StaticResource PrimaryDarkBlueBrush}" Foreground="#94A3B8">
+        <StatusBar Grid.Row="3" Background="{StaticResource PrimaryDarkBlueBrush}" Foreground="#94A3B8" Padding="12,3">
             <StatusBarItem>
                 <TextBlock x:Name="TxtDbStatus" Text="● DB: Connected (LAN PC1)" Foreground="{StaticResource SuccessGreenBrush}" FontWeight="SemiBold"/>
             </StatusBarItem>
             <Separator Background="#334155"/>
             <StatusBarItem>
                 <TextBlock x:Name="TxtBackupWarning" Text="Backup: Up to date" Foreground="#CBD5E1"/>
+            </StatusBarItem>
+            <StatusBarItem HorizontalAlignment="Right">
+                <TextBlock Cursor="Hand" ToolTip="Click to visit https://www.linsinfotech.in" MouseLeftButtonDown="OnLinInfotechLinkClick">
+                    <Run Text="Developed by " Foreground="#94A3B8" FontSize="11"/>
+                    <Run Text="Lin's Infotech Company Ltd." Foreground="#38BDF8" FontWeight="Bold" TextDecorations="Underline" FontSize="11"/>
+                </TextBlock>
             </StatusBarItem>
         </StatusBar>
     </Grid>

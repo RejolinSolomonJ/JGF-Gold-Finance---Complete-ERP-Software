@@ -1,7 +1,7 @@
 <Window x:Class="JGF.Desktop.Views.LoginDialog"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="JGF — User Login" Height="480" Width="440"
+        Title="JGF — User Login" Height="520" Width="440"
         Icon="pack://application:,,,/Assets/app.ico"
         WindowStartupLocation="CenterScreen" ResizeMode="NoResize"
         Background="#252526" Foreground="White">
@@ -9,6 +9,7 @@
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
@@ -33,6 +34,14 @@
             <Button Content="Exit" Width="100" Height="36" Style="{StaticResource SecondaryButtonStyle}" Click="OnCancelClick" Margin="0,0,10,0"/>
             <Button Content="Login" Width="130" Height="36" Style="{StaticResource PrimaryButtonStyle}" Click="OnLoginClick" IsDefault="True"/>
         </StackPanel>
+
+        <!-- Footer Developer Branding -->
+        <Border Grid.Row="3" Margin="0,16,0,0" Padding="0,10,0,0" BorderBrush="#383838" BorderThickness="0,1,0,0">
+            <TextBlock HorizontalAlignment="Center" Cursor="Hand" ToolTip="Click to visit https://www.linsinfotech.in" MouseLeftButtonDown="OnLinInfotechLinkClick">
+                <Run Text="Developed by " Foreground="#888888" FontSize="11"/>
+                <Run Text="Lin's Infotech Company Ltd." Foreground="#38BDF8" FontWeight="Bold" TextDecorations="Underline" FontSize="11"/>
+            </TextBlock>
+        </Border>
     </Grid>
 </Window>
 
