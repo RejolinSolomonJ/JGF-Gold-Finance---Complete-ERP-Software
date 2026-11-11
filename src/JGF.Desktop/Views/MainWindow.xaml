@@ -22,8 +22,14 @@
 
         <!-- 1. Top Brand Header -->
         <Border Grid.Row="0" Background="{StaticResource PrimaryDarkBlueBrush}" Padding="16,10" BorderBrush="#1E293B" BorderThickness="0,0,0,1">
-            <DockPanel LastChildFill="True">
-                <StackPanel Orientation="Horizontal" DockPanel.Dock="Left" VerticalAlignment="Center">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <!-- Left: Brand Logo & Title -->
+                <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
                     <Image Source="pack://application:,,,/Assets/logo.png" Height="44" Width="44" Margin="0,0,14,0" RenderOptions.BitmapScalingMode="HighQuality"/>
                     <StackPanel VerticalAlignment="Center">
                         <StackPanel Orientation="Horizontal">
@@ -34,23 +40,31 @@
                     </StackPanel>
                 </StackPanel>
                 
-                <StackPanel Orientation="Horizontal" DockPanel.Dock="Right" VerticalAlignment="Center">
-                    <Border Background="#1E293B" CornerRadius="4" Padding="10,4" Margin="0,0,12,0">
-                        <StackPanel Orientation="Horizontal">
-                            <TextBlock Text="User: " Foreground="#94A3B8" FontSize="12"/>
-                            <TextBlock x:Name="TxtCurrentUser" Text="Admin (Owner)" Foreground="White" FontWeight="SemiBold" FontSize="12" Margin="0,0,12,0"/>
+                <!-- Right End Corner: User, Role & Live Auto-Updating Date -->
+                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center" HorizontalAlignment="Right">
+                    <!-- User & Role Card -->
+                    <Border Background="#1E293B" CornerRadius="6" Padding="12,6" Margin="0,0,10,0" BorderBrush="#334155" BorderThickness="1">
+                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                            <TextBlock Text="👤 User: " Foreground="#94A3B8" FontSize="12"/>
+                            <TextBlock x:Name="TxtCurrentUser" Text="Admin" Foreground="White" FontWeight="Bold" FontSize="12" Margin="0,0,10,0"/>
                             <TextBlock Text="Role: " Foreground="#94A3B8" FontSize="12"/>
-                            <TextBlock x:Name="TxtCurrentRole" Text="Owner" Foreground="{StaticResource SuccessGreenBrush}" FontWeight="SemiBold" FontSize="12"/>
+                            <Border Background="#064E3B" CornerRadius="4" Padding="6,1" Margin="2,0,0,0">
+                                <TextBlock x:Name="TxtCurrentRole" Text="Owner" Foreground="#34D399" FontWeight="Bold" FontSize="11"/>
+                            </Border>
                         </StackPanel>
                     </Border>
-                    <Border Background="#1E293B" CornerRadius="4" Padding="10,4">
-                        <StackPanel Orientation="Horizontal">
-                            <TextBlock Text="Date: " Foreground="#94A3B8" FontSize="12"/>
-                            <TextBlock x:Name="TxtCurrentDate" Text="09-Nov-2026" Foreground="White" FontWeight="SemiBold" FontSize="12"/>
+
+                    <!-- Live Date & Time Card -->
+                    <Border Background="#1E293B" CornerRadius="6" Padding="12,6" BorderBrush="#334155" BorderThickness="1">
+                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                            <TextBlock Text="📅 Date: " Foreground="#94A3B8" FontSize="12"/>
+                            <TextBlock x:Name="TxtCurrentDate" Text="Today" Foreground="White" FontWeight="Bold" FontSize="12"/>
+                            <TextBlock Text="  ⏰ " Foreground="#94A3B8" FontSize="11" Margin="4,0,0,0"/>
+                            <TextBlock x:Name="TxtCurrentTime" Text="12:00 PM" Foreground="#FBBF24" FontWeight="SemiBold" FontSize="12"/>
                         </StackPanel>
                     </Border>
                 </StackPanel>
-            </DockPanel>
+            </Grid>
         </Border>
 
         <!-- 2. Main Grouped Menu Navigation Bar (All function keys removed) -->

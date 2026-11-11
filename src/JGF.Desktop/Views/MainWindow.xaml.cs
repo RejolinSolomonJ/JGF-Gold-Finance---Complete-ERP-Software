@@ -29,6 +29,7 @@ public partial class MainWindow : Window
     private User? _currentUser;
     private DateTime _lastActivityUtc = DateTime.UtcNow;
     private readonly System.Windows.Threading.DispatcherTimer _inactivityTimer = new();
+    private readonly System.Windows.Threading.DispatcherTimer _clockTimer = new();
     private bool _isScreenLocked;
 
     public MainWindow(IServiceProvider services, IPermissionService permissionService)
@@ -36,6 +37,11 @@ public partial class MainWindow : Window
         InitializeComponent();
         _services = services;
         _permissionService = permissionService;
+
+        UpdateHeaderDateTime();
+        _clockTimer.Interval = TimeSpan.FromSeconds(1);
+        _clockTimer.Tick += (s, e) => UpdateHeaderDateTime();
+        _clockTimer.Start();
 
         Loaded += async (s, e) => await InitializeAsync();
 
@@ -287,10 +293,23 @@ public partial class MainWindow : Window
         }
     }
 
+    private void UpdateHeaderDateTime()
+    {
+        if (TxtCurrentDate != null)
+        {
+            TxtCurrentDate.Text = DateTime.Now.ToString("dd-MMM-yyyy");
+        }
+        if (TxtCurrentTime != null)
+        {
+            TxtCurrentTime.Text = DateTime.Now.ToString("hh:mm:ss tt");
+        }
+    }
+
     private void ApplyUserSession(User user)
     {
         TxtCurrentUser.Text = $"{user.FullName} ({user.Username})";
         TxtCurrentRole.Text = user.Role.ToString();
+        UpdateHeaderDateTime();
 
         // Configure Role-Based Menu Visibility
         MenuAuditLog.Visibility = (user.Role == UserRole.Owner) ? Visibility.Visible : Visibility.Collapsed;
