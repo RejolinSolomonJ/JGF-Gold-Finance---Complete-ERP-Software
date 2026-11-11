@@ -214,6 +214,30 @@
                             </DataGridTemplateColumn.CellTemplate>
                         </DataGridTemplateColumn>
 
+                        <!-- This Month Due -->
+                        <DataGridTextColumn Header="Monthly Due (₹)" Binding="{Binding MonthlyInterest, StringFormat={}{0:N2}}" Width="115" FontWeight="SemiBold"
+                                            HeaderStyle="{StaticResource RightAlignedDataGridHeader}">
+                            <DataGridTextColumn.ElementStyle>
+                                <Style TargetType="TextBlock" BasedOn="{StaticResource RightAlignedDataGridCellText}">
+                                    <Setter Property="Foreground" Value="#1D4ED8"/>
+                                </Style>
+                            </DataGridTextColumn.ElementStyle>
+                        </DataGridTextColumn>
+
+                        <!-- Accrued Interest -->
+                        <DataGridTextColumn Header="Accrued Int (₹)" Binding="{Binding AccruedInterest, StringFormat={}{0:N2}}" Width="115"
+                                            HeaderStyle="{StaticResource RightAlignedDataGridHeader}" ElementStyle="{StaticResource RightAlignedDataGridCellText}"/>
+
+                        <!-- Pay to Close Now -->
+                        <DataGridTextColumn Header="Pay to Close (₹)" Binding="{Binding PayToCloseNow, StringFormat={}{0:N2}}" Width="125" FontWeight="Bold"
+                                            HeaderStyle="{StaticResource RightAlignedDataGridHeader}">
+                            <DataGridTextColumn.ElementStyle>
+                                <Style TargetType="TextBlock" BasedOn="{StaticResource RightAlignedDataGridCellText}">
+                                    <Setter Property="Foreground" Value="#15803D"/>
+                                </Style>
+                            </DataGridTextColumn.ElementStyle>
+                        </DataGridTextColumn>
+
                         <!-- Status Badge -->
                         <DataGridTemplateColumn Header="Status (நிலை)" Width="125" HeaderStyle="{StaticResource CenterAlignedDataGridHeader}">
                             <DataGridTemplateColumn.CellTemplate>

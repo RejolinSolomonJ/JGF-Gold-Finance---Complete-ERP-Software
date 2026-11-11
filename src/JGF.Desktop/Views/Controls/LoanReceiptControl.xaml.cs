@@ -29,6 +29,7 @@ public class CustomerLoanBalanceViewModel
     public decimal OriginalPrincipal { get; set; }
     public decimal PrincipalPaid { get; set; }
     public decimal RemainingBalance { get; set; }
+    public decimal MonthlyInterest { get; set; }
     public decimal AccruedInterest { get; set; }
     public decimal PayToCloseNow { get; set; }
     public string Status { get; set; } = string.Empty;
@@ -46,6 +47,7 @@ public partial class LoanReceiptControl : UserControl
 
     private Loan? _loadedLoan;
     private decimal _currentPrincipalBalance = 0m;
+    private decimal _monthlyInterestDue = 0m;
     private InterestCalculationResult? _calcResult;
     private bool _isUpdatingReceiptType = false;
     private bool _isPromptingClosure = false;
@@ -200,8 +202,11 @@ public partial class LoanReceiptControl : UserControl
             MinimumInterestDays = 30
         };
 
+        var principal = _currentPrincipalBalance > 0 ? _currentPrincipalBalance : _loadedLoan.LoanAmount;
+        _monthlyInterestDue = Math.Round(principal * (scheme.InterestRatePerMonth / 100m), 2, MidpointRounding.AwayFromZero);
+
         _calcResult = _interestCalculator.CalculateInterest(
-            _currentPrincipalBalance > 0 ? _currentPrincipalBalance : _loadedLoan.LoanAmount,
+            principal,
             scheme.InterestRatePerMonth,
             scheme.PenalInterestRatePerMonth,
             _loadedLoan.PledgeDate,
@@ -213,7 +218,38 @@ public partial class LoanReceiptControl : UserControl
             false);
 
         GridInterest.ItemsSource = _calcResult.Breakdown;
-        TxtInterestAmount.Text = _calcResult.TotalInterest.ToString("F2");
+
+        // Auto Calculation Date Badge
+        var startDate = _loadedLoan.LastInterestPaidDate ?? _loadedLoan.PledgeDate;
+        var elapsedDays = Math.Max(0, receiptDate.DayNumber - startDate.DayNumber);
+        if (TxtAutoCalcDateBadge != null)
+        {
+            TxtAutoCalcDateBadge.Text = $"🗓️ Auto Calculated for {receiptDate:dd-MMM-yyyy} ({elapsedDays} days / {_calcResult.TotalMonthsCharged:F2} mos)";
+        }
+
+        // This Month Due Card
+        if (TxtThisMonthDue != null)
+        {
+            TxtThisMonthDue.Text = $"{ValidationHelper.FormatCurrency(_monthlyInterestDue)} / mo";
+        }
+        if (TxtAccruedInterestSubtext != null)
+        {
+            TxtAccruedInterestSubtext.Text = $"Accrued to Date: {ValidationHelper.FormatCurrency(_calcResult.TotalInterest)} ({_calcResult.TotalDays} days)";
+        }
+
+        // Quick Fill Buttons in Payment Form
+        if (BtnQuickMonthDue != null)
+        {
+            BtnQuickMonthDue.Content = $"⚡ 1 Mo: {ValidationHelper.FormatCurrency(_monthlyInterestDue)}";
+        }
+        if (BtnQuickFullInterest != null)
+        {
+            BtnQuickFullInterest.Content = $"⚡ Full: {ValidationHelper.FormatCurrency(_calcResult.TotalInterest)}";
+        }
+        if (TxtInterestHelperRate != null)
+        {
+            TxtInterestHelperRate.Text = $"(@ {scheme.InterestRatePerMonth:F2}%/mo = {ValidationHelper.FormatCurrency(_monthlyInterestDue)}/mo)";
+        }
 
         // Update golden Pay to Close Now card
         var payToClose = _currentPrincipalBalance + _calcResult.TotalInterest;
@@ -225,6 +261,20 @@ public partial class LoanReceiptControl : UserControl
         UpdatePostPaymentBalanceNotice();
     }
 
+    private void OnQuick1MonthDueClick(object sender, RoutedEventArgs e)
+    {
+        if (_loadedLoan == null) return;
+        TxtInterestAmount.Text = _monthlyInterestDue.ToString("F2");
+        UpdateTotalReceivable();
+    }
+
+    private void OnQuickFullAccruedInterestClick(object sender, RoutedEventArgs e)
+    {
+        if (_loadedLoan == null || _calcResult == null) return;
+        TxtInterestAmount.Text = _calcResult.TotalInterest.ToString("F2");
+        UpdateTotalReceivable();
+    }
+
     private void OnSettleCloseNowClick(object sender, RoutedEventArgs e)
     {
         if (_loadedLoan == null || _calcResult == null)
@@ -233,7 +283,7 @@ public partial class LoanReceiptControl : UserControl
             return;
         }
 
-        CmbReceiptType.SelectedIndex = 2; // Full Closure & Release
+        CmbReceiptType.SelectedIndex = 3; // Full Closure & Release
         ApplyReceiptTypeRules();
         UpdateTotalReceivable();
         UpdatePostPaymentBalanceNotice();
@@ -258,14 +308,21 @@ public partial class LoanReceiptControl : UserControl
         {
             switch (CmbReceiptType.SelectedIndex)
             {
-                case 0: // Interest Only
+                case 0: // Interest Only - Full Accrued
                     TxtInterestAmount.Text = _calcResult.TotalInterest.ToString("F2");
                     TxtInterestAmount.IsReadOnly = false;
                     TxtPartPrincipal.Text = "0.00";
                     TxtPartPrincipal.IsReadOnly = true;
                     break;
 
-                case 1: // Part Payment
+                case 1: // Interest Only - 1 Month Due
+                    TxtInterestAmount.Text = _monthlyInterestDue.ToString("F2");
+                    TxtInterestAmount.IsReadOnly = false;
+                    TxtPartPrincipal.Text = "0.00";
+                    TxtPartPrincipal.IsReadOnly = true;
+                    break;
+
+                case 2: // Part Payment
                     TxtInterestAmount.Text = _calcResult.TotalInterest.ToString("F2");
                     TxtInterestAmount.IsReadOnly = false;
                     if (decimal.TryParse(TxtPartPrincipal.Text, out var currPart) && currPart == _currentPrincipalBalance)
@@ -275,7 +332,7 @@ public partial class LoanReceiptControl : UserControl
                     TxtPartPrincipal.IsReadOnly = false;
                     break;
 
-                case 2: // Full Closure
+                case 3: // Full Closure
                     TxtInterestAmount.Text = _calcResult.TotalInterest.ToString("F2");
                     TxtInterestAmount.IsReadOnly = false;
                     TxtPartPrincipal.Text = _currentPrincipalBalance.ToString("F2");
@@ -294,7 +351,7 @@ public partial class LoanReceiptControl : UserControl
         if (!_isInitialized || _isUpdatingReceiptType) return;
 
         // Automatic prompt to switch to Full Closure if user enters full principal in Part Payment mode
-        if (!_isPromptingClosure && CmbReceiptType.SelectedIndex == 1 && _loadedLoan != null && _currentPrincipalBalance > 0)
+        if (!_isPromptingClosure && CmbReceiptType.SelectedIndex == 2 && _loadedLoan != null && _currentPrincipalBalance > 0)
         {
             if (decimal.TryParse(TxtPartPrincipal.Text, out var enteredPart) && enteredPart >= _currentPrincipalBalance)
             {
@@ -308,7 +365,7 @@ public partial class LoanReceiptControl : UserControl
 
                 if (result == MessageBoxResult.Yes)
                 {
-                    CmbReceiptType.SelectedIndex = 2; // Full Closure
+                    CmbReceiptType.SelectedIndex = 3; // Full Closure
                     ApplyReceiptTypeRules();
                 }
                 _isPromptingClosure = false;
@@ -335,15 +392,23 @@ public partial class LoanReceiptControl : UserControl
 
         switch (CmbReceiptType?.SelectedIndex ?? 0)
         {
-            case 0: // Interest Only
-                TxtPostPaymentBalance.Text = $"📌 Remaining Balance: {ValidationHelper.FormatCurrency(_currentPrincipalBalance)} (Interest Only — Principal Unchanged)";
-                TxtAutoCloseHint.Text = "💡 Only accrued interest will be settled. Loan stays active.";
+            case 0: // Interest Only - Full Accrued
+                TxtPostPaymentBalance.Text = $"📌 Remaining Balance: {ValidationHelper.FormatCurrency(_currentPrincipalBalance)} (Full Accrued Interest Settled)";
+                TxtAutoCloseHint.Text = "💡 All past accrued interest cleared. Loan stays active.";
                 BdrBalanceNotice.Background = new SolidColorBrush(Color.FromRgb(0xF0, 0xF9, 0xFF));
                 BdrBalanceNotice.BorderBrush = new SolidColorBrush(Color.FromRgb(0xBA, 0xE6, 0xFD));
                 TxtPostPaymentBalance.Foreground = new SolidColorBrush(Color.FromRgb(0x03, 0x69, 0xA1));
                 break;
 
-            case 1: // Part Payment
+            case 1: // Interest Only - 1 Month Due
+                TxtPostPaymentBalance.Text = $"📌 Remaining Balance: {ValidationHelper.FormatCurrency(_currentPrincipalBalance)} (1 Month Interest Settled: {ValidationHelper.FormatCurrency(_monthlyInterestDue)})";
+                TxtAutoCloseHint.Text = "💡 Current month interest collected. Loan stays active.";
+                BdrBalanceNotice.Background = new SolidColorBrush(Color.FromRgb(0xF0, 0xF9, 0xFF));
+                BdrBalanceNotice.BorderBrush = new SolidColorBrush(Color.FromRgb(0xBA, 0xE6, 0xFD));
+                TxtPostPaymentBalance.Foreground = new SolidColorBrush(Color.FromRgb(0x03, 0x69, 0xA1));
+                break;
+
+            case 2: // Part Payment
                 remaining = Math.Max(0m, _currentPrincipalBalance - partPrin);
                 TxtPostPaymentBalance.Text = $"📌 Remaining Balance: {ValidationHelper.FormatCurrency(remaining)} (After paying {ValidationHelper.FormatCurrency(partPrin)} principal)";
                 if (remaining == 0m && _currentPrincipalBalance > 0m)
@@ -362,7 +427,7 @@ public partial class LoanReceiptControl : UserControl
                 }
                 break;
 
-            case 2: // Full Closure
+            case 3: // Full Closure
                 TxtPostPaymentBalance.Text = "📌 Remaining Balance: ₹ 0.00 (FULL CLOSURE & JEWEL RELEASE)";
                 TxtAutoCloseHint.Text = "🎉 Loan will be closed and collateral jewel release document printed!";
                 BdrBalanceNotice.Background = new SolidColorBrush(Color.FromRgb(0xF0, 0xFD, 0xF4));
@@ -463,8 +528,9 @@ public partial class LoanReceiptControl : UserControl
         var rType = CmbReceiptType.SelectedIndex switch
         {
             0 => ReceiptType.InterestOnly,
-            1 => ReceiptType.PartPrincipal,
-            2 => ReceiptType.Closure,
+            1 => ReceiptType.InterestOnly,
+            2 => ReceiptType.PartPrincipal,
+            3 => ReceiptType.Closure,
             _ => ReceiptType.InterestOnly
         };
 
@@ -482,7 +548,7 @@ public partial class LoanReceiptControl : UserControl
             if (prompt == MessageBoxResult.Yes)
             {
                 rType = ReceiptType.Closure;
-                CmbReceiptType.SelectedIndex = 2;
+                CmbReceiptType.SelectedIndex = 3;
                 principal = _currentPrincipalBalance;
             }
         }
@@ -732,11 +798,14 @@ public partial class LoanReceiptControl : UserControl
                     MinimumInterestDays = 30
                 };
 
+                decimal monthlyInterest = 0m;
                 decimal accruedInterest = 0m;
                 decimal payToClose = 0m;
 
                 if (loan.Status == LoanStatus.Active || loan.Status == LoanStatus.PartiallyPaid)
                 {
+                    monthlyInterest = Math.Round(balance * (scheme.InterestRatePerMonth / 100m), 2, MidpointRounding.AwayFromZero);
+
                     var calc = _interestCalculator.CalculateInterest(
                         balance,
                         scheme.InterestRatePerMonth,
@@ -767,6 +836,7 @@ public partial class LoanReceiptControl : UserControl
                     OriginalPrincipal = loan.LoanAmount,
                     PrincipalPaid = Math.Max(0m, loan.LoanAmount - balance),
                     RemainingBalance = balance,
+                    MonthlyInterest = monthlyInterest,
                     AccruedInterest = accruedInterest,
                     PayToCloseNow = payToClose,
                     Status = loan.Status.ToString(),
@@ -785,7 +855,11 @@ public partial class LoanReceiptControl : UserControl
             TxtTrackerTotalPledgedWeight.Text = $"{activeLoans.Sum(l => l.NetWeight):F3} g Gold Pledged";
             TxtTrackerTotalDisbursed.Text = ValidationHelper.FormatCurrency(allLoans.Sum(l => l.LoanAmount));
             TxtTrackerRemainingPrincipal.Text = ValidationHelper.FormatCurrency(activeItems.Sum(i => i.RemainingBalance));
-            TxtTrackerAccruedInterest.Text = $"Interest: {ValidationHelper.FormatCurrency(activeItems.Sum(i => i.AccruedInterest))}";
+            if (TxtTrackerMonthlyInterest != null)
+            {
+                TxtTrackerMonthlyInterest.Text = $"{ValidationHelper.FormatCurrency(activeItems.Sum(i => i.MonthlyInterest))} / mo";
+            }
+            TxtTrackerAccruedInterest.Text = $"Accrued: {ValidationHelper.FormatCurrency(activeItems.Sum(i => i.AccruedInterest))}";
             TxtTrackerGrandPayToClose.Text = ValidationHelper.FormatCurrency(activeItems.Sum(i => i.PayToCloseNow));
         }
         catch (Exception ex)

@@ -33,6 +33,9 @@ public class LoanDirectoryItemViewModel
     public decimal DisbursedAmount { get; set; }
     public decimal PrincipalPaid { get; set; }
     public decimal RemainingPrincipal { get; set; }
+    public decimal MonthlyInterest { get; set; }
+    public decimal AccruedInterest { get; set; }
+    public decimal PayToCloseNow { get; set; }
     public LoanStatus Status { get; set; }
     public string StatusText { get; set; } = string.Empty;
     public Brush BadgeBackground { get; set; } = Brushes.LightGray;
@@ -49,6 +52,7 @@ public partial class LoanDirectoryControl : UserControl
     private readonly ILoanService _loanService;
     private readonly IReceiptService _receiptService;
     private readonly ISchemeService _schemeService;
+    private readonly IInterestCalculator _interestCalculator;
     private readonly User? _currentUser;
 
     private bool _isInitialized = false;
@@ -60,6 +64,7 @@ public partial class LoanDirectoryControl : UserControl
         ILoanService loanService,
         IReceiptService receiptService,
         ISchemeService schemeService,
+        IInterestCalculator interestCalculator,
         User? currentUser = null)
     {
         InitializeComponent();
@@ -67,6 +72,7 @@ public partial class LoanDirectoryControl : UserControl
         _loanService = loanService;
         _receiptService = receiptService;
         _schemeService = schemeService;
+        _interestCalculator = interestCalculator;
         _currentUser = currentUser;
 
         Loaded += async (s, e) => await InitializeAsync();
@@ -253,6 +259,39 @@ public partial class LoanDirectoryControl : UserControl
                     closedOrLastPaid = "None";
                 }
 
+                decimal monthlyInterest = 0m;
+                decimal accruedInterest = 0m;
+                decimal payToClose = 0m;
+
+                if (loan.Status == LoanStatus.Active || loan.Status == LoanStatus.PartiallyPaid)
+                {
+                    var scheme = loan.Scheme ?? new Scheme
+                    {
+                        InterestRatePerMonth = 1.5m,
+                        PenalInterestRatePerMonth = 0.5m,
+                        MaxTenureMonths = 12,
+                        GraceDaysAfterExpiry = 7,
+                        MinimumInterestDays = 30
+                    };
+
+                    monthlyInterest = Math.Round(remainingPrincipal * (scheme.InterestRatePerMonth / 100m), 2, MidpointRounding.AwayFromZero);
+
+                    var calc = _interestCalculator.CalculateInterest(
+                        remainingPrincipal,
+                        scheme.InterestRatePerMonth,
+                        scheme.PenalInterestRatePerMonth,
+                        loan.PledgeDate,
+                        today,
+                        loan.LastInterestPaidDate,
+                        scheme.MaxTenureMonths,
+                        scheme.GraceDaysAfterExpiry,
+                        scheme.MinimumInterestDays,
+                        false);
+
+                    accruedInterest = calc.TotalInterest;
+                    payToClose = remainingPrincipal + accruedInterest;
+                }
+
                 viewModels.Add(new LoanDirectoryItemViewModel
                 {
                     LoanId = loan.Id,
@@ -266,6 +305,9 @@ public partial class LoanDirectoryControl : UserControl
                     DisbursedAmount = loan.LoanAmount,
                     PrincipalPaid = principalPaid,
                     RemainingPrincipal = remainingPrincipal,
+                    MonthlyInterest = monthlyInterest,
+                    AccruedInterest = accruedInterest,
+                    PayToCloseNow = payToClose,
                     Status = loan.Status,
                     StatusText = statusText,
                     BadgeBackground = bgBrush,
