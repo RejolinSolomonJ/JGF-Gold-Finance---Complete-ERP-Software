@@ -488,7 +488,8 @@ public partial class MainWindow : Window
     {
         var view = new Controls.BankRepledgeControl(
             _services.GetRequiredService<IBankRepledgeService>(),
-            _services.GetRequiredService<IBankService>());
+            _services.GetRequiredService<IBankService>(),
+            _currentUser);
         MainContentArea.Content = view;
     });
 

@@ -2,6 +2,7 @@ using System.Windows;
 using System.Windows.Controls;
 using JGF.Application.Repledge;
 using JGF.Application.Services;
+using JGF.Domain.Entities;
 
 namespace JGF.Desktop.Views.Controls;
 
@@ -16,15 +17,16 @@ public partial class BankRepledgeControl : UserControl
 
     public BankRepledgeControl(
         IBankRepledgeService repledgeService,
-        IBankService bankService)
+        IBankService bankService,
+        User? currentUser = null)
     {
         InitializeComponent();
         _repledgeService = repledgeService;
         _bankService = bankService;
 
         // Instantiate child controls
-        _newEntryControl = new BankRepledgeNewEntryControl(_repledgeService, _bankService);
-        _paymentControl = new BankPaymentControl(_repledgeService);
+        _newEntryControl = new BankRepledgeNewEntryControl(_repledgeService, _bankService, currentUser);
+        _paymentControl = new BankPaymentControl(_repledgeService, currentUser);
         _reportsControl = new BankReportsControl(_repledgeService);
 
         NewEntryContentHost.Content = _newEntryControl;

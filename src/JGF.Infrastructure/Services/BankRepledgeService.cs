@@ -168,6 +168,18 @@ public class BankRepledgeService : DbServiceBase, IBankRepledgeService
 
             if (headCash != null && headBankLoan != null)
             {
+                Guid? postedByUserId = null;
+                if (dto.UserId != Guid.Empty)
+                {
+                    var exists = await context.Users.AsNoTracking().AnyAsync(u => u.Id == dto.UserId, ct);
+                    if (exists) postedByUserId = dto.UserId;
+                }
+                if (!postedByUserId.HasValue)
+                {
+                    var defaultUser = await context.Users.AsNoTracking().FirstOrDefaultAsync(u => !u.IsDeleted, ct);
+                    postedByUserId = defaultUser?.Id;
+                }
+
                 var voucherNumber = await _numberSeries.GetNextNumberAsync(NumberSeriesType.VoucherNumber, fy, null, ct);
                 var voucher = new Voucher
                 {
@@ -179,7 +191,7 @@ public class BankRepledgeService : DbServiceBase, IBankRepledgeService
                     Narration = $"Repledge ref. #{bankPledge.PledgeNumber} from {bank.Name} ({selectedLoans.Count} customer loans pledged)",
                     IsPosted = true,
                     PostedAtUtc = DateTime.UtcNow,
-                    PostedByUserId = dto.UserId,
+                    PostedByUserId = postedByUserId,
                     ReferenceType = "BankPledge",
                     ReferenceId = bankPledge.Id
                 };
@@ -308,6 +320,18 @@ public class BankRepledgeService : DbServiceBase, IBankRepledgeService
             var headInterestExp = await context.LedgerHeads.FirstOrDefaultAsync(l => l.Code == "5001", ct);
             var headPostalExp = await context.LedgerHeads.FirstOrDefaultAsync(l => l.Code == "5004", ct);
 
+            Guid? postedByUserId = null;
+            if (dto.UserId != Guid.Empty)
+            {
+                var exists = await context.Users.AsNoTracking().AnyAsync(u => u.Id == dto.UserId, ct);
+                if (exists) postedByUserId = dto.UserId;
+            }
+            if (!postedByUserId.HasValue)
+            {
+                var defaultUser = await context.Users.AsNoTracking().FirstOrDefaultAsync(u => !u.IsDeleted, ct);
+                postedByUserId = defaultUser?.Id;
+            }
+
             var vNumber = await _numberSeries.GetNextNumberAsync(NumberSeriesType.VoucherNumber, fy, null, ct);
             var voucher = new Voucher
             {
@@ -319,7 +343,7 @@ public class BankRepledgeService : DbServiceBase, IBankRepledgeService
                 Narration = $"Payment voucher #{rzNumber} to {bankPledge.Bank.Name} on repledge #{bankPledge.PledgeNumber}",
                 IsPosted = true,
                 PostedAtUtc = DateTime.UtcNow,
-                PostedByUserId = dto.UserId,
+                PostedByUserId = postedByUserId,
                 ReferenceType = "BankPayment",
                 ReferenceId = payment.Id
             };

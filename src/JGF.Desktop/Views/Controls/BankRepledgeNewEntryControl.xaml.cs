@@ -227,8 +227,9 @@ public partial class BankRepledgeNewEntryControl : UserControl
         }
         catch (Exception ex)
         {
+            var msg = ex.InnerException != null ? $"{ex.Message} ({ex.InnerException.Message})" : ex.Message;
             Log.Error(ex, "Failed to create bank pledge.");
-            MessageBox.Show($"Failed to save bank pledge: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            MessageBox.Show($"Failed to save bank pledge: {msg}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
         }
     }
 }
