@@ -135,20 +135,29 @@
         </Border>
 
         <!-- 4. Bottom Operational Status Bar -->
-        <StatusBar Grid.Row="3" Background="{StaticResource PrimaryDarkBlueBrush}" Foreground="#94A3B8" Padding="12,3">
-            <StatusBarItem>
-                <TextBlock x:Name="TxtDbStatus" Text="● DB: Connected (LAN PC1)" Foreground="{StaticResource SuccessGreenBrush}" FontWeight="SemiBold"/>
-            </StatusBarItem>
-            <Separator Background="#334155"/>
-            <StatusBarItem>
-                <TextBlock x:Name="TxtBackupWarning" Text="Backup: Up to date" Foreground="#CBD5E1"/>
-            </StatusBarItem>
-            <StatusBarItem HorizontalAlignment="Right">
-                <TextBlock Cursor="Hand" ToolTip="Click to visit https://www.linsinfotech.in" MouseLeftButtonDown="OnLinInfotechLinkClick">
-                    <Run Text="Developed by " Foreground="#94A3B8" FontSize="11"/>
-                    <Run Text="Lin's Infotech Company Ltd." Foreground="#38BDF8" FontWeight="Bold" TextDecorations="Underline" FontSize="11"/>
-                </TextBlock>
-            </StatusBarItem>
-        </StatusBar>
+        <Border Grid.Row="3" Background="{StaticResource PrimaryDarkBlueBrush}" Padding="16,6" BorderBrush="#1E293B" BorderThickness="0,1,0,0">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <!-- Left: DB Connection Status & Backup Status -->
+                <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
+                    <TextBlock x:Name="TxtDbStatus" Text="● DB: Connected (LAN PC1)" Foreground="{StaticResource SuccessGreenBrush}" FontWeight="SemiBold" FontSize="11" Margin="0,0,10,0"/>
+                    <TextBlock Text="|" Foreground="#334155" Margin="0,0,10,0" VerticalAlignment="Center"/>
+                    <TextBlock x:Name="TxtBackupWarning" Text="Backup: Up to date" Foreground="#CBD5E1" FontSize="11"/>
+                </StackPanel>
+
+                <!-- Right: Developed by Lin's Infotech Company Ltd. -->
+                <Border Grid.Column="1" HorizontalAlignment="Right" VerticalAlignment="Center" Background="#0F172A" CornerRadius="4" Padding="10,4" BorderBrush="#334155" BorderThickness="1">
+                    <TextBlock Cursor="Hand" ToolTip="Click to visit https://www.linsinfotech.in" MouseLeftButtonDown="OnLinInfotechLinkClick" VerticalAlignment="Center">
+                        <Run Text="Developed by " Foreground="#94A3B8" FontSize="11"/>
+                        <Run Text="Lin's Infotech Company Ltd." Foreground="#38BDF8" FontWeight="Bold" TextDecorations="Underline" FontSize="11"/>
+                        <Run Text=" (www.linsinfotech.in) ↗" Foreground="#38BDF8" FontWeight="SemiBold" FontSize="11"/>
+                    </TextBlock>
+                </Border>
+            </Grid>
+        </Border>
     </Grid>
 </Window>
