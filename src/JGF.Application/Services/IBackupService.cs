@@ -3,7 +3,8 @@ using JGF.Domain.Enums;
 
 namespace JGF.Application.Services;
 
-public record BackupResult(bool Success, string FilePath, long FileSize, string? ErrorMessage = null);
+public record BackupResult(bool Success, string FilePath, long FileSize, string? CloudPath = null, string? ErrorMessage = null);
+public record BackupSettingsDto(string CloudSyncPath, string LanSharePath);
 
 public interface IBackupService
 {
@@ -11,5 +12,7 @@ public interface IBackupService
     Task<bool> RestoreBackupAsync(string encryptedBackupPath, string encryptionKey, string targetDatabaseName, CancellationToken ct = default);
     Task<bool> HasRecentSuccessfulBackupAsync(TimeSpan threshold, CancellationToken ct = default);
     Task<List<BackupLog>> GetBackupLogsAsync(int limit = 50, CancellationToken ct = default);
+    Task<BackupSettingsDto> GetBackupSettingsAsync(CancellationToken ct = default);
+    Task SaveBackupSettingsAsync(BackupSettingsDto settings, CancellationToken ct = default);
 }
 

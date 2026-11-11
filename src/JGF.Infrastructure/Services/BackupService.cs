@@ -110,20 +110,53 @@ public class BackupService : DbServiceBase, IBackupService
             log.FileSizeBytes = fi.Length;
             log.Status = BackupStatus.Success;
 
-            // LAN Copy check (e.g. to PC2 shared folder if setting exists)
-            var lanShare = await context.Settings.FirstOrDefaultAsync(s => s.Key == "Backup.LanSharePath", ct);
-            if (lanShare != null && !string.IsNullOrWhiteSpace(lanShare.Value) && Directory.Exists(lanShare.Value))
+            // 1. LIFETIME CLOUD SYNC: Mirror encrypted dump to Cloud Sync folder (OneDrive/GDrive)
+            // Lifetime policy: Cloud backups are NEVER purged or deleted so every day's backup is preserved permanently.
+            string? cloudDestPath = null;
+            try
             {
-                var destPath = Path.Combine(lanShare.Value, Path.GetFileName(encryptedPath));
-                File.Copy(encryptedPath, destPath, overwrite: true);
-                log.LanCopyStatus = "Copied to " + destPath;
+                var cloudSetting = await context.Settings.FirstOrDefaultAsync(s => s.Key == "Backup.CloudPath" || s.Key == "Backup.CloudSyncPath", ct);
+                var cloudSyncDir = !string.IsNullOrWhiteSpace(cloudSetting?.Value)
+                    ? cloudSetting.Value
+                    : GetDefaultCloudSyncFolder();
+
+                if (!string.IsNullOrWhiteSpace(cloudSyncDir))
+                {
+                    Directory.CreateDirectory(cloudSyncDir);
+                    cloudDestPath = Path.Combine(cloudSyncDir, Path.GetFileName(encryptedPath));
+                    File.Copy(encryptedPath, cloudDestPath, overwrite: true);
+                    log.CloudUploadStatus = $"Synced to Cloud (Lifetime): {cloudDestPath}";
+                    _logger.LogInformation("Encrypted backup mirrored to lifetime cloud archive at {CloudPath}", cloudDestPath);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Failed to mirror backup to cloud folder.");
+                log.CloudUploadStatus = $"Cloud Sync Failed: {ex.Message}";
             }
 
-            // Apply retention: keep 30 daily backups
+            // 2. Secondary LAN Copy (e.g. to PC2 shared folder if setting exists)
+            try
+            {
+                var lanShare = await context.Settings.FirstOrDefaultAsync(s => s.Key == "Backup.LanSharePath", ct);
+                if (lanShare != null && !string.IsNullOrWhiteSpace(lanShare.Value) && Directory.Exists(lanShare.Value))
+                {
+                    var destPath = Path.Combine(lanShare.Value, Path.GetFileName(encryptedPath));
+                    File.Copy(encryptedPath, destPath, overwrite: true);
+                    log.LanCopyStatus = "Copied to " + destPath;
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "LAN backup copy failed.");
+                log.LanCopyStatus = $"LAN Copy Failed: {ex.Message}";
+            }
+
+            // 3. Apply local retention: keep 30 daily backups in the local ProgramData vault (Cloud copies remain permanent)
             CleanupOldBackups(backupDir, 30);
 
             await context.SaveChangesAsync(ct);
-            return new BackupResult(true, encryptedPath, fi.Length);
+            return new BackupResult(true, encryptedPath, fi.Length, cloudDestPath);
         }
         catch (Exception ex)
         {
@@ -131,7 +164,7 @@ public class BackupService : DbServiceBase, IBackupService
             log.Status = BackupStatus.Failed;
             log.ErrorMessage = ex.Message;
             await context.SaveChangesAsync(ct);
-            return new BackupResult(false, encryptedPath, 0, ex.Message);
+            return new BackupResult(false, encryptedPath, 0, null, ex.Message);
         }
     }
 
@@ -199,6 +232,91 @@ public class BackupService : DbServiceBase, IBackupService
             .OrderByDescending(b => b.BackupDate)
             .Take(limit)
             .ToListAsync(ct);
+    }
+
+    public async Task<BackupSettingsDto> GetBackupSettingsAsync(CancellationToken ct = default)
+    {
+        await using var scope = await GetContextAsync(ct);
+        var context = scope.Context;
+
+        var cloudSetting = await context.Settings
+            .AsNoTracking()
+            .FirstOrDefaultAsync(s => s.Key == "Backup.CloudPath" || s.Key == "Backup.CloudSyncPath", ct);
+
+        var lanSetting = await context.Settings
+            .AsNoTracking()
+            .FirstOrDefaultAsync(s => s.Key == "Backup.LanSharePath", ct);
+
+        var cloudPath = !string.IsNullOrWhiteSpace(cloudSetting?.Value)
+            ? cloudSetting.Value
+            : GetDefaultCloudSyncFolder();
+
+        var lanPath = lanSetting?.Value ?? @"\\PC2\JGF_Backups";
+
+        return new BackupSettingsDto(cloudPath, lanPath);
+    }
+
+    public async Task SaveBackupSettingsAsync(BackupSettingsDto settings, CancellationToken ct = default)
+    {
+        await using var scope = await GetContextAsync(ct);
+        var context = scope.Context;
+
+        // Save Cloud Sync Path
+        var cloud = await context.Settings.FirstOrDefaultAsync(s => s.Key == "Backup.CloudPath" || s.Key == "Backup.CloudSyncPath", ct);
+        if (cloud == null)
+        {
+            await context.Settings.AddAsync(new Setting
+            {
+                Key = "Backup.CloudPath",
+                Value = settings.CloudSyncPath.Trim(),
+                DisplayName = "Cloud Sync Backup Folder",
+                Category = "Backup",
+                DataType = "string",
+                Description = "Permanent Lifetime Cloud Archive folder (OneDrive / Google Drive)"
+            }, ct);
+        }
+        else
+        {
+            cloud.Value = settings.CloudSyncPath.Trim();
+        }
+
+        // Save LAN Path
+        var lan = await context.Settings.FirstOrDefaultAsync(s => s.Key == "Backup.LanSharePath", ct);
+        if (lan == null)
+        {
+            await context.Settings.AddAsync(new Setting
+            {
+                Key = "Backup.LanSharePath",
+                Value = settings.LanSharePath.Trim(),
+                DisplayName = "LAN PC2 Backup Share",
+                Category = "Backup",
+                DataType = "string",
+                Description = "LAN Shared backup folder path on secondary workstation"
+            }, ct);
+        }
+        else
+        {
+            lan.Value = settings.LanSharePath.Trim();
+        }
+
+        await context.SaveChangesAsync(ct);
+    }
+
+    public static string GetDefaultCloudSyncFolder()
+    {
+        var oneDrive = Environment.GetEnvironmentVariable("OneDriveConsumer")
+                    ?? Environment.GetEnvironmentVariable("OneDrive");
+
+        if (string.IsNullOrEmpty(oneDrive) || !Directory.Exists(oneDrive))
+        {
+            var userProfile = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+            var oneDriveCandidate = Path.Combine(userProfile, "OneDrive");
+            oneDrive = Directory.Exists(oneDriveCandidate)
+                ? oneDriveCandidate
+                : Path.Combine(userProfile, "JGF_Cloud_Backups");
+        }
+
+        return Path.Combine(oneDrive, "JGF_Cloud_Backups");
     }
 
     private static void CleanupOldBackups(string directory, int keepCount)
