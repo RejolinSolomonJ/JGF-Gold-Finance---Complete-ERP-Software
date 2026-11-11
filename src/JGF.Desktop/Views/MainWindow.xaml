@@ -58,8 +58,9 @@
             <MenuItem Header="⌂ Dashboard" Click="OnDashboardClick" Padding="10,6"/>
             
             <MenuItem Header="Loans" Padding="10,6">
-                <MenuItem Header="New Loan Entry" Click="OnNewLoanClick"/>
-                <MenuItem Header="Loan Timeline &amp; Sub-Ledger" Click="OnStockClick"/>
+                <MenuItem Header="📋 All Loans &amp; Status Directory" Click="OnLoanDirectoryClick"/>
+                <MenuItem Header="➕ New Loan Entry" Click="OnNewLoanClick"/>
+                <MenuItem Header="📜 Loan Timeline &amp; Sub-Ledger" Click="OnStockClick"/>
             </MenuItem>
             
             <MenuItem Header="Customers" Padding="10,6">

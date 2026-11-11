@@ -427,6 +427,17 @@ public partial class MainWindow : Window
         MainContentArea.Content = dbSettings;
     });
 
+    public void OnLoanDirectoryClick(object sender, RoutedEventArgs e) => SafeNavigate(() =>
+    {
+        var view = new Controls.LoanDirectoryControl(
+            _services.GetRequiredService<IDbContextFactory<JgfDbContext>>(),
+            _services.GetRequiredService<ILoanService>(),
+            _services.GetRequiredService<IReceiptService>(),
+            _services.GetRequiredService<ISchemeService>(),
+            _currentUser);
+        MainContentArea.Content = view;
+    });
+
     private void OnNewLoanClick(object sender, RoutedEventArgs e) => SafeNavigate(() =>
     {
         var view = new Controls.NewLoanEntryControl(
@@ -478,6 +489,7 @@ public partial class MainWindow : Window
             {
                 switch (target)
                 {
+                    case "LoanDirectory": OnLoanDirectoryClick(this, new RoutedEventArgs()); break;
                     case "NewLoan": OnNewLoanClick(this, new RoutedEventArgs()); break;
                     case "Receipt": OnReceiptClick(this, new RoutedEventArgs()); break;
                     case "Repledge": OnRepledgeClick(this, new RoutedEventArgs()); break;

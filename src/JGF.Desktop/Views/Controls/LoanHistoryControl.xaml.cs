@@ -14,15 +14,20 @@ public partial class LoanHistoryControl : UserControl
         _loanService = loanService;
     }
 
-    private async void OnLoadHistoryClick(object sender, RoutedEventArgs e)
+    public async void OnLoadHistoryClick(object? sender = null, RoutedEventArgs? e = null)
     {
-        var q = TxtLoanNo.Text.Trim();
-        if (string.IsNullOrWhiteSpace(q)) return;
+        await LoadHistoryAsync(TxtLoanNo.Text.Trim());
+    }
 
-        var loan = await _loanService.FindLoanByNumberOrBarcodeAsync(q);
+    public async Task LoadHistoryAsync(string loanNumber)
+    {
+        if (string.IsNullOrWhiteSpace(loanNumber)) return;
+        TxtLoanNo.Text = loanNumber;
+
+        var loan = await _loanService.FindLoanByNumberOrBarcodeAsync(loanNumber);
         if (loan == null)
         {
-            MessageBox.Show($"Loan '{q}' not found.", "Search", MessageBoxButton.OK, MessageBoxImage.Information);
+            MessageBox.Show($"Loan '{loanNumber}' not found.", "Search", MessageBoxButton.OK, MessageBoxImage.Information);
             return;
         }
 

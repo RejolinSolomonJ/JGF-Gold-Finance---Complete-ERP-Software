@@ -179,6 +179,7 @@
                 <DockPanel LastChildFill="True">
                     <TextBlock Text="⚡ FAST OPERATIONS:" Foreground="#F59E0B" FontWeight="Bold" VerticalAlignment="Center" Margin="0,0,16,0"/>
                     <WrapPanel>
+                        <Button Content="📋 All Loans Directory (F3)" Background="#1E3A8A" Foreground="White" FontWeight="SemiBold" Margin="0,0,8,0" Padding="10,6" Click="OnLoanDirectoryClick"/>
                         <Button Content="➕ New Loan Entry (F2)" Background="#334155" Foreground="White" FontWeight="SemiBold" Margin="0,0,8,0" Padding="10,6" Click="OnNewLoanClick"/>
                         <Button Content="🧾 Receipt Payment (F4)" Background="#334155" Foreground="White" FontWeight="SemiBold" Margin="0,0,8,0" Padding="10,6" Click="OnReceiptClick"/>
                         <Button Content="🏦 Bank Repledge (F5)" Background="#334155" Foreground="White" FontWeight="SemiBold" Margin="0,0,8,0" Padding="10,6" Click="OnRepledgeClick"/>

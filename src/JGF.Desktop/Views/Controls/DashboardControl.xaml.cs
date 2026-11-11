@@ -93,6 +93,7 @@ public partial class DashboardControl : UserControl
         await LoadDashboardDataAsync();
     }
 
+    private void OnLoanDirectoryClick(object sender, RoutedEventArgs e) => _navigationCallback?.Invoke("LoanDirectory");
     private void OnNewLoanClick(object sender, RoutedEventArgs e) => _navigationCallback?.Invoke("NewLoan");
     private void OnReceiptClick(object sender, RoutedEventArgs e) => _navigationCallback?.Invoke("Receipt");
     private void OnRepledgeClick(object sender, RoutedEventArgs e) => _navigationCallback?.Invoke("Repledge");
