@@ -1,15 +1,39 @@
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using System.Windows.Media;
 using JGF.Application.Loans;
 using JGF.Application.Receipts;
+using JGF.Application.Reports;
 using JGF.Application.Services;
 using JGF.Desktop.Common;
 using JGF.Domain.Entities;
 using JGF.Domain.Enums;
+using Microsoft.Win32;
 using Serilog;
 
 namespace JGF.Desktop.Views.Controls;
+
+public class CustomerLoanBalanceViewModel
+{
+    public Guid LoanId { get; set; }
+    public string LoanNumber { get; set; } = string.Empty;
+    public DateOnly PledgeDate { get; set; }
+    public string SchemeInfo { get; set; } = string.Empty;
+    public string JewelDetails { get; set; } = string.Empty;
+    public decimal OriginalPrincipal { get; set; }
+    public decimal PrincipalPaid { get; set; }
+    public decimal RemainingBalance { get; set; }
+    public decimal AccruedInterest { get; set; }
+    public decimal PayToCloseNow { get; set; }
+    public string Status { get; set; } = string.Empty;
+    public bool IsActive { get; set; }
+}
 
 public partial class LoanReceiptControl : UserControl
 {
@@ -17,26 +41,39 @@ public partial class LoanReceiptControl : UserControl
     private readonly IReceiptService _receiptService;
     private readonly IInterestCalculator _interestCalculator;
     private readonly User? _currentUser;
+    private readonly ICustomerService? _customerService;
+    private readonly IJlReportService? _reportService;
 
     private Loan? _loadedLoan;
     private decimal _currentPrincipalBalance = 0m;
     private InterestCalculationResult? _calcResult;
     private bool _isUpdatingReceiptType = false;
+    private bool _isPromptingClosure = false;
+    private bool _isInitialized = false;
     private Receipt? _lastReceipt;
     private List<Receipt> _pastReceipts = new();
+
+    // Customer Tracker State
+    private Customer? _currentTrackerCustomer;
+    private List<CustomerLoanBalanceViewModel> _trackerLoanViewModels = new();
 
     public LoanReceiptControl(
         ILoanService loanService,
         IReceiptService receiptService,
         IInterestCalculator interestCalculator,
-        User? currentUser = null)
+        User? currentUser = null,
+        ICustomerService? customerService = null,
+        IJlReportService? reportService = null)
     {
         InitializeComponent();
         _loanService = loanService;
         _receiptService = receiptService;
         _interestCalculator = interestCalculator;
         _currentUser = currentUser;
+        _customerService = customerService;
+        _reportService = reportService;
 
+        _isInitialized = true;
         DpReceiptDate.SelectedDate = DateTime.Today;
         Loaded += async (s, e) => await InitializeAsync();
     }
@@ -48,6 +85,10 @@ public partial class LoanReceiptControl : UserControl
             await LoadLoanAsync(TxtSearchQuery.Text.Trim());
         }
     }
+
+    // ==========================================
+    // TAB 1: LOAN RECEIPT & PAY TO CLOSE LOGIC
+    // ==========================================
 
     private async void OnSearchLoanClick(object sender, RoutedEventArgs e)
     {
@@ -62,7 +103,7 @@ public partial class LoanReceiptControl : UserControl
         }
     }
 
-    private async Task LoadLoanAsync(string query)
+    public async Task LoadLoanAsync(string query)
     {
         if (string.IsNullOrWhiteSpace(query))
         {
@@ -75,7 +116,7 @@ public partial class LoanReceiptControl : UserControl
             var loan = await _loanService.FindLoanByNumberOrBarcodeAsync(query);
             if (loan == null)
             {
-                // Try searching by mobile
+                // Try searching by mobile or customer code
                 var loans = await _loanService.SearchLoansAsync(query, take: 1);
                 loan = loans.FirstOrDefault();
             }
@@ -89,7 +130,10 @@ public partial class LoanReceiptControl : UserControl
             _loadedLoan = loan;
             var history = await _loanService.GetLoanHistoryAsync(loan.Id);
             _currentPrincipalBalance = history.OrderByDescending(h => h.EntryDate).ThenByDescending(h => h.CreatedAtUtc).FirstOrDefault()?.Balance ?? loan.LoanAmount;
-            if (_currentPrincipalBalance <= 0) _currentPrincipalBalance = loan.LoanAmount;
+            if (_currentPrincipalBalance <= 0 && loan.Status == LoanStatus.Active)
+            {
+                _currentPrincipalBalance = loan.LoanAmount;
+            }
 
             _pastReceipts = await _receiptService.GetReceiptsForLoanAsync(loan.Id);
             _lastReceipt = _pastReceipts.FirstOrDefault();
@@ -119,16 +163,25 @@ public partial class LoanReceiptControl : UserControl
             : "No payments yet";
         TxtPrincipalBalance.Text = ValidationHelper.FormatCurrency(_currentPrincipalBalance);
         TxtNetWeight.Text = $"Net Wt: {ValidationHelper.FormatWeight(loan.NetWeight)}";
+
+        // Pay to Close Now golden card update
+        var accrued = _calcResult?.TotalInterest ?? 0m;
+        var payToClose = _currentPrincipalBalance + accrued;
+        TxtPayToCloseNow.Text = ValidationHelper.FormatCurrency(payToClose);
+        TxtPayToCloseBreakdown.Text = $"Principal: {ValidationHelper.FormatCurrency(_currentPrincipalBalance)} + Interest: {ValidationHelper.FormatCurrency(accrued)}";
+
+        UpdatePostPaymentBalanceNotice();
     }
 
     private void OnReceiptDateChanged(object? sender, SelectionChangedEventArgs e)
     {
+        if (!_isInitialized) return;
         RecalculateInterest();
     }
 
     private void RecalculateInterest()
     {
-        if (_loadedLoan == null) return;
+        if (!_isInitialized || _loadedLoan == null) return;
 
         var receiptDate = DateOnly.FromDateTime(DpReceiptDate.SelectedDate ?? DateTime.Today);
         if (receiptDate < _loadedLoan.PledgeDate)
@@ -160,17 +213,40 @@ public partial class LoanReceiptControl : UserControl
             false);
 
         GridInterest.ItemsSource = _calcResult.Breakdown;
-
         TxtInterestAmount.Text = _calcResult.TotalInterest.ToString("F2");
+
+        // Update golden Pay to Close Now card
+        var payToClose = _currentPrincipalBalance + _calcResult.TotalInterest;
+        TxtPayToCloseNow.Text = ValidationHelper.FormatCurrency(payToClose);
+        TxtPayToCloseBreakdown.Text = $"Principal: {ValidationHelper.FormatCurrency(_currentPrincipalBalance)} + Interest: {ValidationHelper.FormatCurrency(_calcResult.TotalInterest)}";
 
         ApplyReceiptTypeRules();
         UpdateTotalReceivable();
+        UpdatePostPaymentBalanceNotice();
+    }
+
+    private void OnSettleCloseNowClick(object sender, RoutedEventArgs e)
+    {
+        if (_loadedLoan == null || _calcResult == null)
+        {
+            MessageBox.Show("Please search and load an active loan first.", "Notice", MessageBoxButton.OK, MessageBoxImage.Warning);
+            return;
+        }
+
+        CmbReceiptType.SelectedIndex = 2; // Full Closure & Release
+        ApplyReceiptTypeRules();
+        UpdateTotalReceivable();
+        UpdatePostPaymentBalanceNotice();
+
+        TxtPartPrincipal.Focus();
     }
 
     private void OnReceiptTypeChanged(object sender, SelectionChangedEventArgs e)
     {
+        if (!_isInitialized) return;
         ApplyReceiptTypeRules();
         UpdateTotalReceivable();
+        UpdatePostPaymentBalanceNotice();
     }
 
     private void ApplyReceiptTypeRules()
@@ -192,6 +268,10 @@ public partial class LoanReceiptControl : UserControl
                 case 1: // Part Payment
                     TxtInterestAmount.Text = _calcResult.TotalInterest.ToString("F2");
                     TxtInterestAmount.IsReadOnly = false;
+                    if (decimal.TryParse(TxtPartPrincipal.Text, out var currPart) && currPart == _currentPrincipalBalance)
+                    {
+                        TxtPartPrincipal.Text = "0.00";
+                    }
                     TxtPartPrincipal.IsReadOnly = false;
                     break;
 
@@ -211,13 +291,90 @@ public partial class LoanReceiptControl : UserControl
 
     private void OnPaymentAmountChanged(object sender, TextChangedEventArgs e)
     {
-        if (_isUpdatingReceiptType) return;
+        if (!_isInitialized || _isUpdatingReceiptType) return;
+
+        // Automatic prompt to switch to Full Closure if user enters full principal in Part Payment mode
+        if (!_isPromptingClosure && CmbReceiptType.SelectedIndex == 1 && _loadedLoan != null && _currentPrincipalBalance > 0)
+        {
+            if (decimal.TryParse(TxtPartPrincipal.Text, out var enteredPart) && enteredPart >= _currentPrincipalBalance)
+            {
+                _isPromptingClosure = true;
+                var result = MessageBox.Show(
+                    $"The entered principal amount ({ValidationHelper.FormatCurrency(enteredPart)}) completely settles the remaining loan balance of {ValidationHelper.FormatCurrency(_currentPrincipalBalance)}.\n\n" +
+                    "Would you like to automatically switch to 'Full Closure & Release' to close this loan and generate the Jewel Release Slip?",
+                    "Full Principal Payment Detected",
+                    MessageBoxButton.YesNo,
+                    MessageBoxImage.Question);
+
+                if (result == MessageBoxResult.Yes)
+                {
+                    CmbReceiptType.SelectedIndex = 2; // Full Closure
+                    ApplyReceiptTypeRules();
+                }
+                _isPromptingClosure = false;
+            }
+        }
+
         UpdateTotalReceivable();
+        UpdatePostPaymentBalanceNotice();
+    }
+
+    private void UpdatePostPaymentBalanceNotice()
+    {
+        if (!_isInitialized || TxtPostPaymentBalance == null || TxtAutoCloseHint == null || BdrBalanceNotice == null) return;
+
+        if (_loadedLoan == null)
+        {
+            TxtPostPaymentBalance.Text = "📌 Load a loan to inspect balance and settlement breakdown.";
+            TxtAutoCloseHint.Text = string.Empty;
+            return;
+        }
+
+        decimal.TryParse(TxtPartPrincipal?.Text, out var partPrin);
+        decimal remaining = _currentPrincipalBalance;
+
+        switch (CmbReceiptType?.SelectedIndex ?? 0)
+        {
+            case 0: // Interest Only
+                TxtPostPaymentBalance.Text = $"📌 Remaining Balance: {ValidationHelper.FormatCurrency(_currentPrincipalBalance)} (Interest Only — Principal Unchanged)";
+                TxtAutoCloseHint.Text = "💡 Only accrued interest will be settled. Loan stays active.";
+                BdrBalanceNotice.Background = new SolidColorBrush(Color.FromRgb(0xF0, 0xF9, 0xFF));
+                BdrBalanceNotice.BorderBrush = new SolidColorBrush(Color.FromRgb(0xBA, 0xE6, 0xFD));
+                TxtPostPaymentBalance.Foreground = new SolidColorBrush(Color.FromRgb(0x03, 0x69, 0xA1));
+                break;
+
+            case 1: // Part Payment
+                remaining = Math.Max(0m, _currentPrincipalBalance - partPrin);
+                TxtPostPaymentBalance.Text = $"📌 Remaining Balance: {ValidationHelper.FormatCurrency(remaining)} (After paying {ValidationHelper.FormatCurrency(partPrin)} principal)";
+                if (remaining == 0m && _currentPrincipalBalance > 0m)
+                {
+                    TxtAutoCloseHint.Text = "⚡ FULL BALANCE COVERED! Select 'Full Closure & Release' to complete settlement.";
+                    BdrBalanceNotice.Background = new SolidColorBrush(Color.FromRgb(0xFE, 0xF3, 0xC7));
+                    BdrBalanceNotice.BorderBrush = new SolidColorBrush(Color.FromRgb(0xFD, 0xE6, 0x8A));
+                    TxtPostPaymentBalance.Foreground = new SolidColorBrush(Color.FromRgb(0xB4, 0x53, 0x09));
+                }
+                else
+                {
+                    TxtAutoCloseHint.Text = $"💡 Principal will decrease from {ValidationHelper.FormatCurrency(_currentPrincipalBalance)} to {ValidationHelper.FormatCurrency(remaining)}";
+                    BdrBalanceNotice.Background = new SolidColorBrush(Color.FromRgb(0xF0, 0xFD, 0xF4));
+                    BdrBalanceNotice.BorderBrush = new SolidColorBrush(Color.FromRgb(0xBB, 0xF7, 0xD0));
+                    TxtPostPaymentBalance.Foreground = new SolidColorBrush(Color.FromRgb(0x16, 0x65, 0x34));
+                }
+                break;
+
+            case 2: // Full Closure
+                TxtPostPaymentBalance.Text = "📌 Remaining Balance: ₹ 0.00 (FULL CLOSURE & JEWEL RELEASE)";
+                TxtAutoCloseHint.Text = "🎉 Loan will be closed and collateral jewel release document printed!";
+                BdrBalanceNotice.Background = new SolidColorBrush(Color.FromRgb(0xF0, 0xFD, 0xF4));
+                BdrBalanceNotice.BorderBrush = new SolidColorBrush(Color.FromRgb(0xBB, 0xF7, 0xD0));
+                TxtPostPaymentBalance.Foreground = new SolidColorBrush(Color.FromRgb(0x16, 0x65, 0x34));
+                break;
+        }
     }
 
     private bool UpdateTotalReceivable()
     {
-        if (TxtTotalReceivable == null) return false;
+        if (!_isInitialized || TxtTotalReceivable == null || TxtInterestError == null || TxtPrincipalError == null || TxtPostalError == null || TxtAdjustmentError == null || BtnProcessReceipt == null) return false;
 
         bool isValid = true;
 
@@ -303,8 +460,6 @@ public partial class LoanReceiptControl : UserControl
         decimal.TryParse(TxtPostalCharges.Text, out var postal);
         decimal.TryParse(TxtAdjustment.Text, out var adj);
 
-        var total = interest + principal + postal - adj;
-
         var rType = CmbReceiptType.SelectedIndex switch
         {
             0 => ReceiptType.InterestOnly,
@@ -312,6 +467,25 @@ public partial class LoanReceiptControl : UserControl
             2 => ReceiptType.Closure,
             _ => ReceiptType.InterestOnly
         };
+
+        // Safety verification if user is paying full principal in non-closure receipt
+        if (rType != ReceiptType.Closure && principal >= _currentPrincipalBalance && _currentPrincipalBalance > 0)
+        {
+            var prompt = MessageBox.Show(
+                $"The principal payment of {ValidationHelper.FormatCurrency(principal)} covers the entire remaining balance.\n\n" +
+                "Do you want to process this as a 'Full Closure & Release' instead so jewels can be officially released to the customer?",
+                "Complete Closure Confirmation",
+                MessageBoxButton.YesNoCancel,
+                MessageBoxImage.Question);
+
+            if (prompt == MessageBoxResult.Cancel) return;
+            if (prompt == MessageBoxResult.Yes)
+            {
+                rType = ReceiptType.Closure;
+                CmbReceiptType.SelectedIndex = 2;
+                principal = _currentPrincipalBalance;
+            }
+        }
 
         var payMode = CmbPayMode.SelectedIndex switch
         {
@@ -365,10 +539,21 @@ public partial class LoanReceiptControl : UserControl
             };
             dlg.ShowDialog();
 
-            // Reload loan status
+            // Reload loan status and balances
             _loadedLoan = await _loanService.GetLoanByIdAsync(_loadedLoan.Id);
-            if (_loadedLoan != null) DisplayLoanInfo(_loadedLoan);
+            if (_loadedLoan != null)
+            {
+                var history = await _loanService.GetLoanHistoryAsync(_loadedLoan.Id);
+                _currentPrincipalBalance = history.OrderByDescending(h => h.EntryDate).ThenByDescending(h => h.CreatedAtUtc).FirstOrDefault()?.Balance ?? 0m;
+                DisplayLoanInfo(_loadedLoan);
+            }
             RecalculateInterest();
+
+            // Refresh Tracker if this customer is currently selected in Tab 2
+            if (_currentTrackerCustomer != null && _loadedLoan != null && _currentTrackerCustomer.Id == _loadedLoan.CustomerId)
+            {
+                await LoadCustomerTrackerDataAsync(_currentTrackerCustomer);
+            }
         }
         catch (Exception ex)
         {
@@ -422,5 +607,277 @@ public partial class LoanReceiptControl : UserControl
             Owner = Window.GetWindow(this)
         };
         dlg.ShowDialog();
+    }
+
+    // ==========================================
+    // TAB 2: CUSTOMER BALANCE TRACKER LOGIC
+    // ==========================================
+
+    private async void OnCustomerTrackerKeyDown(object sender, KeyEventArgs e)
+    {
+        if (e.Key == Key.Enter)
+        {
+            await SearchAndLoadCustomerTrackerAsync(TxtCustomerTrackerSearch.Text.Trim());
+        }
+    }
+
+    private async void OnCustomerTrackerSearchClick(object sender, RoutedEventArgs e)
+    {
+        await SearchAndLoadCustomerTrackerAsync(TxtCustomerTrackerSearch.Text.Trim());
+    }
+
+    private async void OnCustomerTrackerPickClick(object sender, RoutedEventArgs e)
+    {
+        if (_customerService == null)
+        {
+            MessageBox.Show("Customer service is not available.", "Notice", MessageBoxButton.OK, MessageBoxImage.Information);
+            return;
+        }
+
+        var dlg = new CustomerLookupDialog(_customerService, TxtCustomerTrackerSearch.Text.Trim())
+        {
+            Owner = Window.GetWindow(this)
+        };
+
+        if (dlg.ShowDialog() == true && dlg.SelectedCustomer != null)
+        {
+            TxtCustomerTrackerSearch.Text = dlg.SelectedCustomer.FullName;
+            await LoadCustomerTrackerDataAsync(dlg.SelectedCustomer);
+        }
+    }
+
+    private async void OnCustomerTrackerRefreshClick(object sender, RoutedEventArgs e)
+    {
+        if (_currentTrackerCustomer != null)
+        {
+            await LoadCustomerTrackerDataAsync(_currentTrackerCustomer);
+        }
+        else if (!string.IsNullOrWhiteSpace(TxtCustomerTrackerSearch.Text))
+        {
+            await SearchAndLoadCustomerTrackerAsync(TxtCustomerTrackerSearch.Text.Trim());
+        }
+    }
+
+    private async Task SearchAndLoadCustomerTrackerAsync(string query)
+    {
+        if (string.IsNullOrWhiteSpace(query))
+        {
+            MessageBox.Show("Please enter customer name, mobile, or customer code to search.", "Search Query Required", MessageBoxButton.OK, MessageBoxImage.Information);
+            return;
+        }
+
+        try
+        {
+            Customer? customer = null;
+            if (_customerService != null)
+            {
+                var customers = await _customerService.SearchCustomersAsync(query, take: 5);
+                customer = customers.FirstOrDefault();
+            }
+
+            if (customer == null)
+            {
+                // Fallback search through loans
+                var loans = await _loanService.SearchLoansAsync(query, take: 1);
+                customer = loans.FirstOrDefault()?.Customer;
+            }
+
+            if (customer == null)
+            {
+                MessageBox.Show($"No customer found matching '{query}'.", "Customer Not Found", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
+            await LoadCustomerTrackerDataAsync(customer);
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "Failed to search customer for tracker.");
+            MessageBox.Show($"Failed to search customer: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
+    }
+
+    private async Task LoadCustomerTrackerDataAsync(Customer customer)
+    {
+        try
+        {
+            _currentTrackerCustomer = customer;
+            TxtTrackerCustName.Text = $"{customer.FullName} ({customer.Code})";
+            TxtTrackerCustPhone.Text = $"Mobile: {customer.MobileNumber}";
+            TxtTrackerCustAddress.Text = $"Address: {customer.Address ?? "-"}, {customer.City ?? "-"}";
+
+            // Find all loans for this customer
+            var allLoans = await _loanService.SearchLoansAsync(customer.MobileNumber, take: 100);
+            if (allLoans.Count == 0 && !string.IsNullOrWhiteSpace(customer.Code))
+            {
+                allLoans = await _loanService.SearchLoansAsync(customer.Code, take: 100);
+            }
+
+            var viewModels = new List<CustomerLoanBalanceViewModel>();
+            var today = DateOnly.FromDateTime(DateTime.Today);
+
+            foreach (var loan in allLoans)
+            {
+                // Compute current balance from ledger history
+                var history = await _loanService.GetLoanHistoryAsync(loan.Id);
+                var balance = history.OrderByDescending(h => h.EntryDate).ThenByDescending(h => h.CreatedAtUtc).FirstOrDefault()?.Balance ?? loan.LoanAmount;
+                if (balance <= 0 && loan.Status == LoanStatus.Active) balance = loan.LoanAmount;
+
+                var scheme = loan.Scheme ?? new Scheme
+                {
+                    InterestRatePerMonth = 1.5m,
+                    PenalInterestRatePerMonth = 0.5m,
+                    MaxTenureMonths = 12,
+                    GraceDaysAfterExpiry = 7,
+                    MinimumInterestDays = 30
+                };
+
+                decimal accruedInterest = 0m;
+                decimal payToClose = 0m;
+
+                if (loan.Status == LoanStatus.Active || loan.Status == LoanStatus.PartiallyPaid)
+                {
+                    var calc = _interestCalculator.CalculateInterest(
+                        balance,
+                        scheme.InterestRatePerMonth,
+                        scheme.PenalInterestRatePerMonth,
+                        loan.PledgeDate,
+                        today,
+                        loan.LastInterestPaidDate,
+                        scheme.MaxTenureMonths,
+                        scheme.GraceDaysAfterExpiry,
+                        scheme.MinimumInterestDays,
+                        false);
+
+                    accruedInterest = calc.TotalInterest;
+                    payToClose = balance + accruedInterest;
+                }
+
+                var jewelDesc = loan.Items != null && loan.Items.Count > 0
+                    ? string.Join(", ", loan.Items.Select(i => $"{i.JewelType?.Name ?? "Item"} ({i.Quantity} pcs, {i.NetWeight:F3}g)"))
+                    : $"{loan.NetWeight:F3}g Gold";
+
+                viewModels.Add(new CustomerLoanBalanceViewModel
+                {
+                    LoanId = loan.Id,
+                    LoanNumber = loan.LoanNumber,
+                    PledgeDate = loan.PledgeDate,
+                    SchemeInfo = $"{scheme.Name} ({scheme.InterestRatePerMonth:F2}%/mo)",
+                    JewelDetails = jewelDesc,
+                    OriginalPrincipal = loan.LoanAmount,
+                    PrincipalPaid = Math.Max(0m, loan.LoanAmount - balance),
+                    RemainingBalance = balance,
+                    AccruedInterest = accruedInterest,
+                    PayToCloseNow = payToClose,
+                    Status = loan.Status.ToString(),
+                    IsActive = (loan.Status == LoanStatus.Active || loan.Status == LoanStatus.PartiallyPaid)
+                });
+            }
+
+            _trackerLoanViewModels = viewModels;
+            GridCustomerLoans.ItemsSource = _trackerLoanViewModels;
+
+            // Aggregate KPI Cards
+            var activeItems = _trackerLoanViewModels.Where(v => v.IsActive).ToList();
+            var activeLoans = allLoans.Where(l => l.Status == LoanStatus.Active || l.Status == LoanStatus.PartiallyPaid).ToList();
+
+            TxtTrackerActiveLoansCount.Text = $"{activeItems.Count} {(activeItems.Count == 1 ? "Active Loan" : "Active Loans")}";
+            TxtTrackerTotalPledgedWeight.Text = $"{activeLoans.Sum(l => l.NetWeight):F3} g Gold Pledged";
+            TxtTrackerTotalDisbursed.Text = ValidationHelper.FormatCurrency(allLoans.Sum(l => l.LoanAmount));
+            TxtTrackerRemainingPrincipal.Text = ValidationHelper.FormatCurrency(activeItems.Sum(i => i.RemainingBalance));
+            TxtTrackerAccruedInterest.Text = $"Interest: {ValidationHelper.FormatCurrency(activeItems.Sum(i => i.AccruedInterest))}";
+            TxtTrackerGrandPayToClose.Text = ValidationHelper.FormatCurrency(activeItems.Sum(i => i.PayToCloseNow));
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "Failed to load customer tracker data.");
+            MessageBox.Show($"Failed to load customer loans: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
+    }
+
+    private async void OnSettleCustomerLoanRowClick(object sender, RoutedEventArgs e)
+    {
+        if ((sender as FrameworkElement)?.DataContext is CustomerLoanBalanceViewModel item)
+        {
+            // Switch to Tab 1 (Issue Receipt & Pay to Close)
+            ReceiptsTabControl.SelectedIndex = 0;
+
+            // Load this specific loan
+            TxtSearchQuery.Text = item.LoanNumber;
+            await LoadLoanAsync(item.LoanNumber);
+        }
+    }
+
+    private async void OnPrintCustomerStatementClick(object sender, RoutedEventArgs e)
+    {
+        if (_currentTrackerCustomer == null)
+        {
+            MessageBox.Show("Please search and select a customer first to print statement.", "Notice", MessageBoxButton.OK, MessageBoxImage.Information);
+            return;
+        }
+
+        try
+        {
+            var printDlg = new PrintDialog();
+            if (printDlg.ShowDialog() == true)
+            {
+                printDlg.PrintVisual(GridCustomerLoans, $"JGF Statement - {_currentTrackerCustomer.FullName}");
+                MessageBox.Show("Customer statement sent to printer successfully.", "Printed", MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "Failed to print customer statement.");
+            MessageBox.Show($"Failed to print statement: {ex.Message}", "Print Error", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
+    }
+
+    private async void OnDownloadCustomerStatementClick(object sender, RoutedEventArgs e)
+    {
+        if (_currentTrackerCustomer == null)
+        {
+            MessageBox.Show("Please search and select a customer first to download statement.", "Notice", MessageBoxButton.OK, MessageBoxImage.Information);
+            return;
+        }
+
+        try
+        {
+            var sfd = new SaveFileDialog
+            {
+                FileName = $"Statement_{_currentTrackerCustomer.Code}_{DateTime.Today:yyyyMMdd}.csv",
+                Filter = "CSV Files (*.csv)|*.csv|Text Files (*.txt)|*.txt",
+                Title = "Save Customer Statement"
+            };
+
+            if (sfd.ShowDialog() == true)
+            {
+                using var writer = new StreamWriter(sfd.FileName);
+                await writer.WriteLineAsync($"JEBA GOLD FINANCE - CUSTOMER BALANCE STATEMENT");
+                await writer.WriteLineAsync($"Customer: {_currentTrackerCustomer.FullName} ({_currentTrackerCustomer.Code})");
+                await writer.WriteLineAsync($"Mobile: {_currentTrackerCustomer.MobileNumber}");
+                await writer.WriteLineAsync($"Date: {DateTime.Now:dd-MMM-yyyy HH:mm}");
+                await writer.WriteLineAsync();
+                await writer.WriteLineAsync("GL Number,Pledge Date,Scheme,Jewels,Original Principal,Principal Paid,Remaining Balance,Accrued Interest,Pay to Close Now,Status");
+
+                foreach (var item in _trackerLoanViewModels)
+                {
+                    await writer.WriteLineAsync($"\"{item.LoanNumber}\",\"{item.PledgeDate:dd-MMM-yyyy}\",\"{item.SchemeInfo}\",\"{item.JewelDetails}\",{item.OriginalPrincipal:F2},{item.PrincipalPaid:F2},{item.RemainingBalance:F2},{item.AccruedInterest:F2},{item.PayToCloseNow:F2},\"{item.Status}\"");
+                }
+
+                await writer.WriteLineAsync();
+                var active = _trackerLoanViewModels.Where(v => v.IsActive).ToList();
+                await writer.WriteLineAsync($"Total Active Loans: {active.Count}");
+                await writer.WriteLineAsync($"Total Remaining Balance: ₹ {active.Sum(a => a.RemainingBalance):N2}");
+                await writer.WriteLineAsync($"Total Accrued Interest: ₹ {active.Sum(a => a.AccruedInterest):N2}");
+                await writer.WriteLineAsync($"TOTAL TO PAY TO CLOSE ALL: ₹ {active.Sum(a => a.PayToCloseNow):N2}");
+
+                MessageBox.Show($"Customer statement successfully saved to:\n{sfd.FileName}", "Export Successful", MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "Failed to download customer statement.");
+            MessageBox.Show($"Failed to download statement: {ex.Message}", "Export Error", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
     }
 }

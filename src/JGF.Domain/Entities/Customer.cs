@@ -27,6 +27,16 @@ public class Customer : AuditableEntity, ISoftDeletable
     public string Name { get; set; } = string.Empty;
 
     /// <summary>
+    /// Alias property for CustomerCode
+    /// </summary>
+    [NotMapped]
+    public string CustomerCode
+    {
+        get => Code;
+        set => Code = value;
+    }
+
+    /// <summary>
     /// Alias property for FullName
     /// </summary>
     [NotMapped]

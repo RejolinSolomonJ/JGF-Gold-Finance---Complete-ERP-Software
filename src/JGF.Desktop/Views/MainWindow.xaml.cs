@@ -445,7 +445,9 @@ public partial class MainWindow : Window
             _services.GetRequiredService<ILoanService>(),
             _services.GetRequiredService<IReceiptService>(),
             _services.GetRequiredService<IInterestCalculator>(),
-            _currentUser);
+            _currentUser,
+            _services.GetService<ICustomerService>(),
+            _services.GetService<IJlReportService>());
         MainContentArea.Content = view;
     });
 

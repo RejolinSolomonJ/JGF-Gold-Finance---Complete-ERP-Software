@@ -192,7 +192,7 @@ public class AuthService : DbServiceBase, IAuthService
                 Action = action,
                 TableName = "Users",
                 IpAddress = ipAddress,
-                NewValues = notes,
+                NewValues = System.Text.Json.JsonSerializer.Serialize(new { note = notes }),
                 Timestamp = DateTime.UtcNow
             };
             await context.AuditLogs.AddAsync(log, ct);
