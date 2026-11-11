@@ -38,8 +38,8 @@
         <!-- Footer Developer Branding -->
         <Border Grid.Row="3" Margin="0,16,0,0" Padding="0,10,0,0" BorderBrush="#383838" BorderThickness="0,1,0,0">
             <TextBlock HorizontalAlignment="Center" Cursor="Hand" ToolTip="Click to visit https://www.linsinfotech.in" MouseLeftButtonDown="OnLinInfotechLinkClick">
-                <Run Text="Developed by " Foreground="#888888" FontSize="11"/>
-                <Run Text="Lin's Infotech Company Ltd." Foreground="#38BDF8" FontWeight="Bold" TextDecorations="Underline" FontSize="11"/>
+                <Run Text="Developed by " Foreground="#FFFFFF" FontSize="11"/>
+                <Run Text="Lin's Infotech Company Ltd." Foreground="#FFFFFF" FontWeight="SemiBold" TextDecorations="Underline" FontSize="11"/>
             </TextBlock>
         </Border>
     </Grid>

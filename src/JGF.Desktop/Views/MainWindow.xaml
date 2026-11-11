@@ -149,14 +149,11 @@
                     <TextBlock x:Name="TxtBackupWarning" Text="Backup: Up to date" Foreground="#CBD5E1" FontSize="11"/>
                 </StackPanel>
 
-                <!-- Right: Developed by Lin's Infotech Company Ltd. -->
-                <Border Grid.Column="1" HorizontalAlignment="Right" VerticalAlignment="Center" Background="#0F172A" CornerRadius="4" Padding="10,4" BorderBrush="#334155" BorderThickness="1">
-                    <TextBlock Cursor="Hand" ToolTip="Click to visit https://www.linsinfotech.in" MouseLeftButtonDown="OnLinInfotechLinkClick" VerticalAlignment="Center">
-                        <Run Text="Developed by " Foreground="#94A3B8" FontSize="11"/>
-                        <Run Text="Lin's Infotech Company Ltd." Foreground="#38BDF8" FontWeight="Bold" TextDecorations="Underline" FontSize="11"/>
-                        <Run Text=" (www.linsinfotech.in) ↗" Foreground="#38BDF8" FontWeight="SemiBold" FontSize="11"/>
-                    </TextBlock>
-                </Border>
+                <!-- Right: Developed by Lin's Infotech Company Ltd. (Plain white text with hover link) -->
+                <TextBlock Grid.Column="1" HorizontalAlignment="Right" VerticalAlignment="Center" Cursor="Hand" ToolTip="Click to visit https://www.linsinfotech.in" MouseLeftButtonDown="OnLinInfotechLinkClick">
+                    <Run Text="Developed by " Foreground="#FFFFFF" FontSize="11"/>
+                    <Run Text="Lin's Infotech Company Ltd." Foreground="#FFFFFF" FontWeight="SemiBold" TextDecorations="Underline" FontSize="11"/>
+                </TextBlock>
             </Grid>
         </Border>
     </Grid>
