@@ -32,4 +32,5 @@ Backups/
 CustomerPhotos/
 *.sql
 *.xlsx
+Releases/*.exe
 
