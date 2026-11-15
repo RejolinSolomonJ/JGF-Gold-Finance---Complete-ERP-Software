@@ -28,7 +28,7 @@ public static class LoanPawnTicketPrintHelper
     private static readonly SolidColorBrush BorderPenBrush = new(System.Windows.Media.Color.FromRgb(0x1E, 0x29, 0x3B));
     private static readonly SolidColorBrush SoftGray = new(System.Windows.Media.Color.FromRgb(0x47, 0x55, 0x69));
 
-    public const string FirmName = "VASANTHAM FINANCE";
+    public const string FirmName = "JEBA GOLD FINANCE";
     public const string FirmType = "(Pawn Brokers)";
     public const string FirmAddress = "Pallam Road, Near Bus Stop, Thengamputhur Junction.";
     public const string FirmLicense = "L.No:2020221223102";
@@ -570,9 +570,9 @@ public static class LoanPawnTicketPrintHelper
         glDock.Children.Add(dt);
         deedStack.Children.Add(glDock);
 
-        // Body Text 1: Thengamputhur VASANTHAM பைனான்ஸ் நிறுவனம் அவர்களுக்கு...
+        // Body Text 1: Thengamputhur JEBA GOLD பைனான்ஸ் நிறுவனம் அவர்களுக்கு...
         var p1 = new TextBlock { FontSize = 10, LineHeight = 16.5, TextWrapping = TextWrapping.Wrap, Foreground = InkBlack, Margin = new Thickness(0, 2, 0, 3) };
-        p1.Inlines.Add(new Run($"தேதி Thengamputhur VASANTHAM பைனான்ஸ் நிறுவனம் அவர்களுக்கு மேற்படி நிறுவனத்தில் கடன் தொகை ரூபாய் "));
+        p1.Inlines.Add(new Run($"தேதி Thengamputhur JEBA GOLD பைனான்ஸ் நிறுவனம் அவர்களுக்கு மேற்படி நிறுவனத்தில் கடன் தொகை ரூபாய் "));
         p1.Inlines.Add(new Bold(new Run($"₹ {loan.LoanAmount:N2} /-")));
         p1.Inlines.Add(new Run($"\nஉறுப்பினர் எண் : "));
         p1.Inlines.Add(new Bold(new Run($"{customer.Code}")));
@@ -818,7 +818,7 @@ public static class LoanPawnTicketPrintHelper
             {
                 Title = "Download Jewel Loan Pawn Ticket & Deed (ரசீது & கடன் பத்திரம்)",
                 Filter = "PDF Document (*.pdf)|*.pdf|All Files (*.*)|*.*",
-                FileName = $"VASANTHAM_PawnTicket_{loan.LoanNumber.Replace('/', '_')}_{DateTime.Today:yyyyMMdd}.pdf"
+                FileName = $"JGF_PawnTicket_{loan.LoanNumber.Replace('/', '_')}_{DateTime.Today:yyyyMMdd}.pdf"
             };
 
             if (sfd.ShowDialog(owner) != true) return false;
@@ -827,7 +827,7 @@ public static class LoanPawnTicketPrintHelper
             var visual2 = CreateMortgageDeedVisual(loan, customer, scheme, loan.Receipts?.ToList());
 
             using var doc = new PdfDocument();
-            doc.Info.Title = $"VASANTHAM FINANCE Pawn Ticket #{loan.LoanNumber}";
+            doc.Info.Title = $"JEBA GOLD FINANCE Pawn Ticket #{loan.LoanNumber}";
             doc.Info.Author = FirmName;
             doc.Info.Subject = "Tamil Nadu Jewel Loan Pawn Ticket & Mortgage Deed";
 
