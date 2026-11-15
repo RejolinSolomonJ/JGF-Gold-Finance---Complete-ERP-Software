@@ -1,6 +1,4 @@
 using System;
-using System.IO;
-using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
 using JGF.Desktop.Common;
@@ -26,13 +24,12 @@ public partial class LoanTicketActionsDialog : Window
         _scheme = scheme ?? throw new ArgumentNullException(nameof(scheme));
 
         TxtSuccessTitle.Text = $"Jewel Loan #{_loan.LoanNumber} Disbursed Successfully!";
-        TxtSuccessSubtitle.Text = $"Amount: ₹ {_loan.LoanAmount:N2} | Net Wt: {_loan.NetWeight:F3} g | Customer: {_customer.Name} ({_customer.Code})";
+        TxtSuccessSubtitle.Text = $"Disbursed: ₹ {_loan.LoanAmount:N2} | Net Weight: {_loan.NetWeight:F3} g | Customer: {_customer.Name} ({_customer.Code})";
 
         Loaded += (s, e) =>
         {
-            LoadVisuals();
             RbSheet1.IsChecked = true;
-            UpdateActivePreview();
+            LoadVisuals();
         };
     }
 
@@ -42,6 +39,8 @@ public partial class LoanTicketActionsDialog : Window
         {
             _visualSheet1 = LoanPawnTicketPrintHelper.CreateMortgageDeedVisual(_loan, _customer, _scheme, _loan.Receipts?.ToList());
             _visualSheet2 = LoanPawnTicketPrintHelper.CreateInventoryAndSlipVisual(_loan, _customer, _scheme);
+
+            UpdateActivePreview();
         }
         catch (Exception ex)
         {
@@ -105,6 +104,16 @@ public partial class LoanTicketActionsDialog : Window
         }
     }
 
+    private void OnOpenWordClick(object sender, RoutedEventArgs e)
+    {
+        LoanWordDocumentHelper.OpenInWord(_loan, _customer, _scheme);
+    }
+
+    private void OnSaveWordClick(object sender, RoutedEventArgs e)
+    {
+        LoanWordDocumentHelper.SaveWordDocument(_loan, _customer, _scheme, this);
+    }
+
     private async void OnDownloadPdfClick(object sender, RoutedEventArgs e)
     {
         BtnDownloadPdf.IsEnabled = false;
@@ -123,3 +132,4 @@ public partial class LoanTicketActionsDialog : Window
         Close();
     }
 }
+

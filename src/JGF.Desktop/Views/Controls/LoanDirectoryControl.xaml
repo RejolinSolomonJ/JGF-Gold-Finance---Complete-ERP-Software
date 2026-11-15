@@ -26,6 +26,7 @@
                 </StackPanel>
 
                 <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center" HorizontalAlignment="Right">
+                    <Button Content="📝 Open in Word" Width="140" Height="34" Margin="0,0,8,0" Style="{StaticResource SecondaryButtonStyle}" Click="OnOpenSelectedInWordClick" ToolTip="Directly open the pre-filled Word Document in Microsoft Word"/>
                     <Button Content="📄 Print Pawn Ticket" Width="150" Height="34" Margin="0,0,8,0" Style="{StaticResource SecondaryButtonStyle}" Click="OnPrintSelectedPawnTicketClick" ToolTip="Print or download Pawn Ticket &amp; Deed for selected loan"/>
                     <Button Content="📥 Export CSV" Width="120" Height="34" Margin="0,0,8,0" Style="{StaticResource SecondaryButtonStyle}" Click="OnExportCsvClick"/>
                     <Button Content="🖨 Print Directory" Width="130" Height="34" Style="{StaticResource PrimaryButtonStyle}" Click="OnPrintDirectoryClick"/>
@@ -265,7 +266,7 @@
                                             HeaderStyle="{StaticResource CenterAlignedDataGridHeader}" ElementStyle="{StaticResource CenterAlignedDataGridCellText}"/>
 
                         <!-- Action Buttons -->
-                        <DataGridTemplateColumn Header="Action" Width="220" MinWidth="200">
+                        <DataGridTemplateColumn Header="Action" Width="280" MinWidth="260">
                             <DataGridTemplateColumn.CellTemplate>
                                 <DataTemplate>
                                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
@@ -274,7 +275,9 @@
                                         <Button Content="📜 Ledger" Height="26" Padding="6,0" Style="{StaticResource SecondaryButtonStyle}" FontSize="11"
                                                 Click="OnViewHistoryRowClick" Margin="0,0,4,0" ToolTip="View chronological ledger timeline"/>
                                         <Button Content="📄 Ticket" Height="26" Padding="6,0" Style="{StaticResource SecondaryButtonStyle}" FontSize="11"
-                                                Click="OnPrintPawnTicketRowClick" ToolTip="Print or download Pawn Ticket &amp; Mortgage Deed"/>
+                                                Click="OnPrintPawnTicketRowClick" Margin="0,0,4,0" ToolTip="Print or download Pawn Ticket &amp; Mortgage Deed"/>
+                                        <Button Content="📝 Word" Height="26" Padding="6,0" Style="{StaticResource SecondaryButtonStyle}" FontSize="11"
+                                                Click="OnOpenWordRowClick" ToolTip="Open filled Word Document directly in Microsoft Word"/>
                                     </StackPanel>
                                 </DataTemplate>
                             </DataGridTemplateColumn.CellTemplate>

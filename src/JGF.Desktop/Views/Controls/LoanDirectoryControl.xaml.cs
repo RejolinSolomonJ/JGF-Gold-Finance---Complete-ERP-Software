@@ -469,6 +469,46 @@ public partial class LoanDirectoryControl : UserControl
         }
     }
 
+    private async void OnOpenSelectedInWordClick(object sender, RoutedEventArgs e)
+    {
+        if (GridLoans.SelectedItem is LoanDirectoryItemViewModel item)
+        {
+            await OpenWordDocumentForLoanAsync(item.LoanId);
+        }
+        else
+        {
+            MessageBox.Show("Please select a loan from the table first.", "Select Loan", MessageBoxButton.OK, MessageBoxImage.Information);
+        }
+    }
+
+    private async void OnOpenWordRowClick(object sender, RoutedEventArgs e)
+    {
+        if (sender is Button btn && btn.DataContext is LoanDirectoryItemViewModel item)
+        {
+            await OpenWordDocumentForLoanAsync(item.LoanId);
+        }
+    }
+
+    private async Task OpenWordDocumentForLoanAsync(Guid loanId)
+    {
+        try
+        {
+            var loan = await _loanService.GetLoanByIdAsync(loanId);
+            if (loan == null)
+            {
+                MessageBox.Show("Loan record not found.", "Error", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
+            LoanWordDocumentHelper.OpenInWord(loan, loan.Customer, loan.Scheme);
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "Failed to open Word document.");
+            MessageBox.Show($"Failed to open Word document: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
+    }
+
     private async Task OpenPawnTicketDialogForLoanAsync(Guid loanId)
     {
         try

@@ -366,6 +366,34 @@ public static class LoanWordDocumentHelper
         }
     }
 
+    public static string? FindWinWordExe()
+    {
+        var standardPaths = new[]
+        {
+            @"C:\Program Files\Microsoft Office\Root\Office16\WINWORD.EXE",
+            @"C:\Program Files (x86)\Microsoft Office\Root\Office16\WINWORD.EXE",
+            @"C:\Program Files\Microsoft Office\Office16\WINWORD.EXE",
+            @"C:\Program Files (x86)\Microsoft Office\Office16\WINWORD.EXE",
+            @"C:\Program Files\Microsoft Office\Office15\WINWORD.EXE",
+            @"C:\Program Files (x86)\Microsoft Office\Office15\WINWORD.EXE"
+        };
+
+        foreach (var path in standardPaths)
+        {
+            if (File.Exists(path)) return path;
+        }
+
+        try
+        {
+            using var key = Registry.LocalMachine.OpenSubKey(@"SOFTWARE\Microsoft\Windows\CurrentVersion\App Paths\winword.exe");
+            var val = key?.GetValue("")?.ToString();
+            if (!string.IsNullOrWhiteSpace(val) && File.Exists(val)) return val;
+        }
+        catch { }
+
+        return null;
+    }
+
     /// <summary>
     /// Generates the filled document and opens it directly in Microsoft Word or default viewer.
     /// </summary>
@@ -374,7 +402,26 @@ public static class LoanWordDocumentHelper
         try
         {
             var filledPath = GenerateFilledDocument(loan, customer, scheme);
-            Process.Start(new ProcessStartInfo(filledPath) { UseShellExecute = true });
+
+            var winwordPath = FindWinWordExe();
+            if (winwordPath != null && File.Exists(winwordPath))
+            {
+                var psi = new ProcessStartInfo
+                {
+                    FileName = winwordPath,
+                    Arguments = $"\"{filledPath}\"",
+                    UseShellExecute = true,
+                    WindowStyle = ProcessWindowStyle.Normal
+                };
+                Process.Start(psi);
+                return true;
+            }
+
+            Process.Start(new ProcessStartInfo(filledPath)
+            {
+                UseShellExecute = true,
+                WindowStyle = ProcessWindowStyle.Normal
+            });
             return true;
         }
         catch (Exception ex)
@@ -470,44 +517,6 @@ public static class LoanWordDocumentHelper
         catch (Exception ex)
         {
             Log.Warning(ex, "Word COM PDF conversion failed; falling back to internal PDF renderer.");
-        }
-        return false;
-    }
-
-    /// <summary>
-    /// Converts a filled Word document to XPS for native vector rendering inside WPF DocumentViewer.
-    /// </summary>
-    public static bool ExportWordToXps(Loan loan, Customer customer, Scheme scheme, string targetXpsPath)
-    {
-        try
-        {
-            var filledDocxPath = GenerateFilledDocument(loan, customer, scheme);
-
-            Type? wordType = Type.GetTypeFromProgID("Word.Application");
-            if (wordType != null)
-            {
-                dynamic? wordApp = Activator.CreateInstance(wordType);
-                if (wordApp != null)
-                {
-                    try
-                    {
-                        wordApp.Visible = false;
-                        dynamic doc = wordApp.Documents.Open(filledDocxPath);
-                        doc.SaveAs2(targetXpsPath, 18); // 18 = wdFormatXPS
-                        doc.Close(false);
-                        return true;
-                    }
-                    finally
-                    {
-                        wordApp.Quit();
-                        System.Runtime.InteropServices.Marshal.ReleaseComObject(wordApp);
-                    }
-                }
-            }
-        }
-        catch (Exception ex)
-        {
-            Log.Warning(ex, "Word COM XPS conversion failed; falling back to internal visual preview.");
         }
         return false;
     }
