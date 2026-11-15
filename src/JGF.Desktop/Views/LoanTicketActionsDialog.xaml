@@ -41,11 +41,11 @@
             <DockPanel LastChildFill="False">
                 <TextBlock Text="Document Sheet:" VerticalAlignment="Center" FontWeight="SemiBold" FontSize="12" Margin="0,0,12,0" Foreground="#334155"/>
                 
-                <RadioButton x:Name="RbSheet1" Content="Sheet 1: Jewel Inventory &amp; Customer Receipt (ரசீது &amp; நகைப் பட்டியல்)"
+                <RadioButton x:Name="RbSheet1" Content="Sheet 1: அடமானக் கடன் பத்திரம் (Mortgage Deed &amp; Conditions)"
                              GroupName="SheetGroup" FontWeight="SemiBold" FontSize="12" Margin="0,0,18,0"
                              VerticalAlignment="Center" Checked="OnSheetSelectionChanged"/>
 
-                <RadioButton x:Name="RbSheet2" Content="Sheet 2: Legal Mortgage Deed &amp; Ledger (அடமானக் கடன் பத்திரம் &amp; தவணை அட்டவணை)"
+                <RadioButton x:Name="RbSheet2" Content="Sheet 2: நகைப் பட்டியல் &amp; ரசீது (Jewel Inventory &amp; Slip)"
                              GroupName="SheetGroup" FontWeight="SemiBold" FontSize="12"
                              VerticalAlignment="Center" Checked="OnSheetSelectionChanged"/>
             </DockPanel>
@@ -61,16 +61,22 @@
         <!-- 4. Action Buttons Footer -->
         <Border Grid.Row="3" Background="#FFFFFF" BorderBrush="{DynamicResource BorderLightBrush}" BorderThickness="1" CornerRadius="6" Padding="12,10">
             <DockPanel LastChildFill="False">
-                <Button x:Name="BtnClose" Content="Close" DockPanel.Dock="Left" Width="100" Height="38"
+                <Button x:Name="BtnClose" Content="Close" DockPanel.Dock="Left" Width="90" Height="38"
                         Style="{DynamicResource SecondaryButtonStyle}" Click="OnCloseClick" IsCancel="True"/>
 
-                <Button x:Name="BtnDownloadPdf" Content="💾 Download PDF (Complete 2-Page)" DockPanel.Dock="Right" Width="230" Height="38" Margin="8,0,0,0"
+                <Button x:Name="BtnOpenWord" Content="📝 Open in Word (.docx)" DockPanel.Dock="Left" Width="175" Height="38" Margin="8,0,0,0"
+                        Style="{DynamicResource SecondaryButtonStyle}" Click="OnOpenWordClick"/>
+
+                <Button x:Name="BtnSaveWord" Content="💾 Save Word (.docx)" DockPanel.Dock="Left" Width="160" Height="38" Margin="8,0,0,0"
+                        Style="{DynamicResource SecondaryButtonStyle}" Click="OnSaveWordClick"/>
+
+                <Button x:Name="BtnDownloadPdf" Content="📄 Download PDF (2-Page)" DockPanel.Dock="Right" Width="185" Height="38" Margin="8,0,0,0"
                         Style="{DynamicResource SecondaryButtonStyle}" Click="OnDownloadPdfClick"/>
 
-                <Button x:Name="BtnPrintBoth" Content="🖨️ Print Both Sheets (Duplex)" DockPanel.Dock="Right" Width="190" Height="38" Margin="8,0,0,0"
+                <Button x:Name="BtnPrintBoth" Content="🖨️ Print Both Sheets" DockPanel.Dock="Right" Width="160" Height="38" Margin="8,0,0,0"
                         Style="{DynamicResource SecondaryButtonStyle}" Click="OnPrintBothClick"/>
 
-                <Button x:Name="BtnPrintCurrent" Content="🖨️ Print Selected Sheet" DockPanel.Dock="Right" Width="180" Height="38" Margin="8,0,0,0"
+                <Button x:Name="BtnPrintCurrent" Content="🖨️ Print Current Sheet" DockPanel.Dock="Right" Width="170" Height="38" Margin="8,0,0,0"
                         Style="{DynamicResource PrimaryButtonStyle}" Click="OnPrintCurrentClick"/>
             </DockPanel>
         </Border>

@@ -37,8 +37,8 @@ public partial class LoanTicketActionsDialog : Window
     {
         try
         {
-            _visualSheet1 = LoanPawnTicketPrintHelper.CreateInventoryAndSlipVisual(_loan, _customer, _scheme);
-            _visualSheet2 = LoanPawnTicketPrintHelper.CreateMortgageDeedVisual(_loan, _customer, _scheme, _loan.Receipts?.ToList());
+            _visualSheet1 = LoanPawnTicketPrintHelper.CreateMortgageDeedVisual(_loan, _customer, _scheme, _loan.Receipts?.ToList());
+            _visualSheet2 = LoanPawnTicketPrintHelper.CreateInventoryAndSlipVisual(_loan, _customer, _scheme);
 
             UpdateActivePreview();
         }
@@ -72,36 +72,46 @@ public partial class LoanTicketActionsDialog : Window
     {
         var isSheet1 = RbSheet1.IsChecked == true;
         var visual = isSheet1
-            ? LoanPawnTicketPrintHelper.CreateInventoryAndSlipVisual(_loan, _customer, _scheme)
-            : LoanPawnTicketPrintHelper.CreateMortgageDeedVisual(_loan, _customer, _scheme, _loan.Receipts?.ToList());
+            ? LoanPawnTicketPrintHelper.CreateMortgageDeedVisual(_loan, _customer, _scheme, _loan.Receipts?.ToList())
+            : LoanPawnTicketPrintHelper.CreateInventoryAndSlipVisual(_loan, _customer, _scheme);
 
         var title = isSheet1
-            ? $"JGF Loan {_loan.LoanNumber} - Jewel Inventory & Customer Slip"
-            : $"JGF Loan {_loan.LoanNumber} - Mortgage Deed & Ledger";
+            ? $"JGF Loan {_loan.LoanNumber} - Mortgage Deed & Ledger"
+            : $"JGF Loan {_loan.LoanNumber} - Jewel Inventory & Customer Slip";
 
         LoanPawnTicketPrintHelper.PrintTicket(visual, title, this);
     }
 
     private void OnPrintBothClick(object sender, RoutedEventArgs e)
     {
-        var v1 = LoanPawnTicketPrintHelper.CreateInventoryAndSlipVisual(_loan, _customer, _scheme);
-        var v2 = LoanPawnTicketPrintHelper.CreateMortgageDeedVisual(_loan, _customer, _scheme, _loan.Receipts?.ToList());
+        var v1 = LoanPawnTicketPrintHelper.CreateMortgageDeedVisual(_loan, _customer, _scheme, _loan.Receipts?.ToList());
+        var v2 = LoanPawnTicketPrintHelper.CreateInventoryAndSlipVisual(_loan, _customer, _scheme);
 
-        // Print Sheet 1
-        var p1Success = LoanPawnTicketPrintHelper.PrintTicket(v1, $"JGF Loan {_loan.LoanNumber} - Sheet 1 (Inventory & Slip)", this);
+        // Print Sheet 1 (Deed)
+        var p1Success = LoanPawnTicketPrintHelper.PrintTicket(v1, $"JGF Loan {_loan.LoanNumber} - Sheet 1 (Mortgage Deed)", this);
         if (p1Success)
         {
             var res = MessageBox.Show(
-                "Sheet 1 sent to printer.\n\nReady to print Sheet 2 (Legal Mortgage Deed)?",
+                "Sheet 1 (Mortgage Deed) sent to printer.\n\nReady to print Sheet 2 (Jewel Inventory & Customer Slip)?",
                 "Print Next Sheet",
                 MessageBoxButton.YesNo,
                 MessageBoxImage.Question);
 
             if (res == MessageBoxResult.Yes)
             {
-                LoanPawnTicketPrintHelper.PrintTicket(v2, $"JGF Loan {_loan.LoanNumber} - Sheet 2 (Mortgage Deed & Ledger)", this);
+                LoanPawnTicketPrintHelper.PrintTicket(v2, $"JGF Loan {_loan.LoanNumber} - Sheet 2 (Inventory & Customer Slip)", this);
             }
         }
+    }
+
+    private void OnOpenWordClick(object sender, RoutedEventArgs e)
+    {
+        LoanWordDocumentHelper.OpenInWord(_loan, _customer, _scheme);
+    }
+
+    private void OnSaveWordClick(object sender, RoutedEventArgs e)
+    {
+        LoanWordDocumentHelper.SaveWordDocument(_loan, _customer, _scheme, this);
     }
 
     private async void OnDownloadPdfClick(object sender, RoutedEventArgs e)
