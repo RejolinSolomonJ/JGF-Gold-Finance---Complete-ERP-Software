@@ -832,3 +832,4 @@ public static class LoanPawnTicketPrintHelper
         gfx.DrawImage(xImg, 0, 0, page.Width.Point, page.Height.Point);
     }
 }
+

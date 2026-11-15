@@ -1,6 +1,7 @@
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using System.Windows.Media;
 using JGF.Application.Services;
 using JGF.Desktop.Common;
 using JGF.Domain.Entities;
@@ -36,6 +37,12 @@ public partial class CustomerLookupDialog : Window
             var list = await _customerService.SearchCustomersAsync(query, take: 50, ct);
             GridCustomers.ItemsSource = list;
             TxtEmptyState.Visibility = (list.Count == 0) ? Visibility.Visible : Visibility.Collapsed;
+
+            // Automatically select first row so user can immediately press Enter or click Select Customer
+            if (list.Count > 0)
+            {
+                GridCustomers.SelectedIndex = 0;
+            }
         }
         catch (OperationCanceledException)
         {
@@ -68,11 +75,33 @@ public partial class CustomerLookupDialog : Window
 
     private void OnSearchKeyDown(object sender, KeyEventArgs e)
     {
-        if (e.Key == Key.Down && GridCustomers.Items.Count > 0)
+        if (e.Key == Key.Enter)
+        {
+            if (GridCustomers.SelectedItem != null || GridCustomers.Items.Count > 0)
+            {
+                ConfirmSelection();
+                e.Handled = true;
+                return;
+            }
+        }
+        else if (e.Key == Key.Down && GridCustomers.Items.Count > 0)
         {
             GridCustomers.Focus();
             GridCustomers.SelectedIndex = 0;
             e.Handled = true;
+        }
+    }
+
+    private void OnGridPreviewMouseDown(object sender, MouseButtonEventArgs e)
+    {
+        if (e.OriginalSource is DependencyObject dep)
+        {
+            var row = FindVisualParent<DataGridRow>(dep);
+            if (row?.Item is Customer c)
+            {
+                row.IsSelected = true;
+                GridCustomers.SelectedItem = c;
+            }
         }
     }
 
@@ -87,6 +116,18 @@ public partial class CustomerLookupDialog : Window
 
     private void OnCustomerDoubleClicked(object sender, MouseButtonEventArgs e)
     {
+        if (e.OriginalSource is DependencyObject dep)
+        {
+            var row = FindVisualParent<DataGridRow>(dep);
+            if (row?.Item is Customer c)
+            {
+                SelectedCustomer = c;
+                DialogResult = true;
+                Close();
+                return;
+            }
+        }
+
         ConfirmSelection();
     }
 
@@ -97,16 +138,42 @@ public partial class CustomerLookupDialog : Window
 
     private void ConfirmSelection()
     {
+        // 1. Check direct SelectedItem
         if (GridCustomers.SelectedItem is Customer c)
         {
             SelectedCustomer = c;
             DialogResult = true;
             Close();
+            return;
         }
-        else
+
+        // 2. Check CurrentItem
+        if (GridCustomers.CurrentItem is Customer cur)
         {
-            MessageBox.Show("Please select a customer from the table.", "Selection Required", MessageBoxButton.OK, MessageBoxImage.Information);
+            SelectedCustomer = cur;
+            DialogResult = true;
+            Close();
+            return;
         }
+
+        // 3. Fallback: If only 1 customer or first customer in list exists, take it!
+        if (GridCustomers.Items.Count > 0 && GridCustomers.Items[0] is Customer firstCustomer)
+        {
+            SelectedCustomer = firstCustomer;
+            DialogResult = true;
+            Close();
+            return;
+        }
+
+        MessageBox.Show("Please select a customer from the table.", "Selection Required", MessageBoxButton.OK, MessageBoxImage.Information);
+    }
+
+    private static T? FindVisualParent<T>(DependencyObject child) where T : DependencyObject
+    {
+        var parentObj = VisualTreeHelper.GetParent(child);
+        if (parentObj == null) return null;
+        if (parentObj is T parent) return parent;
+        return FindVisualParent<T>(parentObj);
     }
 
     private void OnCancelClick(object sender, RoutedEventArgs e)

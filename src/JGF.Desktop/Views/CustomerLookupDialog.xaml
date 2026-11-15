@@ -37,8 +37,30 @@
                           AutoGenerateColumns="False" 
                           IsReadOnly="True" 
                           SelectionMode="Single"
+                          SelectionUnit="FullRow"
+                          CanUserAddRows="False"
+                          CanUserDeleteRows="False"
+                          RowHeaderWidth="0"
+                          GridLinesVisibility="Horizontal"
+                          Cursor="Hand"
+                          PreviewMouseDown="OnGridPreviewMouseDown"
                           MouseDoubleClick="OnCustomerDoubleClicked"
                           KeyDown="OnGridKeyDown">
+                    <DataGrid.RowStyle>
+                        <Style TargetType="DataGridRow">
+                            <Setter Property="Height" Value="32"/>
+                            <Setter Property="VerticalContentAlignment" Value="Center"/>
+                            <Style.Triggers>
+                                <Trigger Property="IsSelected" Value="True">
+                                    <Setter Property="Background" Value="#DBEAFE"/>
+                                    <Setter Property="FontWeight" Value="SemiBold"/>
+                                </Trigger>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter Property="Background" Value="#F1F5F9"/>
+                                </Trigger>
+                            </Style.Triggers>
+                        </Style>
+                    </DataGrid.RowStyle>
                     <DataGrid.Columns>
                         <DataGridTextColumn Header="Customer Code" Binding="{Binding Code}" Width="120" FontWeight="SemiBold"/>
                         <DataGridTextColumn Header="Full Name (English)" Binding="{Binding FullName}" Width="200"/>
