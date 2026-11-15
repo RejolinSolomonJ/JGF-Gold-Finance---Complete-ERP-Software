@@ -226,9 +226,10 @@ public static class LoanPawnTicketPrintHelper
         tfGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(70) });
         tfGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(70) });
 
-        var totalQty = loan.Items.Sum(i => i.Quantity);
-        var totalGross = loan.Items.Sum(i => i.GrossWeight);
-        var totalNet = loan.Items.Sum(i => i.NetWeight);
+        var items = loan.Items?.ToList() ?? new List<LoanItem>();
+        var totalQty = items.Count > 0 ? items.Sum(i => i.Quantity) : 1;
+        var totalGross = items.Count > 0 ? items.Sum(i => i.GrossWeight) : loan.GrossWeight;
+        var totalNet = items.Count > 0 ? items.Sum(i => i.NetWeight) : loan.NetWeight;
 
         var tfLabel = new TextBlock { Text = "TOTAL:", FontWeight = FontWeights.Bold, FontSize = 9.5, Foreground = InkDark };
         Grid.SetColumn(tfLabel, 1);
@@ -252,7 +253,7 @@ public static class LoanPawnTicketPrintHelper
         itemsDock.Children.Add(itemsStack);
 
         int rowIndex = 0;
-        foreach (var item in loan.Items)
+        foreach (var item in items)
         {
             var rowGrid = new Grid { Margin = new Thickness(4, 2, 4, 2) };
             rowGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(70) });

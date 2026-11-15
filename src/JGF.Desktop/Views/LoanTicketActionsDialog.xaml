@@ -42,7 +42,7 @@
                 <TextBlock Text="Document Sheet:" VerticalAlignment="Center" FontWeight="SemiBold" FontSize="12" Margin="0,0,12,0" Foreground="#334155"/>
                 
                 <RadioButton x:Name="RbSheet1" Content="Sheet 1: Jewel Inventory &amp; Customer Receipt (ரசீது &amp; நகைப் பட்டியல்)"
-                             IsChecked="True" GroupName="SheetGroup" FontWeight="SemiBold" FontSize="12" Margin="0,0,18,0"
+                             GroupName="SheetGroup" FontWeight="SemiBold" FontSize="12" Margin="0,0,18,0"
                              VerticalAlignment="Center" Checked="OnSheetSelectionChanged"/>
 
                 <RadioButton x:Name="RbSheet2" Content="Sheet 2: Legal Mortgage Deed &amp; Ledger (அடமானக் கடன் பத்திரம் &amp; தவணை அட்டவணை)"

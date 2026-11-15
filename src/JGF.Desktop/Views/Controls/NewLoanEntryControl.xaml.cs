@@ -601,18 +601,27 @@ public partial class NewLoanEntryControl : UserControl
 
             var loan = await _loanService.IssueNewLoanAsync(dto);
 
-            // Fetch fully populated loan with Customer, Scheme, and LoanItems
-            var fullLoan = await _loanService.GetLoanByIdAsync(loan.Id) ?? loan;
-            var customer = fullLoan.Customer ?? _selectedCustomer;
-            var scheme = fullLoan.Scheme ?? _selectedScheme;
-
-            // Automatically open Pawn Ticket & Mortgage Deed Action Dialog (Print / Download)
-            var parentWin = Window.GetWindow(this);
-            var ticketDialog = new LoanTicketActionsDialog(fullLoan, customer, scheme)
+            try
             {
-                Owner = parentWin
-            };
-            ticketDialog.ShowDialog();
+                // Fetch fully populated loan with Customer, Scheme, and LoanItems
+                var fullLoan = await _loanService.GetLoanByIdAsync(loan.Id) ?? loan;
+                var customer = fullLoan.Customer ?? _selectedCustomer;
+                var scheme = fullLoan.Scheme ?? _selectedScheme;
+
+                // Automatically open Pawn Ticket & Mortgage Deed Action Dialog (Print / Download)
+                var parentWin = Window.GetWindow(this);
+                var ticketDialog = new LoanTicketActionsDialog(fullLoan, customer, scheme)
+                {
+                    Owner = parentWin
+                };
+                ticketDialog.ShowDialog();
+            }
+            catch (Exception dlgEx)
+            {
+                Log.Error(dlgEx, "Failed to open loan pawn ticket dialog.");
+                MessageBox.Show($"Loan #{loan.LoanNumber} was successfully disbursed, but opening the print dialog encountered an error: {dlgEx.Message}\nYou can view, print, or download the ticket anytime from the Loan Directory.",
+                    "Loan Disbursed Successfully", MessageBoxButton.OK, MessageBoxImage.Information);
+            }
 
             OnClearClick(sender, e);
         }

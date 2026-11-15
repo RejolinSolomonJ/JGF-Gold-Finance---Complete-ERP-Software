@@ -26,7 +26,11 @@ public partial class LoanTicketActionsDialog : Window
         TxtSuccessTitle.Text = $"Jewel Loan #{_loan.LoanNumber} Disbursed Successfully!";
         TxtSuccessSubtitle.Text = $"Disbursed: ₹ {_loan.LoanAmount:N2} | Net Weight: {_loan.NetWeight:F3} g | Customer: {_customer.Name} ({_customer.Code})";
 
-        Loaded += (s, e) => LoadVisuals();
+        Loaded += (s, e) =>
+        {
+            RbSheet1.IsChecked = true;
+            LoadVisuals();
+        };
     }
 
     private void LoadVisuals()
@@ -47,6 +51,8 @@ public partial class LoanTicketActionsDialog : Window
 
     private void UpdateActivePreview()
     {
+        if (PnlPreviewContainer == null || RbSheet1 == null) return;
+
         if (RbSheet1.IsChecked == true)
         {
             PnlPreviewContainer.Content = _visualSheet1;
