@@ -386,6 +386,95 @@ public static class LoanWordDocumentHelper
     }
 
     /// <summary>
+    /// Sends the pre-filled Word document directly to the printer using Microsoft Word automation or shell verb.
+    /// </summary>
+    public static bool PrintWordDocumentDirectly(Loan loan, Customer customer, Scheme scheme)
+    {
+        try
+        {
+            var filledPath = GenerateFilledDocument(loan, customer, scheme);
+
+            // Attempt printing via Word COM
+            Type? wordType = Type.GetTypeFromProgID("Word.Application");
+            if (wordType != null)
+            {
+                dynamic? wordApp = Activator.CreateInstance(wordType);
+                if (wordApp != null)
+                {
+                    try
+                    {
+                        wordApp.Visible = false;
+                        dynamic doc = wordApp.Documents.Open(filledPath);
+                        doc.PrintOut();
+                        doc.Close(false);
+                        return true;
+                    }
+                    finally
+                    {
+                        wordApp.Quit();
+                        System.Runtime.InteropServices.Marshal.ReleaseComObject(wordApp);
+                    }
+                }
+            }
+
+            // Fallback to shell print verb
+            var psi = new ProcessStartInfo(filledPath)
+            {
+                Verb = "print",
+                UseShellExecute = true,
+                CreateNoWindow = true,
+                WindowStyle = ProcessWindowStyle.Hidden
+            };
+            Process.Start(psi);
+            return true;
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "Failed to send Word document directly to printer.");
+            System.Windows.MessageBox.Show($"Failed to send to printer: {ex.Message}", "Print Error", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
+            return false;
+        }
+    }
+
+    /// <summary>
+    /// Converts a filled Word document to high-resolution vector PDF using Word's native engine.
+    /// </summary>
+    public static bool ExportWordToPdf(Loan loan, Customer customer, Scheme scheme, string targetPdfPath)
+    {
+        try
+        {
+            var filledPath = GenerateFilledDocument(loan, customer, scheme);
+
+            Type? wordType = Type.GetTypeFromProgID("Word.Application");
+            if (wordType != null)
+            {
+                dynamic? wordApp = Activator.CreateInstance(wordType);
+                if (wordApp != null)
+                {
+                    try
+                    {
+                        wordApp.Visible = false;
+                        dynamic doc = wordApp.Documents.Open(filledPath);
+                        doc.SaveAs2(targetPdfPath, 17); // 17 = wdFormatPDF
+                        doc.Close(false);
+                        return true;
+                    }
+                    finally
+                    {
+                        wordApp.Quit();
+                        System.Runtime.InteropServices.Marshal.ReleaseComObject(wordApp);
+                    }
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Log.Warning(ex, "Word COM PDF conversion failed; falling back to internal PDF renderer.");
+        }
+        return false;
+    }
+
+    /// <summary>
     /// Shows SaveFileDialog and saves the pre-filled Word document to user's desired location.
     /// </summary>
     public static bool SaveWordDocument(Loan loan, Customer customer, Scheme scheme, System.Windows.Window? owner = null)
@@ -425,3 +514,4 @@ public static class LoanWordDocumentHelper
         }
     }
 }
+

@@ -608,7 +608,10 @@ public partial class NewLoanEntryControl : UserControl
                 var customer = fullLoan.Customer ?? _selectedCustomer;
                 var scheme = fullLoan.Scheme ?? _selectedScheme;
 
-                // Automatically open Pawn Ticket & Mortgage Deed Action Dialog (Print / Download)
+                // 1. Immediately open the exact pre-filled Word document directly in Microsoft Word!
+                LoanWordDocumentHelper.OpenInWord(fullLoan, customer, scheme);
+
+                // 2. Open Pawn Ticket & Mortgage Deed Action Dialog (Print / Download / Word Options)
                 var parentWin = Window.GetWindow(this);
                 var ticketDialog = new LoanTicketActionsDialog(fullLoan, customer, scheme)
                 {
