@@ -600,11 +600,19 @@ public partial class NewLoanEntryControl : UserControl
             BtnIssueLoan.IsEnabled = false;
 
             var loan = await _loanService.IssueNewLoanAsync(dto);
-            MessageBox.Show($"Jewel Loan #{loan.LoanNumber} successfully issued!\n" +
-                            $"Disbursed: {ValidationHelper.FormatCurrency(loan.LoanAmount)}\n" +
-                            $"Net Weight: {ValidationHelper.FormatWeight(loan.NetWeight)}\n" +
-                            $"Voucher posted: Dr Jewel Loan, Cr Cash",
-                "Loan Disbursed Successfully", MessageBoxButton.OK, MessageBoxImage.Information);
+
+            // Fetch fully populated loan with Customer, Scheme, and LoanItems
+            var fullLoan = await _loanService.GetLoanByIdAsync(loan.Id) ?? loan;
+            var customer = fullLoan.Customer ?? _selectedCustomer;
+            var scheme = fullLoan.Scheme ?? _selectedScheme;
+
+            // Automatically open Pawn Ticket & Mortgage Deed Action Dialog (Print / Download)
+            var parentWin = Window.GetWindow(this);
+            var ticketDialog = new LoanTicketActionsDialog(fullLoan, customer, scheme)
+            {
+                Owner = parentWin
+            };
+            ticketDialog.ShowDialog();
 
             OnClearClick(sender, e);
         }

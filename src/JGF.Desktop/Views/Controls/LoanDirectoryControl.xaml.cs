@@ -449,6 +449,50 @@ public partial class LoanDirectoryControl : UserControl
         }
     }
 
+    private async void OnPrintPawnTicketRowClick(object sender, RoutedEventArgs e)
+    {
+        if ((sender as FrameworkElement)?.DataContext is LoanDirectoryItemViewModel item)
+        {
+            await OpenPawnTicketDialogForLoanAsync(item.LoanId);
+        }
+    }
+
+    private async void OnPrintSelectedPawnTicketClick(object sender, RoutedEventArgs e)
+    {
+        if (GridLoans.SelectedItem is LoanDirectoryItemViewModel item)
+        {
+            await OpenPawnTicketDialogForLoanAsync(item.LoanId);
+        }
+        else
+        {
+            MessageBox.Show("Please select a loan from the table first.", "Select Loan", MessageBoxButton.OK, MessageBoxImage.Information);
+        }
+    }
+
+    private async Task OpenPawnTicketDialogForLoanAsync(Guid loanId)
+    {
+        try
+        {
+            var loan = await _loanService.GetLoanByIdAsync(loanId);
+            if (loan == null)
+            {
+                MessageBox.Show("Loan record not found.", "Error", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
+            var dlg = new LoanTicketActionsDialog(loan, loan.Customer, loan.Scheme)
+            {
+                Owner = Window.GetWindow(this)
+            };
+            dlg.ShowDialog();
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "Failed to open pawn ticket dialog.");
+            MessageBox.Show($"Failed to open pawn ticket: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
+    }
+
     private void OnGridRowDoubleClick(object sender, MouseButtonEventArgs e)
     {
         if (GridLoans.SelectedItem is LoanDirectoryItemViewModel item)
