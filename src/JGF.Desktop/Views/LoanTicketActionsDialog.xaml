@@ -53,9 +53,15 @@
 
         <!-- 3. Scrollable Visual Document Preview Container -->
         <Border Grid.Row="2" Background="#E2E8F0" BorderBrush="{DynamicResource BorderLightBrush}" BorderThickness="1" CornerRadius="6" Margin="0,0,0,12" ClipToBounds="True">
-            <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto" Padding="20">
-                <ContentPresenter x:Name="PnlPreviewContainer" HorizontalAlignment="Center" VerticalAlignment="Top"/>
-            </ScrollViewer>
+            <Grid>
+                <!-- Native Document Viewer displaying the exact vector Word/PDF pages with JGF logo -->
+                <DocumentViewer x:Name="DocViewer" Visibility="Collapsed" Background="#525659"/>
+
+                <!-- Fallback Container if XPS is not used -->
+                <ScrollViewer x:Name="FallbackScrollViewer" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto" Padding="20">
+                    <ContentPresenter x:Name="PnlPreviewContainer" HorizontalAlignment="Center" VerticalAlignment="Top"/>
+                </ScrollViewer>
+            </Grid>
         </Border>
 
         <!-- 4. Action Buttons Footer -->

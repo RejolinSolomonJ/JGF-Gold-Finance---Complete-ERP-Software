@@ -475,6 +475,44 @@ public static class LoanWordDocumentHelper
     }
 
     /// <summary>
+    /// Converts a filled Word document to XPS for native vector rendering inside WPF DocumentViewer.
+    /// </summary>
+    public static bool ExportWordToXps(Loan loan, Customer customer, Scheme scheme, string targetXpsPath)
+    {
+        try
+        {
+            var filledDocxPath = GenerateFilledDocument(loan, customer, scheme);
+
+            Type? wordType = Type.GetTypeFromProgID("Word.Application");
+            if (wordType != null)
+            {
+                dynamic? wordApp = Activator.CreateInstance(wordType);
+                if (wordApp != null)
+                {
+                    try
+                    {
+                        wordApp.Visible = false;
+                        dynamic doc = wordApp.Documents.Open(filledDocxPath);
+                        doc.SaveAs2(targetXpsPath, 18); // 18 = wdFormatXPS
+                        doc.Close(false);
+                        return true;
+                    }
+                    finally
+                    {
+                        wordApp.Quit();
+                        System.Runtime.InteropServices.Marshal.ReleaseComObject(wordApp);
+                    }
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Log.Warning(ex, "Word COM XPS conversion failed; falling back to internal visual preview.");
+        }
+        return false;
+    }
+
+    /// <summary>
     /// Shows SaveFileDialog and saves the pre-filled Word document to user's desired location.
     /// </summary>
     public static bool SaveWordDocument(Loan loan, Customer customer, Scheme scheme, System.Windows.Window? owner = null)
